@@ -1,0 +1,27 @@
+{
+  "name": "The Ment Shop",
+  "short_name": "Ment Shop",
+  "description": "Spread kindness, collect mints! A gamified compliment app.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#2ECC71",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["lifestyle", "social", "health"],
+  "screenshots": [],
+  "prefer_related_applications": false
+}
