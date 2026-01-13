@@ -7,22 +7,6 @@ const MintButton = ({
   onClick
 }: MintButtonProps) => {
   return <div className="relative flex flex-col items-center">
-      {/* Pulse ring behind button */}
-      <motion.div className="absolute inset-0 rounded-full bg-mint/30" animate={{
-      scale: [1, 1.2, 1],
-      opacity: [0.5, 0, 0.5]
-    }} transition={{
-      duration: 2,
-      repeat: Infinity,
-      ease: 'easeInOut'
-    }} style={{
-      width: 160,
-      height: 160,
-      left: '50%',
-      top: '50%',
-      marginLeft: -80,
-      marginTop: -80
-    }} />
       
       <motion.button onClick={onClick} className="relative flex items-center justify-center focus:outline-none focus-visible:ring-4 focus-visible:ring-mint/50 rounded-full w-40 h-40" whileHover={{
       scale: 1.05
