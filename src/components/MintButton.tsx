@@ -35,9 +35,24 @@ const MintButton = ({
       repeat: Infinity,
       ease: 'easeInOut'
     }}>
-        <motion.img src={wrappedMint} alt="Send a Ment" className="w-40 h-40 object-contain drop-shadow-lg mx-auto" style={{
-        filter: 'drop-shadow(0 8px 24px rgba(46, 204, 113, 0.4))'
-      }} />
+        <motion.img 
+          src={wrappedMint} 
+          alt="Send a Ment" 
+          className="w-40 h-40 object-contain mx-auto" 
+          animate={{
+            filter: [
+              'drop-shadow(0 0 20px rgba(46, 204, 113, 0.6)) drop-shadow(0 0 40px rgba(46, 204, 113, 0.4))',
+              'drop-shadow(0 0 35px rgba(46, 204, 113, 0.9)) drop-shadow(0 0 60px rgba(46, 204, 113, 0.6))',
+              'drop-shadow(0 0 20px rgba(46, 204, 113, 0.6)) drop-shadow(0 0 40px rgba(46, 204, 113, 0.4))'
+            ],
+            scale: [1, 1.05, 1]
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: 'easeInOut'
+          }}
+        />
       </motion.button>
       
       <motion.p className="mt-4 font-display text-xl font-bold text-mint" animate={{
