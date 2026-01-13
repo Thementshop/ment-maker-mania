@@ -8,6 +8,7 @@ import MintButton from '@/components/MintButton';
 import SendMentModal from '@/components/SendMentModal';
 import LevelUpModal from '@/components/LevelUpModal';
 import InspirationalQuote from '@/components/InspirationalQuote';
+import heroBanner from '@/assets/hero-banner.png';
 const Index = () => {
   const {
     jarCount,
@@ -35,6 +36,20 @@ const Index = () => {
   const pendingCount = pendingMents.filter(m => m.status === 'pending').length;
   return <div className="min-h-screen bg-gradient-mint">
       <Header worldCount={worldKindnessCount} />
+      
+      {/* Hero Banner */}
+      <motion.div 
+        className="w-full"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <img 
+          src={heroBanner} 
+          alt="Welcome to The Ment Shop - The Candy Store of Compliments" 
+          className="w-full h-auto object-cover"
+        />
+      </motion.div>
       
       <main className="container items-center gap-6 sm:gap-8 py-6 sm:py-8 pb-24 px-4 flex flex-row">
         {/* Jar Section with Level Badge above */}
