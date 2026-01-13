@@ -65,20 +65,6 @@ const Index = () => {
           <GlassJar mintCount={jarCount} />
         </motion.div>
         
-        {/* Send Ment Button */}
-        <motion.div initial={{
-        opacity: 0,
-        scale: 0.8
-      }} animate={{
-        opacity: 1,
-        scale: 1
-      }} transition={{
-        delay: 0.3,
-        type: 'spring'
-      }} className="my-4">
-          <MintButton onClick={() => setIsModalOpen(true)} />
-        </motion.div>
-        
         {/* Stats Counters */}
         <motion.div initial={{
         opacity: 0,
@@ -87,9 +73,23 @@ const Index = () => {
         opacity: 1,
         y: 0
       }} transition={{
-        delay: 0.4
+        delay: 0.3
       }}>
           <StatsCounters jarCount={jarCount} totalSent={totalSent} pendingCount={pendingCount} />
+        </motion.div>
+        
+        {/* Send Ment Button */}
+        <motion.div initial={{
+        opacity: 0,
+        scale: 0.8
+      }} animate={{
+        opacity: 1,
+        scale: 1
+      }} transition={{
+        delay: 0.4,
+        type: 'spring'
+      }} className="my-4">
+          <MintButton onClick={() => setIsModalOpen(true)} />
         </motion.div>
         
         {/* Inspirational Quote */}
