@@ -30,25 +30,30 @@ const GlassJar = ({
   const displayCount = Math.min(mintCount, 30);
   const mintSize = mintCount > 100 ? 'w-8 h-8' : mintCount > 50 ? 'w-10 h-10' : 'w-12 h-12';
 
-  // Generate gravity-based positions for mints (fill from bottom, left to right)
+  // Generate gravity-based positions for mints (fill bottom 50% of jar, left to right)
   const generateMintPositions = () => {
     const positions = [];
-    const mintsPerRow = 5; // How many mints fit per row
-    const maxFillPercent = 0.5; // 25 mints = 50% fill
+    const mintsPerRow = 6; // Mints per row
     
     for (let i = 0; i < displayCount; i++) {
       const row = Math.floor(i / mintsPerRow);
       const col = i % mintsPerRow;
       
-      // Add randomness to positions while maintaining gravity effect
-      const baseX = 15 + (col * 17) + (row % 2 === 1 ? 8 : 0); // Offset every other row
-      const baseY = 85 - (row * 12); // Start from bottom (85%) and stack up
+      // Stagger every other row for natural packing
+      const rowOffset = row % 2 === 1 ? 8 : 0;
+      
+      // X: spread across 10%-90% of container width
+      const baseX = 10 + (col * 14) + rowOffset;
+      
+      // Y: bottom 50% of jar (50%-95%), stack from bottom up
+      // Each row is ~10% height apart, starting from 90%
+      const baseY = 90 - (row * 10);
       
       positions.push({
-        x: baseX + (Math.random() * 6 - 3), // Small random horizontal offset
-        y: Math.max(50, baseY + (Math.random() * 4 - 2)), // Keep within 50-85% (bottom half)
-        rotation: Math.random() * 40 - 20, // Slight rotation for natural look
-        delay: i * 0.03
+        x: Math.min(90, Math.max(10, baseX + (Math.random() * 4 - 2))),
+        y: Math.min(95, Math.max(50, baseY + (Math.random() * 3 - 1.5))),
+        rotation: Math.random() * 30 - 15,
+        delay: i * 0.025
       });
     }
     return positions;
@@ -96,27 +101,27 @@ const GlassJar = ({
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: 'spring', stiffness: 200 }}
           />
-          {/* Mints overlay for level 1 jar - positioned at bottom with gravity */}
-          <div className="absolute inset-0 pointer-events-none">
-            {/* Jar body area where mints should appear (adjusted for jar proportions) */}
-            <div className="absolute left-[18%] right-[18%] top-[28%] bottom-[8%]">
+          {/* Mints overlay for level 1 jar - positioned inside jar body */}
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            {/* Jar interior: narrower sides, starts below lid, ends above base */}
+            <div className="absolute left-[22%] right-[22%] top-[24%] bottom-[6%] overflow-hidden">
               {mintPositions.map((pos, i) => (
                 <motion.img
                   key={i}
                   src={unwrappedMint}
                   alt="Mint"
-                  className="absolute w-5 h-5 sm:w-6 sm:h-6 object-contain"
+                  className="absolute w-4 h-4 sm:w-5 sm:h-5 object-contain drop-shadow-sm"
                   style={{
                     left: `${pos.x}%`,
                     top: `${pos.y}%`,
                     transform: `translate(-50%, -50%) rotate(${pos.rotation}deg)`
                   }}
-                  initial={{ y: -150, opacity: 0, scale: 0.5 }}
+                  initial={{ y: -100, opacity: 0, scale: 0.3 }}
                   animate={{ y: 0, opacity: 1, scale: 1 }}
                   transition={{
                     type: 'spring',
-                    stiffness: 200,
-                    damping: 15,
+                    stiffness: 180,
+                    damping: 12,
                     delay: pos.delay
                   }}
                 />
