@@ -88,8 +88,22 @@ const Index = () => {
       }} transition={{
         delay: 0.4,
         type: 'spring'
-      }} className="my-4">
+      }} className="my-4 flex flex-col items-center">
           <MintButton onClick={() => setIsModalOpen(true)} />
+          <motion.div 
+            className="mt-2 rounded-xl bg-card px-4 py-2 shadow-sm text-center"
+            whileHover={{ scale: 1.05 }}
+          >
+            <motion.span 
+              key={totalSent} 
+              className="font-display text-2xl font-bold text-foreground"
+              initial={{ scale: 1.2, color: 'hsl(var(--mint))' }}
+              animate={{ scale: 1, color: 'hsl(var(--foreground))' }}
+            >
+              {totalSent}
+            </motion.span>
+            <span className="text-xs text-muted-foreground ml-1">Sent</span>
+          </motion.div>
         </motion.div>
         
         {/* Inspirational Quote */}
