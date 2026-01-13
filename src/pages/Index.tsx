@@ -37,32 +37,35 @@ const Index = () => {
       <Header worldCount={worldKindnessCount} />
       
       <main className="container items-center gap-6 sm:gap-8 py-6 sm:py-8 pb-24 px-4 flex flex-row">
-        {/* Level Badge */}
-        <motion.div initial={{
-        opacity: 0,
-        y: -20
-      }} animate={{
-        opacity: 1,
-        y: 0
-      }} transition={{
-        delay: 0.1
-      }}>
-          <LevelBadge totalSent={totalSent} />
-        </motion.div>
-        
-        {/* Glass Jar */}
-        <motion.div initial={{
-        opacity: 0,
-        scale: 0.9
-      }} animate={{
-        opacity: 1,
-        scale: 1
-      }} transition={{
-        delay: 0.2,
-        type: 'spring'
-      }}>
-          <GlassJar mintCount={jarCount} pendingCount={pendingCount} />
-        </motion.div>
+        {/* Jar Section with Level Badge above */}
+        <div className="flex flex-col items-center gap-4">
+          {/* Level Badge */}
+          <motion.div initial={{
+            opacity: 0,
+            y: -20
+          }} animate={{
+            opacity: 1,
+            y: 0
+          }} transition={{
+            delay: 0.1
+          }}>
+            <LevelBadge totalSent={totalSent} />
+          </motion.div>
+          
+          {/* Glass Jar */}
+          <motion.div initial={{
+            opacity: 0,
+            scale: 0.9
+          }} animate={{
+            opacity: 1,
+            scale: 1
+          }} transition={{
+            delay: 0.2,
+            type: 'spring'
+          }}>
+            <GlassJar mintCount={jarCount} pendingCount={pendingCount} />
+          </motion.div>
+        </div>
         
         {/* Send Ment Button */}
         <motion.div initial={{
