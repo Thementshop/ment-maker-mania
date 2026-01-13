@@ -111,7 +111,7 @@ const GlassJar = ({
               - Left/right margins: ~20% on each side for curved glass
             */}
             <div 
-              className="absolute overflow-hidden"
+              className="absolute overflow-hidden border-2 border-red-500"
               style={{
                 left: '20%',
                 right: '20%',
@@ -124,7 +124,7 @@ const GlassJar = ({
                   key={i}
                   src={unwrappedMint}
                   alt="Mint"
-                  className="absolute w-3 h-3 sm:w-4 sm:h-4 object-contain"
+                  className="absolute w-3 h-3 sm:w-4 sm:h-4 object-contain border border-blue-500"
                   style={{
                     left: `${pos.x}%`,
                     top: `${pos.y}%`,
