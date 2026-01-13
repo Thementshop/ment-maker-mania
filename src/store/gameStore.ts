@@ -24,7 +24,7 @@ export interface GameState {
 }
 
 export const LEVELS = [
-  { level: 1, name: "Mint Maker", minMents: 0, maxMents: 24, reward: 10 },
+  { level: 1, name: "Ment Maker", minMents: 0, maxMents: 24, reward: 10 },
   { level: 2, name: "Candy Crafter", minMents: 25, maxMents: 49, reward: 15 },
   { level: 3, name: "Sweet Starter", minMents: 50, maxMents: 99, reward: 20 },
   { level: 4, name: "Kindness Keeper", minMents: 100, maxMents: 174, reward: 25 },
