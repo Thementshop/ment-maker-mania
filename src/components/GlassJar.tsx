@@ -114,7 +114,7 @@ const GlassJar = ({
       scale: 1
     }}>
         <span className="font-display text-lg font-bold text-mint">
-          {mintCount.toLocaleString()} mints
+          {mintCount.toLocaleString()} Ments
         </span>
       </motion.div>
       
