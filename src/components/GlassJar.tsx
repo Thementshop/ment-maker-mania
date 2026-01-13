@@ -30,15 +30,25 @@ const GlassJar = ({
   const displayCount = Math.min(mintCount, 30);
   const mintSize = mintCount > 100 ? 'w-8 h-8' : mintCount > 50 ? 'w-10 h-10' : 'w-12 h-12';
 
-  // Generate random positions for mints within the jar
+  // Generate gravity-based positions for mints (fill from bottom, left to right)
   const generateMintPositions = () => {
     const positions = [];
+    const mintsPerRow = 5; // How many mints fit per row
+    const maxFillPercent = 0.5; // 25 mints = 50% fill
+    
     for (let i = 0; i < displayCount; i++) {
+      const row = Math.floor(i / mintsPerRow);
+      const col = i % mintsPerRow;
+      
+      // Add randomness to positions while maintaining gravity effect
+      const baseX = 15 + (col * 17) + (row % 2 === 1 ? 8 : 0); // Offset every other row
+      const baseY = 85 - (row * 12); // Start from bottom (85%) and stack up
+      
       positions.push({
-        x: 10 + Math.random() * 80,
-        y: 20 + Math.random() * 70,
-        rotation: Math.random() * 360,
-        delay: i * 0.02
+        x: baseX + (Math.random() * 6 - 3), // Small random horizontal offset
+        y: Math.max(50, baseY + (Math.random() * 4 - 2)), // Keep within 50-85% (bottom half)
+        rotation: Math.random() * 40 - 20, // Slight rotation for natural look
+        delay: i * 0.03
       });
     }
     return positions;
@@ -86,26 +96,27 @@ const GlassJar = ({
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: 'spring', stiffness: 200 }}
           />
-          {/* Mints overlay for level 1 jar */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="relative w-24 h-24 mt-4">
-              {mintPositions.slice(0, Math.min(displayCount, 15)).map((pos, i) => (
+          {/* Mints overlay for level 1 jar - positioned at bottom with gravity */}
+          <div className="absolute inset-0 pointer-events-none">
+            {/* Jar body area where mints should appear (adjusted for jar proportions) */}
+            <div className="absolute left-[18%] right-[18%] top-[28%] bottom-[8%]">
+              {mintPositions.map((pos, i) => (
                 <motion.img
                   key={i}
                   src={unwrappedMint}
                   alt="Mint"
-                  className="absolute w-6 h-6 object-contain"
+                  className="absolute w-5 h-5 sm:w-6 sm:h-6 object-contain"
                   style={{
                     left: `${pos.x}%`,
                     top: `${pos.y}%`,
                     transform: `translate(-50%, -50%) rotate(${pos.rotation}deg)`
                   }}
-                  initial={{ y: -100, opacity: 0, scale: 0.5 }}
+                  initial={{ y: -150, opacity: 0, scale: 0.5 }}
                   animate={{ y: 0, opacity: 1, scale: 1 }}
                   transition={{
                     type: 'spring',
-                    stiffness: 300,
-                    damping: 20,
+                    stiffness: 200,
+                    damping: 15,
                     delay: pos.delay
                   }}
                 />
