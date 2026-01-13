@@ -4,7 +4,6 @@ import { useGameStore, getCurrentLevel } from '@/store/gameStore';
 import Header from '@/components/Header';
 import GlassJar from '@/components/GlassJar';
 import LevelBadge from '@/components/LevelBadge';
-import StatsCounters from '@/components/StatsCounters';
 import MintButton from '@/components/MintButton';
 import SendMentModal from '@/components/SendMentModal';
 import LevelUpModal from '@/components/LevelUpModal';
@@ -62,20 +61,7 @@ const Index = () => {
         delay: 0.2,
         type: 'spring'
       }}>
-          <GlassJar mintCount={jarCount} />
-        </motion.div>
-        
-        {/* Stats Counters */}
-        <motion.div initial={{
-        opacity: 0,
-        y: 20
-      }} animate={{
-        opacity: 1,
-        y: 0
-      }} transition={{
-        delay: 0.3
-      }}>
-          <StatsCounters jarCount={jarCount} totalSent={totalSent} pendingCount={pendingCount} />
+          <GlassJar mintCount={jarCount} pendingCount={pendingCount} />
         </motion.div>
         
         {/* Send Ment Button */}

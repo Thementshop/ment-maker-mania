@@ -2,9 +2,11 @@ import { motion } from 'framer-motion';
 import unwrappedMint from '@/assets/unwrapped-mint.png';
 interface GlassJarProps {
   mintCount: number;
+  pendingCount: number;
 }
 const GlassJar = ({
-  mintCount
+  mintCount,
+  pendingCount
 }: GlassJarProps) => {
   // Determine jar size based on mint count
   const getJarHeight = () => {
@@ -114,6 +116,17 @@ const GlassJar = ({
         <span className="font-display text-lg font-bold text-mint">
           {mintCount.toLocaleString()} mints
         </span>
+      </motion.div>
+      
+      {/* Pending count */}
+      <motion.div 
+        className="mt-2 rounded-xl bg-card px-4 py-2 shadow-sm text-center"
+        whileHover={{ scale: 1.05 }}
+      >
+        <motion.span className="font-display text-2xl font-bold text-foreground">
+          {pendingCount}
+        </motion.span>
+        <span className="text-xs text-muted-foreground ml-1">Pending (8h)</span>
       </motion.div>
     </div>;
 };
