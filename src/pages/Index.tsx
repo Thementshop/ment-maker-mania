@@ -80,7 +80,7 @@ const Index = () => {
           delay: 0.2,
           type: 'spring'
         }}>
-            <GlassJar mintCount={jarCount} pendingCount={pendingCount} />
+            <GlassJar mintCount={jarCount} pendingCount={pendingCount} totalSent={totalSent} />
           </motion.div>
         </div>
         
