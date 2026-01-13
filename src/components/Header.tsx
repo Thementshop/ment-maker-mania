@@ -22,7 +22,7 @@ const Header = ({
       }} whileTap={{
         scale: 0.98
       }}>
-          <motion.span className="text-lg" animate={{
+          <motion.span className="text-2xl" animate={{
           rotate: 360
         }} transition={{
           duration: 20,
