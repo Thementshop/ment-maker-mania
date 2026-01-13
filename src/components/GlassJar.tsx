@@ -30,32 +30,43 @@ const GlassJar = ({
   const displayCount = Math.min(mintCount, 30);
   const mintSize = mintCount > 100 ? 'w-8 h-8' : mintCount > 50 ? 'w-10 h-10' : 'w-12 h-12';
 
-  // Generate gravity-based positions for mints (fill bottom 50% of jar, left to right)
+  // Generate gravity-based positions for mints (fill bottom 50% of jar)
   const generateMintPositions = () => {
     const positions = [];
-    const mintsPerRow = 6; // Mints per row
+    const totalMints = displayCount;
     
-    for (let i = 0; i < displayCount; i++) {
+    // For 25 mints filling bottom 50%, use ~5 rows of ~5 mints each
+    const mintsPerRow = 5;
+    const numRows = Math.ceil(totalMints / mintsPerRow);
+    const rowHeight = 50 / Math.max(numRows, 1); // Bottom 50% divided among rows
+    
+    for (let i = 0; i < totalMints; i++) {
       const row = Math.floor(i / mintsPerRow);
       const col = i % mintsPerRow;
       
-      // Stagger every other row for natural packing
-      const rowOffset = row % 2 === 1 ? 8 : 0;
+      // Horizontal: 5%-95% spread (90% coverage) with stagger on odd rows
+      const horizontalSpacing = 90 / Math.max(mintsPerRow - 1, 1);
+      const rowStagger = row % 2 === 1 ? horizontalSpacing / 2 : 0;
+      const baseX = 5 + (col * horizontalSpacing) + rowStagger;
       
-      // X: spread across 10%-90% of container width
-      const baseX = 10 + (col * 14) + rowOffset;
+      // Vertical: Stack from bottom up (row 0 at bottom ~95%, going up)
+      const baseY = 95 - (row * rowHeight);
       
-      // Y: bottom 50% of jar (50%-95%), stack from bottom up
-      // Each row is ~10% height apart, starting from 90%
-      const baseY = 90 - (row * 10);
+      // Random offsets for natural look
+      const xOffset = (Math.random() - 0.5) * 8; // ±4%
+      const yOffset = (Math.random() - 0.5) * 6; // ±3%
+      
+      // Full rotation range for variety (-180° to 180°)
+      const rotation = Math.random() * 360 - 180;
       
       positions.push({
-        x: Math.min(90, Math.max(10, baseX + (Math.random() * 4 - 2))),
-        y: Math.min(95, Math.max(50, baseY + (Math.random() * 3 - 1.5))),
-        rotation: Math.random() * 30 - 15,
-        delay: i * 0.025
+        x: Math.max(5, Math.min(95, baseX + xOffset)),
+        y: Math.max(50, Math.min(98, baseY + yOffset)),
+        rotation,
+        delay: i * 0.03
       });
     }
+    
     return positions;
   };
   
@@ -111,12 +122,12 @@ const GlassJar = ({
               - Left/right margins: ~20% on each side for curved glass
             */}
             <div 
-              className="absolute overflow-hidden border-2 border-red-500"
+              className="absolute overflow-hidden"
               style={{
-                left: '20%',
-                right: '20%',
-                top: '30%',
-                bottom: '8%',
+                left: '15%',
+                right: '15%',
+                top: '28%',
+                bottom: '6%',
               }}
             >
               {mintPositions.map((pos, i) => (
@@ -124,7 +135,7 @@ const GlassJar = ({
                   key={i}
                   src={unwrappedMint}
                   alt="Mint"
-                  className="absolute w-3 h-3 sm:w-4 sm:h-4 object-contain border border-blue-500"
+                  className="absolute w-3 h-3 sm:w-4 sm:h-4 object-contain"
                   style={{
                     left: `${pos.x}%`,
                     top: `${pos.y}%`,
