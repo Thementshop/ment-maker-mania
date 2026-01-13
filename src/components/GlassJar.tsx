@@ -101,22 +101,36 @@ const GlassJar = ({
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: 'spring', stiffness: 200 }}
           />
-          {/* Mints overlay for level 1 jar - positioned inside jar body */}
-          <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            {/* Jar interior: narrower sides, starts below lid, ends above base */}
-            <div className="absolute left-[22%] right-[22%] top-[24%] bottom-[6%] overflow-hidden">
+          {/* Mints overlay - precisely positioned inside jar glass body */}
+          <div className="absolute inset-0 pointer-events-none">
+            {/* 
+              Jar anatomy (from uploaded image):
+              - 0-15%: lid knob and top
+              - 15-25%: neck/opening
+              - 25-95%: main glass body (this is where mints go)
+              - Left/right margins: ~20% on each side for curved glass
+            */}
+            <div 
+              className="absolute overflow-hidden"
+              style={{
+                left: '20%',
+                right: '20%',
+                top: '30%',
+                bottom: '8%',
+              }}
+            >
               {mintPositions.map((pos, i) => (
                 <motion.img
                   key={i}
                   src={unwrappedMint}
                   alt="Mint"
-                  className="absolute w-4 h-4 sm:w-5 sm:h-5 object-contain drop-shadow-sm"
+                  className="absolute w-3 h-3 sm:w-4 sm:h-4 object-contain"
                   style={{
                     left: `${pos.x}%`,
                     top: `${pos.y}%`,
                     transform: `translate(-50%, -50%) rotate(${pos.rotation}deg)`
                   }}
-                  initial={{ y: -100, opacity: 0, scale: 0.3 }}
+                  initial={{ y: -80, opacity: 0, scale: 0.3 }}
                   animate={{ y: 0, opacity: 1, scale: 1 }}
                   transition={{
                     type: 'spring',
