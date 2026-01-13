@@ -39,7 +39,7 @@ const Index = () => {
       
       {/* Hero Banner */}
       <motion.div 
-        className="w-full flex justify-center"
+        className="w-full"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
@@ -47,7 +47,7 @@ const Index = () => {
         <img 
           src={heroBanner} 
           alt="Welcome to The Ment Shop - The Candy Store of Compliments" 
-          className="w-[70%] h-auto object-cover"
+          className="w-full h-auto object-cover"
         />
       </motion.div>
       
