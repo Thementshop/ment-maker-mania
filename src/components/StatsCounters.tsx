@@ -12,9 +12,9 @@ const StatsCounters = ({
   return <div className="flex justify-center gap-4 sm:gap-8 text-center">
       
       
-      <motion.div className="flex flex-col items-center rounded-xl bg-card p-3 shadow-sm" whileHover={{
+      <motion.div whileHover={{
       scale: 1.05
-    }}>
+    }} className="rounded-xl bg-card p-3 shadow-sm flex-col flex items-center justify-start">
         
         <motion.span key={totalSent} className="font-display text-2xl font-bold text-foreground" initial={{
         scale: 1.2,
