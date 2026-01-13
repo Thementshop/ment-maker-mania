@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useGameStore, getCurrentLevel } from '@/store/gameStore';
 import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 import GlassJar from '@/components/GlassJar';
 import LevelBadge from '@/components/LevelBadge';
 import MintButton from '@/components/MintButton';
@@ -34,7 +35,7 @@ const Index = () => {
     }
   };
   const pendingCount = pendingMents.filter(m => m.status === 'pending').length;
-  return <div className="min-h-screen bg-gradient-mint">
+  return <div className="min-h-screen bg-gradient-mint flex flex-col">
       <Header worldCount={worldKindnessCount} />
       
       {/* Hero Banner */}
@@ -128,6 +129,9 @@ const Index = () => {
       
       {/* Level Up Modal */}
       <LevelUpModal isOpen={showLevelUp} onClose={() => setShowLevelUp(false)} totalSent={totalSent} bonusMints={levelUpBonus} />
+      
+      {/* Footer */}
+      <Footer />
     </div>;
 };
 export default Index;
