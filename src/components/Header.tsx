@@ -17,11 +17,11 @@ const Header = ({
           </span>
         </div>
         
-        <motion.div className="world-tracker flex items-center gap-2 rounded-full px-4 py-2 text-primary-foreground" whileHover={{
+        <motion.div whileHover={{
         scale: 1.02
       }} whileTap={{
         scale: 0.98
-      }}>
+      }} className="world-tracker flex items-center gap-2 rounded-full px-4 py-2 text-mint-light">
           <motion.span className="text-2xl" animate={{
           rotate: 360
         }} transition={{
