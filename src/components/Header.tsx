@@ -17,6 +17,17 @@ const Header = ({
           </span>
         </div>
         
+        {/* Center Nav */}
+        <nav className="absolute left-1/2 -translate-x-1/2">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="font-display text-sm font-semibold text-foreground hover:text-primary transition-colors px-4 py-2 rounded-full hover:bg-primary/10"
+          >
+            How it works
+          </motion.button>
+        </nav>
+        
         <motion.div whileHover={{
         scale: 1.02
       }} whileTap={{
