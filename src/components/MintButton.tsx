@@ -24,7 +24,7 @@ const MintButton = ({
       marginTop: -80
     }} />
       
-      <motion.button onClick={onClick} className="relative flex flex-col items-center justify-center focus:outline-none focus-visible:ring-4 focus-visible:ring-mint/50 rounded-full" whileHover={{
+      <motion.button onClick={onClick} className="relative flex items-center justify-center focus:outline-none focus-visible:ring-4 focus-visible:ring-mint/50 rounded-full w-40 h-40" whileHover={{
       scale: 1.05
     }} whileTap={{
       scale: 0.95
@@ -35,7 +35,7 @@ const MintButton = ({
       repeat: Infinity,
       ease: 'easeInOut'
     }}>
-        <motion.img src={wrappedMint} alt="Send a Ment" className="w-40 h-40 object-contain drop-shadow-lg" style={{
+        <motion.img src={wrappedMint} alt="Send a Ment" className="w-40 h-40 object-contain drop-shadow-lg mx-auto" style={{
         filter: 'drop-shadow(0 8px 24px rgba(46, 204, 113, 0.4))'
       }} />
       </motion.button>
