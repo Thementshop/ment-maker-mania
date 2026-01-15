@@ -44,7 +44,7 @@ const Index = () => {
         <img 
           src={tmsBanner} 
           alt="Welcome to The Ment Shop - The Candy Store of Compliments" 
-          className="w-full object-cover object-center"
+          className="w-full max-h-[250px] object-contain object-center"
         />
       </div>
       
