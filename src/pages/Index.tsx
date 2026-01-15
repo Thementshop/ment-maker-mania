@@ -9,6 +9,7 @@ import MintButton from '@/components/MintButton';
 import SendMentModal from '@/components/SendMentModal';
 import LevelUpModal from '@/components/LevelUpModal';
 import InspirationalQuote from '@/components/InspirationalQuote';
+import tmsBanner from '@/assets/TMS_banner.png';
 
 const Index = () => {
   const {
@@ -38,6 +39,14 @@ const Index = () => {
   return <div className="min-h-screen bg-gradient-mint flex flex-col">
       <Header worldCount={worldKindnessCount} />
       
+      {/* Banner Image */}
+      <div className="w-full">
+        <img 
+          src={tmsBanner} 
+          alt="Welcome to The Ment Shop - The Candy Store of Compliments" 
+          className="w-full object-cover object-center"
+        />
+      </div>
       
       <main className="container items-center gap-6 sm:gap-8 py-6 sm:py-8 pb-24 px-4 flex flex-row">
         {/* Jar Section with Level Badge above */}
