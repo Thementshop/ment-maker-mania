@@ -39,19 +39,13 @@ const Index = () => {
       <Header worldCount={worldKindnessCount} />
       
       {/* Hero Banner */}
-      <motion.div 
-        className="w-full overflow-hidden"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        style={{ height: '70%' }}
-      >
+      <div className="w-full overflow-hidden">
         <img 
           src={heroBanner} 
           alt="Welcome to The Ment Shop - The Candy Store of Compliments" 
-          className="w-full h-[70%] object-cover object-center"
+          className="w-full h-auto object-cover object-center"
         />
-      </motion.div>
+      </div>
       
       <main className="container items-center gap-6 sm:gap-8 py-6 sm:py-8 pb-24 px-4 flex flex-row">
         {/* Jar Section with Level Badge above */}
