@@ -39,11 +39,11 @@ const Index = () => {
       <Header worldCount={worldKindnessCount} />
       
       {/* Hero Banner */}
-      <div className="w-full overflow-hidden">
+      <div className="w-full overflow-hidden bg-mint/10">
         <img 
           src={heroBanner} 
           alt="Welcome to The Ment Shop - The Candy Store of Compliments" 
-          className="w-full max-h-[250px] object-cover object-center"
+          className="w-full max-h-[190px] object-contain object-center"
         />
       </div>
       
