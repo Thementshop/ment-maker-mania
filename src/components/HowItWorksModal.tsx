@@ -56,9 +56,8 @@ const HowItWorksModal = ({ isOpen, onClose }: HowItWorksModalProps) => {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed inset-4 sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 
-                       sm:max-w-2xl sm:w-full z-50 bg-card rounded-3xl shadow-2xl overflow-hidden
-                       border border-border/50 max-h-[90vh] flex flex-col"
+            className="fixed inset-4 md:inset-8 lg:inset-12 z-50 bg-card rounded-3xl shadow-2xl overflow-hidden
+                       border border-border/50 flex flex-col"
           >
             {/* Header */}
             <div className="relative bg-gradient-to-r from-mint/20 to-candy-pink/20 p-6 border-b border-border/30">
