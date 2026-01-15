@@ -43,7 +43,7 @@ const Index = () => {
         <img 
           src={heroBanner} 
           alt="Welcome to The Ment Shop - The Candy Store of Compliments" 
-          className="w-full max-h-[200px] object-contain object-center"
+          className="w-full object-cover object-center"
         />
       </div>
       
