@@ -44,12 +44,11 @@ const Index = () => {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        style={{ height: '70%' }}
       >
         <img 
           src={heroBanner} 
           alt="Welcome to The Ment Shop - The Candy Store of Compliments" 
-          className="w-full h-[70%] object-cover object-center"
+          className="w-full h-auto max-h-[200px] object-cover object-center"
         />
       </motion.div>
       
