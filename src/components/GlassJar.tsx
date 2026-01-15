@@ -2,13 +2,11 @@ import { motion } from 'framer-motion';
 import unwrappedMint from '@/assets/unwrapped-mint.png';
 import jarLevel1 from '@/assets/jar-level-1.png';
 import { getCurrentLevel } from '@/store/gameStore';
-
 interface GlassJarProps {
   mintCount: number;
   pendingCount: number;
   totalSent?: number;
 }
-
 const GlassJar = ({
   mintCount,
   pendingCount,
@@ -34,31 +32,30 @@ const GlassJar = ({
   const generateMintPositions = () => {
     const positions = [];
     const totalMints = displayCount;
-    
+
     // For 25 mints filling bottom 50%, use ~5 rows of ~5 mints each
     const mintsPerRow = 5;
     const numRows = Math.ceil(totalMints / mintsPerRow);
     const rowHeight = 50 / Math.max(numRows, 1); // Bottom 50% divided among rows
-    
+
     for (let i = 0; i < totalMints; i++) {
       const row = Math.floor(i / mintsPerRow);
       const col = i % mintsPerRow;
-      
+
       // Horizontal: 5%-95% spread (90% coverage) with stagger on odd rows
       const horizontalSpacing = 90 / Math.max(mintsPerRow - 1, 1);
       const rowStagger = row % 2 === 1 ? horizontalSpacing / 2 : 0;
-      const baseX = 5 + (col * horizontalSpacing) + rowStagger;
-      
+      const baseX = 5 + col * horizontalSpacing + rowStagger;
+
       // Vertical: Stack from bottom up (row 0 at bottom ~95%, going up)
-      const baseY = 95 - (row * rowHeight);
-      
+      const baseY = 95 - row * rowHeight;
+
       // Random offsets for natural look
       const xOffset = (Math.random() - 0.5) * 8; // ±4%
       const yOffset = (Math.random() - 0.5) * 6; // ±3%
-      
+
       // Full rotation range for variety (-180° to 180°)
       const rotation = Math.random() * 360 - 180;
-      
       positions.push({
         x: Math.max(5, Math.min(95, baseX + xOffset)),
         y: Math.max(50, Math.min(98, baseY + yOffset)),
@@ -66,52 +63,56 @@ const GlassJar = ({
         delay: i * 0.03
       });
     }
-    
     return positions;
   };
-  
   const mintPositions = generateMintPositions();
-
-  return (
-    <div className="relative flex-col flex items-center justify-start">
+  return <div className="relative flex-col flex items-center justify-start px-[50px] mx-[50px]">
       {/* Sparkles for high mint count */}
-      {mintCount > 500 && (
-        <>
-          <motion.span
-            className="absolute -top-4 left-1/4 text-2xl sparkle"
-            animate={{ opacity: [1, 0.5, 1], scale: [1, 0.8, 1] }}
-            transition={{ duration: 1.5, repeat: Infinity, delay: 0 }}
-          >
+      {mintCount > 500 && <>
+          <motion.span className="absolute -top-4 left-1/4 text-2xl sparkle" animate={{
+        opacity: [1, 0.5, 1],
+        scale: [1, 0.8, 1]
+      }} transition={{
+        duration: 1.5,
+        repeat: Infinity,
+        delay: 0
+      }}>
             ✨
           </motion.span>
-          <motion.span
-            className="absolute -top-2 right-1/4 text-xl sparkle"
-            animate={{ opacity: [1, 0.5, 1], scale: [1, 0.8, 1] }}
-            transition={{ duration: 1.5, repeat: Infinity, delay: 0.5 }}
-          >
+          <motion.span className="absolute -top-2 right-1/4 text-xl sparkle" animate={{
+        opacity: [1, 0.5, 1],
+        scale: [1, 0.8, 1]
+      }} transition={{
+        duration: 1.5,
+        repeat: Infinity,
+        delay: 0.5
+      }}>
             ✨
           </motion.span>
-          <motion.span
-            className="absolute top-1/4 -right-4 text-lg sparkle"
-            animate={{ opacity: [1, 0.5, 1], scale: [1, 0.8, 1] }}
-            transition={{ duration: 1.5, repeat: Infinity, delay: 1 }}
-          >
+          <motion.span className="absolute top-1/4 -right-4 text-lg sparkle" animate={{
+        opacity: [1, 0.5, 1],
+        scale: [1, 0.8, 1]
+      }} transition={{
+        duration: 1.5,
+        repeat: Infinity,
+        delay: 1
+      }}>
             ✨
           </motion.span>
-        </>
-      )}
+        </>}
 
       {/* Level 1 Jar - Use uploaded image */}
-      {isLevel1 ? (
-        <div className="relative">
-          <motion.img
-            src={jarLevel1}
-            alt="Glass Jar"
-            className="h-48 sm:h-56 w-auto object-contain"
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: 'spring', stiffness: 200 }}
-          />
+      {isLevel1 ? <div className="relative">
+          <motion.img src={jarLevel1} alt="Glass Jar" className="h-48 sm:h-56 w-auto object-contain" initial={{
+        scale: 0.9,
+        opacity: 0
+      }} animate={{
+        scale: 1,
+        opacity: 1
+      }} transition={{
+        type: 'spring',
+        stiffness: 200
+      }} />
           {/* Mints overlay - precisely positioned inside jar glass body */}
           <div className="absolute inset-0 pointer-events-none">
             {/* 
@@ -120,43 +121,35 @@ const GlassJar = ({
               - 15-25%: neck/opening
               - 25-95%: main glass body (this is where mints go)
               - Left/right margins: ~20% on each side for curved glass
-            */}
-            <div 
-              className="absolute overflow-hidden"
-              style={{
-                left: '15%',
-                right: '15%',
-                top: '28%',
-                bottom: '6%',
-              }}
-            >
-              {mintPositions.map((pos, i) => (
-                <motion.img
-                  key={i}
-                  src={unwrappedMint}
-                  alt="Mint"
-                  className="absolute w-3 h-3 sm:w-4 sm:h-4 object-contain"
-                  style={{
-                    left: `${pos.x}%`,
-                    top: `${pos.y}%`,
-                    transform: `translate(-50%, -50%) rotate(${pos.rotation}deg)`
-                  }}
-                  initial={{ y: -80, opacity: 0, scale: 0.3 }}
-                  animate={{ y: 0, opacity: 1, scale: 1 }}
-                  transition={{
-                    type: 'spring',
-                    stiffness: 180,
-                    damping: 12,
-                    delay: pos.delay
-                  }}
-                />
-              ))}
+             */}
+            <div className="absolute overflow-hidden" style={{
+          left: '15%',
+          right: '15%',
+          top: '28%',
+          bottom: '6%'
+        }}>
+              {mintPositions.map((pos, i) => <motion.img key={i} src={unwrappedMint} alt="Mint" className="absolute w-3 h-3 sm:w-4 sm:h-4 object-contain" style={{
+            left: `${pos.x}%`,
+            top: `${pos.y}%`,
+            transform: `translate(-50%, -50%) rotate(${pos.rotation}deg)`
+          }} initial={{
+            y: -80,
+            opacity: 0,
+            scale: 0.3
+          }} animate={{
+            y: 0,
+            opacity: 1,
+            scale: 1
+          }} transition={{
+            type: 'spring',
+            stiffness: 180,
+            damping: 12,
+            delay: pos.delay
+          }} />)}
             </div>
           </div>
-        </div>
-      ) : (
-        /* Default Jar Container for other levels */
-        <div className={`glass-jar relative ${getJarHeight()} w-44 sm:w-52 rounded-3xl overflow-hidden`}>
+        </div> : (/* Default Jar Container for other levels */
+    <div className={`glass-jar relative ${getJarHeight()} w-44 sm:w-52 rounded-3xl overflow-hidden`}>
           {/* Jar Lid */}
           <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-32 h-6 bg-gradient-to-b from-gray-300 to-gray-400 rounded-full shadow-md" />
           
@@ -165,59 +158,51 @@ const GlassJar = ({
           
           {/* Mints inside jar */}
           <div className="absolute inset-4 overflow-hidden">
-            {mintPositions.map((pos, i) => (
-              <motion.img
-                key={i}
-                src={unwrappedMint}
-                alt="Mint"
-                className={`absolute ${mintSize} object-contain`}
-                style={{
-                  left: `${pos.x}%`,
-                  top: `${pos.y}%`,
-                  transform: `translate(-50%, -50%) rotate(${pos.rotation}deg)`
-                }}
-                initial={{ y: -200, opacity: 0, scale: 0.5 }}
-                animate={{ y: 0, opacity: 1, scale: 1 }}
-                transition={{
-                  type: 'spring',
-                  stiffness: 300,
-                  damping: 20,
-                  delay: pos.delay
-                }}
-              />
-            ))}
+            {mintPositions.map((pos, i) => <motion.img key={i} src={unwrappedMint} alt="Mint" className={`absolute ${mintSize} object-contain`} style={{
+          left: `${pos.x}%`,
+          top: `${pos.y}%`,
+          transform: `translate(-50%, -50%) rotate(${pos.rotation}deg)`
+        }} initial={{
+          y: -200,
+          opacity: 0,
+          scale: 0.5
+        }} animate={{
+          y: 0,
+          opacity: 1,
+          scale: 1
+        }} transition={{
+          type: 'spring',
+          stiffness: 300,
+          damping: 20,
+          delay: pos.delay
+        }} />)}
           </div>
           
           {/* Glass shine effect */}
           <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-transparent to-transparent pointer-events-none" />
           <div className="absolute top-4 left-4 w-8 h-16 bg-white/20 rounded-full blur-sm" />
-        </div>
-      )}
+        </div>)}
 
       {/* Mint count label */}
-      <motion.div
-        key={mintCount}
-        className="mt-4 rounded-full bg-mint/10 px-4 py-1"
-        initial={{ scale: 1.1 }}
-        animate={{ scale: 1 }}
-      >
+      <motion.div key={mintCount} className="mt-4 rounded-full bg-mint/10 px-4 py-1" initial={{
+      scale: 1.1
+    }} animate={{
+      scale: 1
+    }}>
         <span className="font-display text-lg font-bold text-mint">
           {mintCount.toLocaleString()} Ments
         </span>
       </motion.div>
 
       {/* Pending count */}
-      <motion.div
-        className="mt-2 rounded-xl bg-card px-4 py-2 shadow-sm text-center"
-        whileHover={{ scale: 1.05 }}
-      >
+      <motion.div className="mt-2 rounded-xl bg-card px-4 py-2 shadow-sm text-center" whileHover={{
+      scale: 1.05
+    }}>
         <motion.span className="font-display text-2xl font-bold text-foreground">
           {pendingCount}
         </motion.span>
         <span className="text-xs text-muted-foreground ml-1">Pending (8h)</span>
       </motion.div>
-    </div>
-  );
+    </div>;
 };
-
 export default GlassJar;
