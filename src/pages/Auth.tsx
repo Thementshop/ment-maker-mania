@@ -5,24 +5,19 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import unwrappedMint from '@/assets/unwrapped-mint.png';
 
 const Auth = () => {
-  const { user, isLoading, signIn, signUp } = useAuth();
+  const { user, isLoading, signUp } = useAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSettingUp, setIsSettingUp] = useState(false);
   
-  // Login form state
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
-  
   // Signup form state
-  const [signupEmail, setSignupEmail] = useState('');
-  const [signupPassword, setSignupPassword] = useState('');
-  const [signupName, setSignupName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
   // Redirect if already logged in
@@ -30,32 +25,10 @@ const Auth = () => {
     return <Navigate to="/" replace />;
   }
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    
-    const { error } = await signIn(loginEmail, loginPassword);
-    
-    if (error) {
-      toast({
-        title: 'Login failed',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } else {
-      toast({
-        title: 'Welcome back!',
-        description: 'You have successfully logged in.',
-      });
-    }
-    
-    setIsSubmitting(false);
-  };
-
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (signupPassword !== confirmPassword) {
+    if (password !== confirmPassword) {
       toast({
         title: 'Passwords do not match',
         description: 'Please make sure your passwords match.',
@@ -64,7 +37,7 @@ const Auth = () => {
       return;
     }
     
-    if (signupPassword.length < 6) {
+    if (password.length < 6) {
       toast({
         title: 'Password too short',
         description: 'Password must be at least 6 characters.',
@@ -75,7 +48,7 @@ const Auth = () => {
     
     setIsSubmitting(true);
     
-    const { error } = await signUp(signupEmail, signupPassword, signupName);
+    const { error } = await signUp(email, password, displayName);
     
     if (error) {
       toast({
@@ -85,7 +58,6 @@ const Auth = () => {
       });
       setIsSubmitting(false);
     } else {
-      // Show setting up state - the auth listener will handle redirect
       setIsSettingUp(true);
       toast({
         title: 'Welcome to The Ment Shop!',
@@ -147,107 +119,70 @@ const Auth = () => {
         className="w-full max-w-md"
       >
         <div className="bg-card rounded-3xl shadow-2xl p-6 border border-border">
-          <Tabs defaultValue="login" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="login" className="font-display">Login</TabsTrigger>
-              <TabsTrigger value="signup" className="font-display">Sign Up</TabsTrigger>
-            </TabsList>
+          <h2 className="font-display text-xl font-bold text-center mb-6">
+            Create Your Account
+          </h2>
+          
+          <form onSubmit={handleSignup} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="display-name">Display Name</Label>
+              <Input
+                id="display-name"
+                type="text"
+                placeholder="Your name"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+              />
+            </div>
             
-            <TabsContent value="login">
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="login-email">Email</Label>
-                  <Input
-                    id="login-email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="login-password">Password</Label>
-                  <Input
-                    id="login-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                
-                <Button
-                  type="submit"
-                  className="w-full bg-mint hover:bg-mint/90 text-primary-foreground font-display"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Logging in...' : 'Login'}
-                </Button>
-              </form>
-            </TabsContent>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
             
-            <TabsContent value="signup">
-              <form onSubmit={handleSignup} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signup-name">Display Name</Label>
-                  <Input
-                    id="signup-name"
-                    type="text"
-                    placeholder="Your name"
-                    value={signupName}
-                    onChange={(e) => setSignupName(e.target.value)}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={signupEmail}
-                    onChange={(e) => setSignupEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
-                  <Input
-                    id="signup-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={signupPassword}
-                    onChange={(e) => setSignupPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="confirm-password">Confirm Password</Label>
-                  <Input
-                    id="confirm-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                
-                <Button
-                  type="submit"
-                  className="w-full bg-mint hover:bg-mint/90 text-primary-foreground font-display"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Creating account...' : 'Create Account'}
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="confirm-password">Confirm Password</Label>
+              <Input
+                id="confirm-password"
+                type="password"
+                placeholder="••••••••"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+              />
+            </div>
+            
+            <Button
+              type="submit"
+              className="w-full bg-mint hover:bg-mint/90 text-primary-foreground font-display"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Creating account...' : 'Start Spreading Kindness'}
+            </Button>
+          </form>
+          
+          <p className="text-xs text-muted-foreground text-center mt-4">
+            Your session is saved automatically — no need to log in again!
+          </p>
         </div>
       </motion.div>
     </div>
