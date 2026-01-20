@@ -14,13 +14,147 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      pending_ments: {
+        Row: {
+          category: string
+          compliment_text: string
+          created_at: string | null
+          expires_at: string
+          id: string
+          recipient_type: string
+          recipient_value: string | null
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          category: string
+          compliment_text: string
+          created_at?: string | null
+          expires_at: string
+          id?: string
+          recipient_type: string
+          recipient_value?: string | null
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          category?: string
+          compliment_text?: string
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          recipient_type?: string
+          recipient_value?: string | null
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          display_name: string | null
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          id: string
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      sent_ments: {
+        Row: {
+          category: string
+          compliment_text: string
+          id: string
+          recipient_type: string
+          sender_id: string
+          sent_at: string | null
+        }
+        Insert: {
+          category: string
+          compliment_text: string
+          id?: string
+          recipient_type: string
+          sender_id: string
+          sent_at?: string | null
+        }
+        Update: {
+          category?: string
+          compliment_text?: string
+          id?: string
+          recipient_type?: string
+          sender_id?: string
+          sent_at?: string | null
+        }
+        Relationships: []
+      }
+      user_game_state: {
+        Row: {
+          created_at: string | null
+          current_level: number
+          id: string
+          jar_count: number
+          total_sent: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          current_level?: number
+          id?: string
+          jar_count?: number
+          total_sent?: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          current_level?: number
+          id?: string
+          jar_count?: number
+          total_sent?: number
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      world_kindness_counter: {
+        Row: {
+          count: number
+          id: number
+          updated_at: string | null
+        }
+        Insert: {
+          count?: number
+          id?: number
+          updated_at?: string | null
+        }
+        Update: {
+          count?: number
+          id?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      increment_world_counter: { Args: never; Returns: number }
     }
     Enums: {
       [_ in never]: never
