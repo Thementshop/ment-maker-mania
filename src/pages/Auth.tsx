@@ -13,6 +13,7 @@ const Auth = () => {
   const { user, isLoading, signIn, signUp } = useAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSettingUp, setIsSettingUp] = useState(false);
   
   // Login form state
   const [loginEmail, setLoginEmail] = useState('');
@@ -82,25 +83,35 @@ const Auth = () => {
         description: error.message,
         variant: 'destructive',
       });
+      setIsSubmitting(false);
     } else {
+      // Show setting up state - the auth listener will handle redirect
+      setIsSettingUp(true);
       toast({
         title: 'Welcome to The Ment Shop!',
-        description: 'Your account has been created. Start spreading kindness!',
+        description: 'Setting up your mint jar...',
       });
     }
-    
-    setIsSubmitting(false);
   };
 
-  if (isLoading) {
+  if (isLoading || isSettingUp) {
     return (
-      <div className="min-h-screen bg-gradient-mint flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-mint flex flex-col items-center justify-center gap-4">
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
         >
           <img src={unwrappedMint} alt="Loading..." className="h-16 w-16" />
         </motion.div>
+        {isSettingUp && (
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-muted-foreground font-medium"
+          >
+            Creating your mint jar...
+          </motion.p>
+        )}
       </div>
     );
   }
