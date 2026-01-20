@@ -1,8 +1,17 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import logo from '@/assets/logo.png';
+import { LogOut, User } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import unwrappedMint from '@/assets/unwrapped-mint.png';
 import HowItWorksModal from './HowItWorksModal';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface HeaderProps {
   worldCount: number;
@@ -10,7 +19,13 @@ interface HeaderProps {
 
 const Header = ({ worldCount }: HeaderProps) => {
   const [isHowItWorksOpen, setIsHowItWorksOpen] = useState(false);
+  const { profile, signOut } = useAuth();
   const formattedCount = worldCount.toLocaleString();
+
+  const getInitials = (name: string | null) => {
+    if (!name) return 'U';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
 
   return (
     <>
@@ -35,27 +50,60 @@ const Header = ({ worldCount }: HeaderProps) => {
             </motion.button>
           </nav>
           
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="world-tracker flex items-center gap-2 rounded-full px-4 py-2 text-mint-light"
-          >
-            <motion.span
-              className="text-2xl"
-              animate={{ rotate: 360 }}
-              transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+          <div className="flex items-center gap-4">
+            {/* World Counter */}
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="world-tracker flex items-center gap-2 rounded-full px-4 py-2 text-mint-light"
             >
-              🌍
-            </motion.span>
-            <motion.span
-              key={worldCount}
-              initial={{ scale: 1.2, color: '#FFD740' }}
-              animate={{ scale: 1, color: '#FFFFFF' }}
-              className="font-display font-bold"
-            >
-              {formattedCount}
-            </motion.span>
-          </motion.div>
+              <motion.span
+                className="text-2xl"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+              >
+                🌍
+              </motion.span>
+              <motion.span
+                key={worldCount}
+                initial={{ scale: 1.2, color: '#FFD740' }}
+                animate={{ scale: 1, color: '#FFFFFF' }}
+                className="font-display font-bold"
+              >
+                {formattedCount}
+              </motion.span>
+            </motion.div>
+
+            {/* User Menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="focus:outline-none"
+                >
+                  <Avatar className="h-9 w-9 border-2 border-mint">
+                    <AvatarImage src={profile?.avatar_url || undefined} />
+                    <AvatarFallback className="bg-mint text-primary-foreground font-display">
+                      {getInitials(profile?.display_name)}
+                    </AvatarFallback>
+                  </Avatar>
+                </motion.button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <div className="px-2 py-1.5">
+                  <p className="text-sm font-medium text-foreground">
+                    {profile?.display_name || 'Mint Maker'}
+                  </p>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => signOut()} className="text-destructive cursor-pointer">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </header>
 

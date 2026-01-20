@@ -9,7 +9,7 @@ import unwrappedMint from '@/assets/unwrapped-mint.png';
 interface SendMentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSend: () => void;
+  onSend: (mentData: { category: string; complimentText: string; recipientType: string }) => void;
 }
 
 type Step = 'recipient' | 'category' | 'compliment' | 'sending' | 'success';
@@ -47,10 +47,10 @@ const SendMentModal = ({ isOpen, onClose, onSend }: SendMentModalProps) => {
   
   const handleSelectCompliment = (compliment: string) => {
     setSelectedCompliment(compliment);
-    handleSend();
+    handleSend(compliment);
   };
   
-  const handleSend = () => {
+  const handleSend = (compliment: string) => {
     setStep('sending');
     
     // Animate unwrapping
@@ -64,7 +64,13 @@ const SendMentModal = ({ isOpen, onClose, onSend }: SendMentModalProps) => {
       });
       
       setStep('success');
-      onSend();
+      
+      // Call onSend with the ment data
+      onSend({
+        category: selectedCategory?.name || '',
+        complimentText: compliment,
+        recipientType: recipientType,
+      });
       
       // Auto close after success
       setTimeout(() => {
