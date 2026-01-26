@@ -1,187 +1,79 @@
 
-## Fix: Persistent Spinning Mint Loading State
 
-### Root Cause Analysis
+## Fix: Add Login Option for Returning Users
 
-After tracing through the code, I found **multiple issues** causing the infinite loading:
+### The Problem
 
-1. **Double `loadGameState` calls**: Both `onAuthStateChange` and `getSession` call `loadGameState`, which can overlap and cause race conditions
-2. **Auth loading blocks everything**: `ProtectedRoute` shows spinner while `AuthContext.isLoading` is `true`, and `setIsLoading(false)` only runs after all async operations complete
-3. **No timeout on AuthContext loading**: While gameStore has a 10s timeout, the AuthContext has no such protection
+Your account exists and is fully confirmed, but the Auth page only shows "Create Your Account" with no login option. When your browser session was cleared during debugging, you had no way to sign back in.
+
+The current design says "Your session is saved automatically — no need to log in again!" but sessions can expire or be cleared, leaving returning users stuck.
 
 ---
 
 ### The Solution
 
-Fix the AuthContext to have a more robust loading flow:
+Add a toggle between Sign Up and Sign In modes on the Auth page. This maintains the clean "native app" feel while giving returning users a way back in.
 
-| Change | Description |
-|--------|-------------|
-| Add timeout to AuthContext | Prevent infinite loading if Supabase auth check hangs |
-| Decouple auth loading from game loading | Auth should complete and show the page; game data loads in background |
-| Remove duplicate loadGameState calls | Only call once per session, not from both listeners |
-| Add loading guard | Prevent multiple simultaneous loadGameState calls |
+---
+
+### User Experience Flow
+
+```text
+First-time visitor:
+┌─────────────────────────┐
+│ Create Your Account     │  ← Default view
+│ [Sign up form]          │
+│                         │
+│ Already have account?   │
+│ [Sign in instead]       │
+└─────────────────────────┘
+
+Returning user (clicks "Sign in"):
+┌─────────────────────────┐
+│ Welcome Back!           │
+│ [Email + Password]      │
+│                         │
+│ New here?               │
+│ [Create account]        │
+└─────────────────────────┘
+```
 
 ---
 
 ### Files to Modify
 
-**1. `src/contexts/AuthContext.tsx`**
-- Add a timeout for the initial auth check
-- Set `isLoading: false` earlier (before game data loads)
-- Add a flag to prevent duplicate game state loads
-
-```tsx
-export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [gameStateLoaded, setGameStateLoaded] = useState(false);  // NEW
-
-  // ... existing fetchProfile ...
-
-  useEffect(() => {
-    let isSubscribed = true;  // Track component mount
-    
-    // Timeout to prevent infinite loading
-    const authTimeout = setTimeout(() => {
-      if (isSubscribed && isLoading) {
-        console.warn('Auth check timed out, proceeding without auth');
-        setIsLoading(false);
-      }
-    }, 5000);  // 5 second timeout
-
-    const loadUserGameState = async (userId: string) => {
-      // Only load once
-      if (gameStateLoaded) return;
-      setGameStateLoaded(true);
-      
-      try {
-        await useGameStore.getState().loadGameState(userId);
-        useGameStore.getState().subscribeToWorldCounter();
-      } catch (error) {
-        console.error('Failed to load game state:', error);
-      }
-    };
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, newSession) => {
-        if (!isSubscribed) return;
-        
-        setSession(newSession);
-        setUser(newSession?.user ?? null);
-        
-        // Set auth as complete FIRST - don't wait for game data
-        setIsLoading(false);
-        clearTimeout(authTimeout);
-        
-        if (newSession?.user) {
-          const userProfile = await fetchProfile(newSession.user.id);
-          setProfile(userProfile);
-          // Load game state in background (don't block auth)
-          loadUserGameState(newSession.user.id);
-        } else {
-          setProfile(null);
-          setGameStateLoaded(false);
-          useGameStore.getState().resetState();
-          useGameStore.getState().unsubscribeFromWorldCounter();
-        }
-      }
-    );
-
-    // Initial session check - but don't duplicate the game state load
-    supabase.auth.getSession().then(async ({ data: { session: existingSession } }) => {
-      if (!isSubscribed) return;
-      
-      setSession(existingSession);
-      setUser(existingSession?.user ?? null);
-      setIsLoading(false);  // Auth check complete
-      clearTimeout(authTimeout);
-      
-      if (existingSession?.user) {
-        const userProfile = await fetchProfile(existingSession.user.id);
-        if (isSubscribed) setProfile(userProfile);
-        loadUserGameState(existingSession.user.id);
-      }
-    });
-
-    return () => {
-      isSubscribed = false;
-      clearTimeout(authTimeout);
-      subscription.unsubscribe();
-      useGameStore.getState().unsubscribeFromWorldCounter();
-    };
-  }, []);
-  
-  // ... rest of component unchanged ...
-};
-```
-
-**2. `src/pages/Index.tsx`**
-- Remove the loading check that shows spinner
-- Show the page immediately with default values
-- Data updates reactively when loaded
-
-```tsx
-// Remove lines 49-60 (the isLoading check)
-// The page will render with default values and update when data loads
-```
+| File | Change |
+|------|--------|
+| `src/pages/Auth.tsx` | Add toggle between signup and login modes |
 
 ---
 
-### Why This Works
+### Implementation Details
 
-```text
-Current (broken):
-┌────────────────────────────┐
-│ AuthProvider mounts        │
-│ isLoading = true           │
-│ ProtectedRoute: spinner    │
-└─────────────┬──────────────┘
-              │
-              ▼
-┌────────────────────────────┐
-│ getSession + onAuthChange  │
-│ both call loadGameState    │ ← Race condition, can hang
-│ wait for all to complete   │
-└─────────────┬──────────────┘
-              │
-              ▼
-┌────────────────────────────┐
-│ Index renders              │
-│ gameStore.isLoading check  │ ← Another spinner!
-└────────────────────────────┘
-
-After fix:
-┌────────────────────────────┐
-│ AuthProvider mounts        │
-│ isLoading = true           │
-│ 5s timeout safety net      │
-└─────────────┬──────────────┘
-              │
-              ▼
-┌────────────────────────────┐
-│ getSession completes       │
-│ setIsLoading(false)        │ ← Auth done IMMEDIATELY
-│ game state loads in bg     │
-└─────────────┬──────────────┘
-              │
-              ▼
-┌────────────────────────────┐
-│ Index renders IMMEDIATELY  │
-│ Shows default values       │
-│ Updates when data loads    │ ← Smooth experience
-└────────────────────────────┘
-```
+1. Add `isLoginMode` state to toggle between signup and login views
+2. Create a simpler login form (just email + password)
+3. Add toggle links at the bottom of each form
+4. Use the existing `signIn` method from AuthContext (already available)
 
 ---
 
-### Summary
+### Code Changes
 
-| Issue | Fix |
-|-------|-----|
-| Double loadGameState calls | Add `gameStateLoaded` flag to prevent duplicate calls |
-| Auth loading blocks page | Set `isLoading: false` immediately after session check, before game data loads |
-| No auth timeout | Add 5-second timeout that forces `isLoading: false` |
-| Index.tsx spinner | Remove the gameStore.isLoading check - show content immediately |
+**`src/pages/Auth.tsx`**
+
+- Add state: `const [isLoginMode, setIsLoginMode] = useState(false);`
+- Import `signIn` from useAuth (already exists in AuthContext)
+- Add login form handler that calls `signIn(email, password)`
+- Conditionally render signup or login form based on mode
+- Add toggle link: "Already have an account? Sign in" / "New here? Create account"
+
+---
+
+### Visual Design
+
+The login form will be simpler than signup:
+- **Login**: Email + Password only (no display name, no confirm password)
+- **Signup**: Display Name + Email + Password + Confirm Password
+
+Both forms will have the same styling with the animated mint logo and mint-themed button.
+
