@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/Header';
@@ -9,15 +8,7 @@ import LevelUpModal from '@/components/LevelUpModal';
 import SendMentSection from '@/components/home/SendMentSection';
 import KindnessJarSection from '@/components/home/KindnessJarSection';
 import MentChainsSection from '@/components/home/MentChainsSection';
-import CarouselDots from '@/components/CarouselDots';
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  type CarouselApi,
-} from '@/components/ui/carousel';
 import tmsBanner from '@/assets/TMS_banner.png';
-import unwrappedMint from '@/assets/unwrapped-mint.png';
 
 const Index = () => {
   const { profile } = useAuth();
@@ -33,7 +24,6 @@ const Index = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [levelUpBonus, setLevelUpBonus] = useState(0);
-  const [carouselApi, setCarouselApi] = useState<CarouselApi>();
 
   const handleSendMent = async (mentData: { category: string; complimentText: string; recipientType: string }) => {
     const result = await sendMent(mentData);
@@ -61,41 +51,21 @@ const Index = () => {
       </div>
       
       <main className="container flex-1 py-6 sm:py-8 pb-24 px-4">
-        {/* Desktop: 3-column grid */}
-        <div className="hidden lg:grid lg:grid-cols-3 lg:gap-6">
-          <SendMentSection 
-            onOpenModal={() => setIsModalOpen(true)} 
-            totalSent={totalSent} 
-          />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+          {/* Left: Kindness Jar */}
           <KindnessJarSection 
             jarCount={jarCount} 
             totalSent={totalSent} 
           />
+          
+          {/* Center: Send a Ment */}
+          <SendMentSection 
+            onOpenModal={() => setIsModalOpen(true)} 
+            totalSent={totalSent} 
+          />
+          
+          {/* Right: Ment Chains */}
           <MentChainsSection />
-        </div>
-
-        {/* Mobile: Swipeable carousel */}
-        <div className="lg:hidden">
-          <Carousel setApi={setCarouselApi} opts={{ loop: false }}>
-            <CarouselContent>
-              <CarouselItem>
-                <SendMentSection 
-                  onOpenModal={() => setIsModalOpen(true)} 
-                  totalSent={totalSent} 
-                />
-              </CarouselItem>
-              <CarouselItem>
-                <KindnessJarSection 
-                  jarCount={jarCount} 
-                  totalSent={totalSent} 
-                />
-              </CarouselItem>
-              <CarouselItem>
-                <MentChainsSection />
-              </CarouselItem>
-            </CarouselContent>
-          </Carousel>
-          <CarouselDots api={carouselApi} count={3} />
         </div>
       </main>
       
