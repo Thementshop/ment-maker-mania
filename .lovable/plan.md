@@ -1,80 +1,98 @@
 
 
-## Fix: Infinite Loading State on Homepage
+## Fix: Infinite Loading State - Root Cause Found
 
-### Root Cause
-When an authenticated user visits the homepage, the `Index.tsx` component checks `isLoading` from `useGameStore()` and shows a spinning mint while loading. The `loadGameState()` function in the game store is either:
-1. Taking too long to complete
-2. Silently failing without setting `isLoading: false`
-3. Getting stuck on one of the database queries
+### The Problem
 
-### Solution
-Add defensive timeout handling and ensure `isLoading` always gets set to `false`, even if the database queries fail or hang.
+The homepage is stuck showing the spinning mint because of two separate loading states that aren't properly coordinated:
+
+| Component | Loading State Source | Initial Value |
+|-----------|---------------------|---------------|
+| `ProtectedRoute` | `AuthContext.isLoading` | `true` |
+| `Index.tsx` | `gameStore.isLoading` | `true` |
+
+When an authenticated user visits `/`:
+1. `ProtectedRoute` shows spinner while `AuthContext.isLoading` is `true`
+2. Auth completes, `AuthContext.isLoading` becomes `false`
+3. User passes through to `Index.tsx`
+4. `Index.tsx` shows spinner while `gameStore.isLoading` is `true`
+5. The gameStore starts with `isLoading: true` **before** `loadGameState` is even called
+6. If anything prevents `loadGameState` from running or completing, the spinner stays forever
+
+### The Fix
+
+Change the gameStore's initial state to have `isLoading: false` instead of `true`. The loading spinner should only show **after** `loadGameState` explicitly sets it to `true`.
 
 ---
 
-### Changes to Make
+### Files to Modify
 
-**1. `src/store/gameStore.ts`**
-- Add a timeout wrapper around the database queries
-- Ensure `isLoading: false` is always set, even on timeout
-- Add better error handling and logging
+| File | Change |
+|------|--------|
+| `src/store/gameStore.ts` | Change `initialState.isLoading` from `true` to `false` |
 
-```tsx
-loadGameState: async (userId: string) => {
-  set({ isLoading: true, userId });
-  
-  // Add timeout to prevent infinite loading
-  const timeout = new Promise((_, reject) => 
-    setTimeout(() => reject(new Error('Load timeout')), 10000)
-  );
-  
-  try {
-    await Promise.race([
-      (async () => {
-        // existing database queries...
-      })(),
-      timeout
-    ]);
-  } catch (error) {
-    console.error('Error loading game state:', error);
-  } finally {
-    // ALWAYS set isLoading to false
-    set(state => ({ ...state, isLoading: false }));
-  }
-}
+---
+
+### Code Change
+
+```typescript
+// In src/store/gameStore.ts, line 75-83
+
+const initialState = {
+  jarCount: 25,
+  totalSent: 0,
+  currentLevel: 1,
+  pendingMents: [],
+  worldKindnessCount: 0,
+  isLoading: false,  // Changed from true to false
+  userId: null,
+};
 ```
 
-**2. `src/store/gameStore.ts` - Fix `resetState()`**
-- Change `resetState` to NOT reset `isLoading` to `true`
-- This prevents the case where logging out and logging back in causes infinite loading
+---
 
-```tsx
-resetState: () => {
-  set({
-    ...initialState,
-    isLoading: false, // Override to prevent infinite loading
-  });
-}
+### Why This Works
+
+```text
+Before (broken):
+┌─────────────────────┐
+│ Store initializes   │
+│ isLoading = true    │ ← Already loading before anything happens
+└─────────┬───────────┘
+          │
+          ▼
+┌─────────────────────┐
+│ Index.tsx renders   │
+│ Shows spinner...    │ ← Stuck if loadGameState never called
+└─────────────────────┘
+
+After (fixed):
+┌─────────────────────┐
+│ Store initializes   │
+│ isLoading = false   │ ← Ready state
+└─────────┬───────────┘
+          │
+          ▼
+┌─────────────────────┐
+│ Index.tsx renders   │
+│ Shows content OR    │ ← Shows default content
+│ loadGameState runs  │
+│ sets isLoading=true │ ← Then shows spinner briefly
+│ completes           │
+│ sets isLoading=false│ ← Then shows real content
+└─────────────────────┘
 ```
 
 ---
 
 ### Technical Details
 
-| File | Changes |
-|------|---------|
-| `src/store/gameStore.ts` | Add timeout wrapper, fix `resetState()`, add `finally` block |
+The timeout and finally block we added in the previous fix are still valuable for handling slow/failed database connections. This change ensures:
 
-### How This Fixes the Issue
+1. The initial render shows content (with default values) instead of a spinner
+2. When `loadGameState` is called, it will briefly show the spinner
+3. The timeout ensures it never hangs more than 10 seconds
+4. The finally block guarantees `isLoading: false` after completion
 
-1. **Timeout Protection**: If database queries hang, the timeout will fire after 10 seconds and force `isLoading: false`
-2. **Finally Block**: Guarantees `isLoading` is set to `false` regardless of success/failure
-3. **Reset State Fix**: Prevents `isLoading: true` from persisting after logout/login cycles
-
-### No Changes Needed To
-
-- `src/pages/Index.tsx` - Loading logic is fine
-- `src/contexts/AuthContext.tsx` - Auth flow is correct
-- Database schema or RLS policies - They're working correctly
+This is a **one-line fix** that resolves the infinite loading issue.
 
