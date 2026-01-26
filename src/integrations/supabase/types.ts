@@ -182,7 +182,7 @@ export type Database = {
           current_level: number
           id: string
           jar_count: number
-          last_free_token_date: string | null
+          last_free_token_date: string
           pause_tokens: number
           total_sent: number
           total_tokens_used: number
@@ -196,7 +196,7 @@ export type Database = {
           current_level?: number
           id?: string
           jar_count?: number
-          last_free_token_date?: string | null
+          last_free_token_date?: string
           pause_tokens?: number
           total_sent?: number
           total_tokens_used?: number
@@ -210,7 +210,7 @@ export type Database = {
           current_level?: number
           id?: string
           jar_count?: number
-          last_free_token_date?: string | null
+          last_free_token_date?: string
           pause_tokens?: number
           total_sent?: number
           total_tokens_used?: number
