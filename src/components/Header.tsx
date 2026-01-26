@@ -3,7 +3,9 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import unwrappedMint from '@/assets/unwrapped-mint.png';
 import HowItWorksModal from './HowItWorksModal';
+import AccountSettingsModal from './AccountSettingsModal';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Settings } from 'lucide-react';
 
 interface HeaderProps {
   worldCount: number;
@@ -11,6 +13,7 @@ interface HeaderProps {
 
 const Header = ({ worldCount }: HeaderProps) => {
   const [isHowItWorksOpen, setIsHowItWorksOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { profile } = useAuth();
   const formattedCount = worldCount.toLocaleString();
 
@@ -66,18 +69,28 @@ const Header = ({ worldCount }: HeaderProps) => {
               </motion.span>
             </motion.div>
 
-            {/* User Avatar */}
-            <motion.div
+            {/* User Avatar - Clickable for Settings */}
+            <motion.button
               whileHover={{ scale: 1.05 }}
-              className="flex items-center gap-2"
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setIsSettingsOpen(true)}
+              className="relative flex items-center gap-2 group"
             >
-              <Avatar className="h-9 w-9 border-2 border-mint">
+              <Avatar className="h-9 w-9 border-2 border-mint transition-colors group-hover:border-primary">
                 <AvatarImage src={profile?.avatar_url || undefined} />
                 <AvatarFallback className="bg-mint text-primary-foreground font-display">
                   {getInitials(profile?.display_name)}
                 </AvatarFallback>
               </Avatar>
-            </motion.div>
+              {/* Settings icon overlay on hover */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                whileHover={{ opacity: 1 }}
+                className="absolute inset-0 flex items-center justify-center bg-background/60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <Settings className="h-4 w-4 text-primary" />
+              </motion.div>
+            </motion.button>
           </div>
         </div>
       </header>
@@ -85,6 +98,11 @@ const Header = ({ worldCount }: HeaderProps) => {
       <HowItWorksModal 
         isOpen={isHowItWorksOpen} 
         onClose={() => setIsHowItWorksOpen(false)} 
+      />
+
+      <AccountSettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
       />
     </>
   );
