@@ -38,8 +38,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  
-  const { loadGameState, subscribeToWorldCounter, unsubscribeFromWorldCounter, resetState } = useGameStore();
 
   // Fetch user profile
   const fetchProfile = async (userId: string) => {
@@ -57,6 +55,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   useEffect(() => {
+    // Get game store methods inside useEffect to avoid issues during initialization
+    const gameStore = useGameStore.getState();
+    
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
@@ -67,12 +68,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           // Fetch profile and game state
           const userProfile = await fetchProfile(newSession.user.id);
           setProfile(userProfile);
-          await loadGameState(newSession.user.id);
-          subscribeToWorldCounter();
+          await useGameStore.getState().loadGameState(newSession.user.id);
+          useGameStore.getState().subscribeToWorldCounter();
         } else {
           setProfile(null);
-          resetState();
-          unsubscribeFromWorldCounter();
+          useGameStore.getState().resetState();
+          useGameStore.getState().unsubscribeFromWorldCounter();
         }
         
         setIsLoading(false);
@@ -87,8 +88,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (existingSession?.user) {
         const userProfile = await fetchProfile(existingSession.user.id);
         setProfile(userProfile);
-        await loadGameState(existingSession.user.id);
-        subscribeToWorldCounter();
+        await useGameStore.getState().loadGameState(existingSession.user.id);
+        useGameStore.getState().subscribeToWorldCounter();
       }
       
       setIsLoading(false);
@@ -96,7 +97,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     return () => {
       subscription.unsubscribe();
-      unsubscribeFromWorldCounter();
+      useGameStore.getState().unsubscribeFromWorldCounter();
     };
   }, []);
 
@@ -124,7 +125,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const signOut = async () => {
     await supabase.auth.signOut();
-    resetState();
+    useGameStore.getState().resetState();
   };
 
   return (
