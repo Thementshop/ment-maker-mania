@@ -88,60 +88,71 @@ export const useGameStore = create<GameState>()((set, get) => ({
   loadGameState: async (userId: string) => {
     set({ isLoading: true, userId });
     
+    // Timeout to prevent infinite loading
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Load timeout after 10s')), 10000)
+    );
+    
     try {
-      // Load user game state
-      const { data: gameState, error: gameError } = await supabase
-        .from('user_game_state')
-        .select('jar_count, total_sent, current_level')
-        .eq('user_id', userId)
-        .maybeSingle();
-      
-      if (gameError) {
-        console.error('Error loading game state:', gameError);
-      }
-      
-      // Load pending ments
-      const { data: pendingMentsData, error: pendingError } = await supabase
-        .from('pending_ments')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('status', 'pending');
-      
-      if (pendingError) {
-        console.error('Error loading pending ments:', pendingError);
-      }
-      
-      // Load world counter
-      const { data: worldCounter, error: worldError } = await supabase
-        .from('world_kindness_counter')
-        .select('count')
-        .eq('id', 1)
-        .maybeSingle();
-      
-      if (worldError) {
-        console.error('Error loading world counter:', worldError);
-      }
-      
-      const pendingMents: PendingMent[] = (pendingMentsData || []).map(m => ({
-        id: m.id,
-        category: m.category,
-        complimentText: m.compliment_text,
-        expiresAt: new Date(m.expires_at),
-        status: m.status as 'pending' | 'passed' | 'expired',
-        recipientType: m.recipient_type,
-        recipientValue: m.recipient_value || undefined,
-      }));
-      
-      set({
-        jarCount: gameState?.jar_count ?? 25,
-        totalSent: gameState?.total_sent ?? 0,
-        currentLevel: gameState?.current_level ?? 1,
-        pendingMents,
-        worldKindnessCount: worldCounter?.count ?? 0,
-        isLoading: false,
-      });
+      await Promise.race([
+        (async () => {
+          // Load user game state
+          const { data: gameState, error: gameError } = await supabase
+            .from('user_game_state')
+            .select('jar_count, total_sent, current_level')
+            .eq('user_id', userId)
+            .maybeSingle();
+          
+          if (gameError) {
+            console.error('Error loading game state:', gameError);
+          }
+          
+          // Load pending ments
+          const { data: pendingMentsData, error: pendingError } = await supabase
+            .from('pending_ments')
+            .select('*')
+            .eq('user_id', userId)
+            .eq('status', 'pending');
+          
+          if (pendingError) {
+            console.error('Error loading pending ments:', pendingError);
+          }
+          
+          // Load world counter
+          const { data: worldCounter, error: worldError } = await supabase
+            .from('world_kindness_counter')
+            .select('count')
+            .eq('id', 1)
+            .maybeSingle();
+          
+          if (worldError) {
+            console.error('Error loading world counter:', worldError);
+          }
+          
+          const pendingMents: PendingMent[] = (pendingMentsData || []).map(m => ({
+            id: m.id,
+            category: m.category,
+            complimentText: m.compliment_text,
+            expiresAt: new Date(m.expires_at),
+            status: m.status as 'pending' | 'passed' | 'expired',
+            recipientType: m.recipient_type,
+            recipientValue: m.recipient_value || undefined,
+          }));
+          
+          set({
+            jarCount: gameState?.jar_count ?? 25,
+            totalSent: gameState?.total_sent ?? 0,
+            currentLevel: gameState?.current_level ?? 1,
+            pendingMents,
+            worldKindnessCount: worldCounter?.count ?? 0,
+          });
+        })(),
+        timeoutPromise
+      ]);
     } catch (error) {
       console.error('Error loading game state:', error);
+    } finally {
+      // ALWAYS set isLoading to false
       set({ isLoading: false });
     }
   },
@@ -343,6 +354,9 @@ export const useGameStore = create<GameState>()((set, get) => ({
   },
   
   resetState: () => {
-    set(initialState);
+    set({
+      ...initialState,
+      isLoading: false, // Override to prevent infinite loading on re-login
+    });
   },
 }));
