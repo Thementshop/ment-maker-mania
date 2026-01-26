@@ -141,12 +141,17 @@ export const useMentChains = (): UseMentChainsReturn => {
 
       if (fetchError) throw fetchError;
 
-      // Update the chain with new holder and incremented count
+      // Reset timer to NOW + 24 hours
+      const newExpiresAt = new Date();
+      newExpiresAt.setHours(newExpiresAt.getHours() + 24);
+
+      // Update the chain with new holder, incremented count, and reset timer
       const { error: updateError } = await supabase
         .from('ment_chains')
         .update({
           current_holder: passedTo,
-          links_count: (chainData?.links_count || 0) + 1
+          links_count: (chainData?.links_count || 0) + 1,
+          expires_at: newExpiresAt.toISOString()
         })
         .eq('chain_id', chainId);
 
