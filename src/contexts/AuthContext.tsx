@@ -17,6 +17,9 @@ interface AuthContextType {
   signUp: (email: string, password: string, displayName?: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
+  updateProfile: (displayName: string) => Promise<{ error: Error | null }>;
+  updateEmail: (newEmail: string) => Promise<{ error: Error | null }>;
+  updatePassword: (newPassword: string) => Promise<{ error: Error | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -156,6 +159,31 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     useGameStore.getState().resetState();
   };
 
+  const updateProfile = async (displayName: string) => {
+    if (!user) return { error: new Error('Not authenticated') };
+    
+    const { error } = await supabase
+      .from('profiles')
+      .update({ display_name: displayName })
+      .eq('id', user.id);
+    
+    if (!error) {
+      setProfile(prev => prev ? { ...prev, display_name: displayName } : null);
+    }
+    
+    return { error: error as Error | null };
+  };
+
+  const updateEmail = async (newEmail: string) => {
+    const { error } = await supabase.auth.updateUser({ email: newEmail });
+    return { error: error as Error | null };
+  };
+
+  const updatePassword = async (newPassword: string) => {
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    return { error: error as Error | null };
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -166,6 +194,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         signUp,
         signIn,
         signOut,
+        updateProfile,
+        updateEmail,
+        updatePassword,
       }}
     >
       {children}
