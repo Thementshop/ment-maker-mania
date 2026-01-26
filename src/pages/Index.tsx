@@ -1,15 +1,21 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useGameStore, getCurrentLevel } from '@/store/gameStore';
+import { useGameStore } from '@/store/gameStore';
 import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import GlassJar from '@/components/GlassJar';
-import LevelBadge from '@/components/LevelBadge';
-import MintButton from '@/components/MintButton';
 import SendMentModal from '@/components/SendMentModal';
 import LevelUpModal from '@/components/LevelUpModal';
-import InspirationalQuote from '@/components/InspirationalQuote';
+import SendMentSection from '@/components/home/SendMentSection';
+import KindnessJarSection from '@/components/home/KindnessJarSection';
+import MentChainsSection from '@/components/home/MentChainsSection';
+import CarouselDots from '@/components/CarouselDots';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  type CarouselApi,
+} from '@/components/ui/carousel';
 import tmsBanner from '@/assets/TMS_banner.png';
 import unwrappedMint from '@/assets/unwrapped-mint.png';
 
@@ -23,9 +29,11 @@ const Index = () => {
     isLoading,
     sendMent
   } = useGameStore();
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [levelUpBonus, setLevelUpBonus] = useState(0);
+  const [carouselApi, setCarouselApi] = useState<CarouselApi>();
 
   const handleSendMent = async (mentData: { category: string; complimentText: string; recipientType: string }) => {
     const result = await sendMent(mentData);
@@ -37,8 +45,6 @@ const Index = () => {
       }, 500);
     }
   };
-
-  const pendingCount = pendingMents.filter(m => m.status === 'pending').length;
 
   if (isLoading) {
     return (
@@ -66,78 +72,43 @@ const Index = () => {
         />
       </div>
       
-      <main className="container flex flex-col gap-6 sm:gap-8 py-6 sm:py-8 pb-24 px-4">
-        {/* Top row: Send Ment Button and Jar */}
-        <div className="flex flex-row items-center">
-          {/* Send Ment Button */}
-          <motion.div initial={{
-            opacity: 0,
-            scale: 0.8
-          }} animate={{
-            opacity: 1,
-            scale: 1
-          }} transition={{
-            delay: 0.4,
-            type: 'spring'
-          }} className="my-4 mx-[75px] flex flex-col items-center">
-            <MintButton onClick={() => setIsModalOpen(true)} />
-            <motion.div className="mt-2 rounded-xl bg-card px-4 py-2 shadow-sm text-center" whileHover={{
-              scale: 1.05
-            }}>
-              <motion.span key={totalSent} className="font-display text-2xl font-bold text-foreground" initial={{
-                scale: 1.2,
-                color: 'hsl(var(--mint))'
-              }} animate={{
-                scale: 1,
-                color: 'hsl(var(--foreground))'
-              }}>
-                {totalSent}
-              </motion.span>
-              <span className="text-xs text-muted-foreground ml-1">Sent</span>
-            </motion.div>
-          </motion.div>
-          
-          {/* Jar Section with Level Badge above */}
-          <div className="flex flex-col items-center gap-4 ml-auto mx-[75px]">
-            {/* Level Badge */}
-            <motion.div initial={{
-              opacity: 0,
-              y: -20
-            }} animate={{
-              opacity: 1,
-              y: 0
-            }} transition={{
-              delay: 0.1
-            }}>
-              <LevelBadge totalSent={totalSent} />
-            </motion.div>
-            
-            {/* Glass Jar */}
-            <motion.div initial={{
-              opacity: 0,
-              scale: 0.9
-            }} animate={{
-              opacity: 1,
-              scale: 1
-            }} transition={{
-              delay: 0.2,
-              type: 'spring'
-            }}>
-              <GlassJar mintCount={jarCount} pendingCount={pendingCount} totalSent={totalSent} />
-            </motion.div>
-          </div>
+      <main className="container flex-1 py-6 sm:py-8 pb-24 px-4">
+        {/* Desktop: 3-column grid */}
+        <div className="hidden lg:grid lg:grid-cols-3 lg:gap-6">
+          <SendMentSection 
+            onOpenModal={() => setIsModalOpen(true)} 
+            totalSent={totalSent} 
+          />
+          <KindnessJarSection 
+            jarCount={jarCount} 
+            totalSent={totalSent} 
+          />
+          <MentChainsSection />
         </div>
-        
-        {/* Inspirational Quote - Below */}
-        <motion.div initial={{
-          opacity: 0
-        }} animate={{
-          opacity: 1
-        }} transition={{
-          delay: 0.5
-        }} className="max-w-md mx-auto">
-          <InspirationalQuote />
-        </motion.div>
+
+        {/* Mobile: Swipeable carousel */}
+        <div className="lg:hidden">
+          <Carousel setApi={setCarouselApi} opts={{ loop: false }}>
+            <CarouselContent>
+              <CarouselItem>
+                <SendMentSection 
+                  onOpenModal={() => setIsModalOpen(true)} 
+                  totalSent={totalSent} 
+                />
+              </CarouselItem>
+              <CarouselItem>
+                <KindnessJarSection 
+                  jarCount={jarCount} 
+                  totalSent={totalSent} 
+                />
+              </CarouselItem>
+              <CarouselItem>
+                <MentChainsSection />
+              </CarouselItem>
+            </CarouselContent>
+          </Carousel>
+          <CarouselDots api={carouselApi} count={3} />
+        </div>
       </main>
       
       {/* Send Ment Modal */}
@@ -148,7 +119,12 @@ const Index = () => {
       />
       
       {/* Level Up Modal */}
-      <LevelUpModal isOpen={showLevelUp} onClose={() => setShowLevelUp(false)} totalSent={totalSent} bonusMints={levelUpBonus} />
+      <LevelUpModal 
+        isOpen={showLevelUp} 
+        onClose={() => setShowLevelUp(false)} 
+        totalSent={totalSent} 
+        bonusMints={levelUpBonus} 
+      />
       
       {/* Footer */}
       <Footer />
