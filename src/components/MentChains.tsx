@@ -19,7 +19,7 @@ const MentChains = () => {
         />
         
         {/* Gradient Overlay for readability */}
-        <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/80 to-background/50" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/70 to-background/40" />
         
         {/* Content */}
         <div className="relative z-10 flex flex-col items-center h-full p-4 text-center">
