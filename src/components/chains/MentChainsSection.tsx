@@ -86,7 +86,7 @@ const MentChainsSection = ({ onStartNewChain }: MentChainsSectionProps) => {
                 chain={chain}
                 onShare={(id) => console.log('Share chain:', id)}
                 onViewDetails={(id) => console.log('View details:', id)}
-                onPause={(id) => console.log('Pause chain:', id)}
+                onPauseUsed={() => console.log('Pause token used')}
               />
             </motion.div>
           ))}
