@@ -1,81 +1,50 @@
 
 
-## Remove Carousel and Display All Sections Horizontally
+## Fix `last_free_token_date` Column Constraint
 
-### What We're Changing
+### Overview
+Make the `last_free_token_date` column NOT NULL to ensure data integrity for the free token eligibility system.
 
-Currently, the homepage has two layouts:
-- **Desktop**: 3-column grid (hidden on mobile)
-- **Mobile**: Swipeable carousel with dot indicators
+### Current State
+- Column is **nullable** with a default of `now()`
+- No existing rows have NULL values (verified)
+- The `handle_new_user()` trigger already sets this on signup
 
-We'll replace this with a single horizontal layout that shows all 3 sections side by side on all screen sizes, with the new order you requested.
-
----
-
-### New Order
-
-| Position | Section |
-|----------|---------|
-| Left | Kindness Jar |
-| Center | Send a Ment |
-| Right | Ment Chains |
+### Why This Matters
+The free token system checks if 7+ days have passed since `last_free_token_date`. Having this column always populated ensures:
+- Reliable eligibility calculations
+- Simpler query logic (no COALESCE needed)
+- Better data consistency
 
 ---
 
-### File to Modify
+## Implementation Steps
 
-**`src/pages/Index.tsx`**
+### Step 1: Database Migration
+Run a migration to alter the column constraint:
 
-Changes:
-1. Remove the carousel imports (CarouselDots, Carousel components, CarouselApi type)
-2. Remove the `carouselApi` state
-3. Replace both the desktop grid and mobile carousel with a single responsive grid
-4. Reorder sections: KindnessJar → SendMent → MentChains
-5. Make the grid responsive: stack on very small screens, 3 columns on larger screens
-
----
-
-### New Layout Code
-
-```tsx
-<main className="container flex-1 py-6 sm:py-8 pb-24 px-4">
-  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-    {/* Left: Kindness Jar */}
-    <KindnessJarSection 
-      jarCount={jarCount} 
-      totalSent={totalSent} 
-    />
-    
-    {/* Center: Send a Ment */}
-    <SendMentSection 
-      onOpenModal={() => setIsModalOpen(true)} 
-      totalSent={totalSent} 
-    />
-    
-    {/* Right: Ment Chains */}
-    <MentChainsSection />
-  </div>
-</main>
+```sql
+ALTER TABLE user_game_state 
+ALTER COLUMN last_free_token_date SET NOT NULL;
 ```
 
----
-
-### Responsive Behavior
-
-| Screen Size | Layout |
-|-------------|--------|
-| Mobile (< 768px) | Stacked vertically (all visible, scroll down) |
-| Tablet & Desktop (≥ 768px) | 3 columns side by side |
-
-This ensures all sections are always visible without swiping or navigating.
+### Step 2: Verify the Change
+After migration, confirm the schema change was applied successfully.
 
 ---
 
-### Cleanup
+## Technical Details
 
-Removing unused code:
-- `CarouselDots` import
-- `Carousel`, `CarouselContent`, `CarouselItem`, `CarouselApi` imports
-- `carouselApi` state variable
-- `unwrappedMint` import (appears unused)
+**Risk Assessment**: Low
+- No existing NULL values in the database
+- Default value (`now()`) is already set
+- The `handle_new_user()` trigger handles new user creation
+
+**Code Impact**: None required
+- The `usePauseTokens.ts` hook already handles this gracefully
+- TypeScript types will automatically update after migration
+
+**Migration Safety**:
+- Migration will succeed since no rows have NULL values
+- Future inserts will require a value or use the default
 
