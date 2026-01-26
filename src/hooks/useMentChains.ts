@@ -42,6 +42,31 @@ export const useMentChains = (): UseMentChainsReturn => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
+  // Check and expire any chains that have timed out
+  const checkAndExpireChains = useCallback(async () => {
+    if (!user) return;
+    
+    const now = new Date().toISOString();
+    
+    // Find expired chains that the user is involved with
+    const { data: expiredChains } = await supabase
+      .from('ment_chains')
+      .select('chain_id')
+      .eq('status', 'active')
+      .lt('expires_at', now)
+      .or(`started_by.eq.${user.id},current_holder.eq.${user.id}`);
+    
+    if (expiredChains && expiredChains.length > 0) {
+      await supabase
+        .from('ment_chains')
+        .update({ 
+          status: 'broken', 
+          broken_at: now 
+        })
+        .in('chain_id', expiredChains.map(c => c.chain_id));
+    }
+  }, [user]);
+
   const fetchChains = useCallback(async () => {
     if (!user) {
       setChains([]);
@@ -53,6 +78,9 @@ export const useMentChains = (): UseMentChainsReturn => {
     try {
       setIsLoading(true);
       setError(null);
+
+      // Check and expire any chains that have timed out
+      await checkAndExpireChains();
 
       // Fetch all chains the user is involved with
       const { data, error: fetchError } = await supabase
@@ -76,7 +104,7 @@ export const useMentChains = (): UseMentChainsReturn => {
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  }, [user, checkAndExpireChains]);
 
   const startChain = useCallback(async (
     recipientId: string,
