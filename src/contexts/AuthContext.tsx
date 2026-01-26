@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useGameStore } from '@/store/gameStore';
@@ -38,6 +38,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const gameStateLoadedRef = useRef(false);
 
   // Fetch user profile
   const fetchProfile = async (userId: string) => {
@@ -55,47 +56,74 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   useEffect(() => {
-    // Get game store methods inside useEffect to avoid issues during initialization
-    const gameStore = useGameStore.getState();
+    let isSubscribed = true;
     
-    // Set up auth state listener FIRST
+    // Timeout to prevent infinite loading - 5 second safety net
+    const authTimeout = setTimeout(() => {
+      if (isSubscribed) {
+        console.warn('Auth check timed out, proceeding without auth');
+        setIsLoading(false);
+      }
+    }, 5000);
+
+    // Load game state only once per session
+    const loadUserGameState = async (userId: string) => {
+      if (gameStateLoadedRef.current) return;
+      gameStateLoadedRef.current = true;
+      
+      try {
+        await useGameStore.getState().loadGameState(userId);
+        useGameStore.getState().subscribeToWorldCounter();
+      } catch (error) {
+        console.error('Failed to load game state:', error);
+      }
+    };
+
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
+        if (!isSubscribed) return;
+        
         setSession(newSession);
         setUser(newSession?.user ?? null);
         
+        // Set auth as complete FIRST - don't wait for game data
+        setIsLoading(false);
+        clearTimeout(authTimeout);
+        
         if (newSession?.user) {
-          // Fetch profile and game state
           const userProfile = await fetchProfile(newSession.user.id);
-          setProfile(userProfile);
-          await useGameStore.getState().loadGameState(newSession.user.id);
-          useGameStore.getState().subscribeToWorldCounter();
+          if (isSubscribed) setProfile(userProfile);
+          // Load game state in background (don't block auth)
+          loadUserGameState(newSession.user.id);
         } else {
           setProfile(null);
+          gameStateLoadedRef.current = false;
           useGameStore.getState().resetState();
           useGameStore.getState().unsubscribeFromWorldCounter();
         }
-        
-        setIsLoading(false);
       }
     );
 
-    // THEN check for existing session
+    // Initial session check
     supabase.auth.getSession().then(async ({ data: { session: existingSession } }) => {
+      if (!isSubscribed) return;
+      
       setSession(existingSession);
       setUser(existingSession?.user ?? null);
+      setIsLoading(false);  // Auth check complete immediately
+      clearTimeout(authTimeout);
       
       if (existingSession?.user) {
         const userProfile = await fetchProfile(existingSession.user.id);
-        setProfile(userProfile);
-        await useGameStore.getState().loadGameState(existingSession.user.id);
-        useGameStore.getState().subscribeToWorldCounter();
+        if (isSubscribed) setProfile(userProfile);
+        loadUserGameState(existingSession.user.id);
       }
-      
-      setIsLoading(false);
     });
 
     return () => {
+      isSubscribed = false;
+      clearTimeout(authTimeout);
       subscription.unsubscribe();
       useGameStore.getState().unsubscribeFromWorldCounter();
     };
