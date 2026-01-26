@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { useAuth } from '@/contexts/AuthContext';
+import { useChainNotifications } from '@/hooks/useChainNotifications';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import SendMentModal from '@/components/SendMentModal';
@@ -11,6 +12,8 @@ import MentChainsSection from '@/components/home/MentChainsSection';
 import tmsBanner from '@/assets/TMS_banner.png';
 
 const Index = () => {
+  // Enable real-time notifications for chain updates
+  useChainNotifications();
   const { profile } = useAuth();
   const {
     jarCount,
