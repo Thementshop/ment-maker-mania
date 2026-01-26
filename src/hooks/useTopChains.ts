@@ -40,6 +40,27 @@ export const useTopChains = (limit: number = 5) => {
 
   useEffect(() => {
     fetchTopChains();
+
+    // Subscribe to real-time changes on ment_chains table
+    const channel = supabase
+      .channel('top-chains-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'ment_chains',
+        },
+        () => {
+          // Refetch when any chain is created or updated
+          fetchTopChains();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [fetchTopChains]);
 
   return { topChains, isLoading, error, refetch: fetchTopChains };
