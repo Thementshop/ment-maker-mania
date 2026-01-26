@@ -1,108 +1,81 @@
 
 
-## Add Account Settings for Profile Management
+## Remove Carousel and Display All Sections Horizontally
 
-### Current State
+### What We're Changing
 
-Currently, there is **no way** for users to change their:
-- Display name
-- Email address
-- Password
+Currently, the homepage has two layouts:
+- **Desktop**: 3-column grid (hidden on mobile)
+- **Mobile**: Swipeable carousel with dot indicators
 
-The avatar in the header is display-only with no click action. The database already has RLS policies allowing users to update their own profile, but no UI exists to use this capability.
-
----
-
-### The Solution
-
-Add a Settings modal accessible from the header avatar that allows users to manage their account.
+We'll replace this with a single horizontal layout that shows all 3 sections side by side on all screen sizes, with the new order you requested.
 
 ---
 
-### User Experience Flow
+### New Order
 
-```text
-Click avatar in header:
-┌─────────────────────────────┐
-│ ⚙️ Account Settings         │
-├─────────────────────────────┤
-│                             │
-│ Display Name                │
-│ [Current Name________] ✓    │
-│                             │
-│ Email                       │
-│ [current@email.com__] ✓     │
-│                             │
-│ Change Password             │
-│ [New Password_______]       │
-│ [Confirm Password___] ✓     │
-│                             │
-│ ─────────────────────────── │
-│ [Sign Out]                  │
-└─────────────────────────────┘
+| Position | Section |
+|----------|---------|
+| Left | Kindness Jar |
+| Center | Send a Ment |
+| Right | Ment Chains |
+
+---
+
+### File to Modify
+
+**`src/pages/Index.tsx`**
+
+Changes:
+1. Remove the carousel imports (CarouselDots, Carousel components, CarouselApi type)
+2. Remove the `carouselApi` state
+3. Replace both the desktop grid and mobile carousel with a single responsive grid
+4. Reorder sections: KindnessJar → SendMent → MentChains
+5. Make the grid responsive: stack on very small screens, 3 columns on larger screens
+
+---
+
+### New Layout Code
+
+```tsx
+<main className="container flex-1 py-6 sm:py-8 pb-24 px-4">
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+    {/* Left: Kindness Jar */}
+    <KindnessJarSection 
+      jarCount={jarCount} 
+      totalSent={totalSent} 
+    />
+    
+    {/* Center: Send a Ment */}
+    <SendMentSection 
+      onOpenModal={() => setIsModalOpen(true)} 
+      totalSent={totalSent} 
+    />
+    
+    {/* Right: Ment Chains */}
+    <MentChainsSection />
+  </div>
+</main>
 ```
 
 ---
 
-### Files to Create/Modify
+### Responsive Behavior
 
-| File | Change |
-|------|--------|
-| `src/components/AccountSettingsModal.tsx` | **NEW** - Modal with forms for each setting |
-| `src/components/Header.tsx` | Make avatar clickable to open settings modal |
-| `src/contexts/AuthContext.tsx` | Add `updateProfile`, `updateEmail`, `updatePassword` methods |
+| Screen Size | Layout |
+|-------------|--------|
+| Mobile (< 768px) | Stacked vertically (all visible, scroll down) |
+| Tablet & Desktop (≥ 768px) | 3 columns side by side |
 
----
-
-### Implementation Details
-
-**1. AuthContext - Add new methods**
-
-```typescript
-interface AuthContextType {
-  // ... existing ...
-  updateProfile: (displayName: string) => Promise<{ error: Error | null }>;
-  updateEmail: (newEmail: string) => Promise<{ error: Error | null }>;
-  updatePassword: (newPassword: string) => Promise<{ error: Error | null }>;
-}
-```
-
-- `updateProfile`: Updates the `profiles` table `display_name` field
-- `updateEmail`: Uses `supabase.auth.updateUser({ email })` - sends confirmation email
-- `updatePassword`: Uses `supabase.auth.updateUser({ password })`
-
-**2. AccountSettingsModal - New component**
-
-Features:
-- Display name field with save button
-- Email field with save button (note: requires email confirmation)
-- Password change with new password + confirm password fields
-- Sign out button at the bottom
-- Each section saves independently
-- Success/error toast notifications
-
-**3. Header - Avatar interaction**
-
-- Add state for modal open/close
-- Wrap avatar in a clickable button
-- Show visual indicator (like a gear icon overlay on hover)
+This ensures all sections are always visible without swiping or navigating.
 
 ---
 
-### Security Considerations
+### Cleanup
 
-- Password changes require the new password to be at least 6 characters
-- Email changes send a confirmation email to the new address
-- All updates use authenticated Supabase client (RLS protected)
-- Display name updates go to the `profiles` table (already has RLS policy)
-
----
-
-### Visual Design
-
-The modal will match the existing app styling:
-- Rounded corners with glass-like background
-- Mint-themed buttons for primary actions
-- Subtle animations using Framer Motion
-- Form inputs matching the Auth page style
+Removing unused code:
+- `CarouselDots` import
+- `Carousel`, `CarouselContent`, `CarouselItem`, `CarouselApi` imports
+- `carouselApi` state variable
+- `unwrappedMint` import (appears unused)
 
