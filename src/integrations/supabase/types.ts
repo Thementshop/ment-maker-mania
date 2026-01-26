@@ -14,6 +14,80 @@ export type Database = {
   }
   public: {
     Tables: {
+      chain_links: {
+        Row: {
+          chain_id: string
+          link_id: string
+          passed_at: string
+          passed_by: string
+          passed_to: string
+          received_compliment: string
+          sent_compliment: string
+          was_forwarded: boolean
+        }
+        Insert: {
+          chain_id: string
+          link_id?: string
+          passed_at?: string
+          passed_by: string
+          passed_to: string
+          received_compliment: string
+          sent_compliment: string
+          was_forwarded?: boolean
+        }
+        Update: {
+          chain_id?: string
+          link_id?: string
+          passed_at?: string
+          passed_by?: string
+          passed_to?: string
+          received_compliment?: string
+          sent_compliment?: string
+          was_forwarded?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chain_links_chain_id_fkey"
+            columns: ["chain_id"]
+            isOneToOne: false
+            referencedRelation: "ment_chains"
+            referencedColumns: ["chain_id"]
+          },
+        ]
+      }
+      ment_chains: {
+        Row: {
+          broken_at: string | null
+          chain_id: string
+          created_at: string
+          current_holder: string
+          expires_at: string
+          links_count: number
+          started_by: string
+          status: string
+        }
+        Insert: {
+          broken_at?: string | null
+          chain_id?: string
+          created_at?: string
+          current_holder: string
+          expires_at: string
+          links_count?: number
+          started_by: string
+          status?: string
+        }
+        Update: {
+          broken_at?: string | null
+          chain_id?: string
+          created_at?: string
+          current_holder?: string
+          expires_at?: string
+          links_count?: number
+          started_by?: string
+          status?: string
+        }
+        Relationships: []
+      }
       pending_ments: {
         Row: {
           category: string
@@ -103,31 +177,40 @@ export type Database = {
       }
       user_game_state: {
         Row: {
+          chains_started_today: number
           created_at: string | null
           current_level: number
           id: string
           jar_count: number
+          pause_tokens: number
           total_sent: number
           updated_at: string | null
           user_id: string
+          your_turn_chains_count: number
         }
         Insert: {
+          chains_started_today?: number
           created_at?: string | null
           current_level?: number
           id?: string
           jar_count?: number
+          pause_tokens?: number
           total_sent?: number
           updated_at?: string | null
           user_id: string
+          your_turn_chains_count?: number
         }
         Update: {
+          chains_started_today?: number
           created_at?: string | null
           current_level?: number
           id?: string
           jar_count?: number
+          pause_tokens?: number
           total_sent?: number
           updated_at?: string | null
           user_id?: string
+          your_turn_chains_count?: number
         }
         Relationships: []
       }
