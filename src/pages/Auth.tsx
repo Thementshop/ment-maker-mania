@@ -9,12 +9,13 @@ import { useToast } from '@/hooks/use-toast';
 import unwrappedMint from '@/assets/unwrapped-mint.png';
 
 const Auth = () => {
-  const { user, isLoading, signUp } = useAuth();
+  const { user, isLoading, signUp, signIn } = useAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSettingUp, setIsSettingUp] = useState(false);
+  const [isLoginMode, setIsLoginMode] = useState(false);
   
-  // Signup form state
+  // Form state
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
@@ -64,6 +65,45 @@ const Auth = () => {
         description: 'Setting up your mint jar...',
       });
     }
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email || !password) {
+      toast({
+        title: 'Missing fields',
+        description: 'Please enter your email and password.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    const { error } = await signIn(email, password);
+    
+    if (error) {
+      toast({
+        title: 'Login failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+      setIsSubmitting(false);
+    } else {
+      toast({
+        title: 'Welcome back!',
+        description: 'Loading your mint jar...',
+      });
+    }
+  };
+
+  const toggleMode = () => {
+    setIsLoginMode(!isLoginMode);
+    setEmail('');
+    setPassword('');
+    setDisplayName('');
+    setConfirmPassword('');
   };
 
   if (isLoading || isSettingUp) {
@@ -116,69 +156,123 @@ const Auth = () => {
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
+        key={isLoginMode ? 'login' : 'signup'}
         className="w-full max-w-md"
       >
         <div className="bg-card rounded-3xl shadow-2xl p-6 border border-border">
           <h2 className="font-display text-xl font-bold text-center mb-6">
-            Create Your Account
+            {isLoginMode ? 'Welcome Back!' : 'Create Your Account'}
           </h2>
           
-          <form onSubmit={handleSignup} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="display-name">Display Name</Label>
-              <Input
-                id="display-name"
-                type="text"
-                placeholder="Your name"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="confirm-password">Confirm Password</Label>
-              <Input
-                id="confirm-password"
-                type="password"
-                placeholder="••••••••"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-              />
-            </div>
-            
-            <Button
-              type="submit"
-              className="w-full bg-mint hover:bg-mint/90 text-primary-foreground font-display"
-              disabled={isSubmitting}
+          {isLoginMode ? (
+            // Login Form
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+              
+              <Button
+                type="submit"
+                className="w-full bg-mint hover:bg-mint/90 text-primary-foreground font-display"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Signing in...' : 'Sign In'}
+              </Button>
+            </form>
+          ) : (
+            // Signup Form
+            <form onSubmit={handleSignup} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="display-name">Display Name</Label>
+                <Input
+                  id="display-name"
+                  type="text"
+                  placeholder="Your name"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="confirm-password">Confirm Password</Label>
+                <Input
+                  id="confirm-password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                />
+              </div>
+              
+              <Button
+                type="submit"
+                className="w-full bg-mint hover:bg-mint/90 text-primary-foreground font-display"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Creating account...' : 'Start Spreading Kindness'}
+              </Button>
+            </form>
+          )}
+          
+          {/* Toggle between modes */}
+          <div className="mt-6 text-center">
+            <button
+              type="button"
+              onClick={toggleMode}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-              {isSubmitting ? 'Creating account...' : 'Start Spreading Kindness'}
-            </Button>
-          </form>
+              {isLoginMode ? (
+                <>New here? <span className="text-mint font-medium">Create an account</span></>
+              ) : (
+                <>Already have an account? <span className="text-mint font-medium">Sign in</span></>
+              )}
+            </button>
+          </div>
           
           <p className="text-xs text-muted-foreground text-center mt-4">
             Your session is saved automatically — no need to log in again!
