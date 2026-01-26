@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Share2, MoreHorizontal, ChevronRight, Flame } from 'lucide-react';
+import { Share2, MoreHorizontal, ChevronRight, Flame, Pause, Ticket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCountdown } from '@/hooks/useCountdown';
+import { usePauseTokens } from '@/hooks/usePauseTokens';
 import type { MentChain } from '@/hooks/useMentChains';
 import {
   DropdownMenu,
@@ -10,14 +12,20 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import mentChainCardBg from '@/assets/ment-chain-card.png';
+import confetti from 'canvas-confetti';
 
 interface ChainCardProps {
   chain: MentChain;
   onShare?: (chainId: string) => void;
   onViewDetails?: (chainId: string) => void;
-  onPause?: (chainId: string) => void;
+  onPauseUsed?: () => void;
 }
 
 const EIGHT_HOURS_MS = 8 * 60 * 60 * 1000;
@@ -35,10 +43,13 @@ const ChainCard = ({
   chain, 
   onShare, 
   onViewDetails,
-  onPause 
+  onPauseUsed
 }: ChainCardProps) => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const countdown = useCountdown(chain.expires_at, EIGHT_HOURS_MS);
+  const { pauseTokens, usePauseToken, refetch } = usePauseTokens();
+  const [isPausing, setIsPausing] = useState(false);
   
   const timerColor = getTimerColor(countdown.hours, countdown.minutes);
 
@@ -54,8 +65,46 @@ const ChainCard = ({
     }
   };
 
+  const handleUsePauseToken = async () => {
+    if (pauseTokens <= 0) {
+      toast({
+        title: "No tokens available",
+        description: "Get more tokens in the Store",
+      });
+      navigate('/store');
+      return;
+    }
+
+    setIsPausing(true);
+    const success = await usePauseToken(chain.chain_id);
+    
+    if (success) {
+      confetti({
+        particleCount: 60,
+        spread: 50,
+        origin: { y: 0.7 },
+        colors: ['#2ECC71', '#27AE60', '#F1C40F']
+      });
+
+      toast({
+        title: "Pause token used! ⏸️",
+        description: "+24 hours added to this chain",
+      });
+
+      await refetch();
+      onPauseUsed?.();
+    } else {
+      toast({
+        title: "Couldn't use token",
+        description: "Please try again",
+        variant: "destructive"
+      });
+    }
+
+    setIsPausing(false);
+  };
+
   const formatChainId = (id: string) => {
-    // Use last 4 characters as the chain number
     const num = parseInt(id.slice(-4), 16) % 10000;
     return `#${num.toString().padStart(4, '0')}`;
   };
@@ -102,11 +151,6 @@ const ChainCard = ({
             <DropdownMenuItem onClick={() => onViewDetails?.(chain.chain_id)}>
               View Details
             </DropdownMenuItem>
-            {chain.status === 'active' && (
-              <DropdownMenuItem onClick={() => onPause?.(chain.chain_id)}>
-                Use Pause Token
-              </DropdownMenuItem>
-            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -165,14 +209,51 @@ const ChainCard = ({
         </Button>
       </div>
 
-      {/* Don't Break The Chain Banner */}
+      {/* Action Buttons Row */}
       {chain.status === 'active' && (
-        <div className="mx-4 mb-4 rounded-full bg-gradient-to-r from-green-100 via-green-50 to-green-100 border border-green-200 px-4 py-2 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Flame className="h-4 w-4 text-orange-500" />
-            <span className="font-semibold text-foreground text-sm">Don't Break The Chain!</span>
+        <div className="px-4 pb-4 flex gap-2">
+          {/* Don't Break The Chain Banner */}
+          <div className="flex-1 rounded-full bg-gradient-to-r from-green-100 via-green-50 to-green-100 border border-green-200 px-4 py-2 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Flame className="h-4 w-4 text-orange-500" />
+              <span className="font-semibold text-foreground text-sm">Don't Break The Chain!</span>
+            </div>
+            <span className="text-lg">🌿</span>
           </div>
-          <span className="text-lg">🌿</span>
+
+          {/* Use Pause Token Button */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-full px-3 border-yellow-300 bg-yellow-50 hover:bg-yellow-100 text-yellow-700"
+                onClick={handleUsePauseToken}
+                disabled={isPausing}
+              >
+                {isPausing ? (
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ repeat: Infinity, duration: 1 }}
+                  >
+                    <Pause className="h-4 w-4" />
+                  </motion.div>
+                ) : (
+                  <>
+                    <Pause className="h-4 w-4 mr-1" />
+                    <Ticket className="h-3 w-3" />
+                  </>
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="text-sm">
+                Use Pause Token (+24h)
+                <br />
+                <span className="text-muted-foreground">You have {pauseTokens} token{pauseTokens !== 1 ? 's' : ''}</span>
+              </p>
+            </TooltipContent>
+          </Tooltip>
         </div>
       )}
     </motion.div>
