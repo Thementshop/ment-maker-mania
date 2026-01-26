@@ -78,7 +78,7 @@ const initialState = {
   currentLevel: 1,
   pendingMents: [],
   worldKindnessCount: 0,
-  isLoading: true,
+  isLoading: false,
   userId: null,
 };
 
