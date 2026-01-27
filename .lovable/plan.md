@@ -1,25 +1,31 @@
 
-# Replace Ment Chain Section Background Image
+# Update Pause Token UI Text
 
 ## Summary
-Replace the current `ment-chain-bg.png` background image in the Ment Chains section with your new candy chain image featuring the green peppermint candies connected by chain links.
+The pause token logic already correctly resets the countdown to 24 hours (not adding to remaining time). The only change needed is to update the toast message in ChainCard.tsx to clarify the "reset" behavior rather than implying it "adds" time.
 
 ## Changes Required
 
-### 1. Add New Image Asset
-Copy the uploaded image to the project's assets folder:
-- **Source**: `user-uploads://The_Ment_Chain_image_by_ChatGPT-3.png`
-- **Destination**: `src/assets/ment-chain-bg.png` (replacing the existing file)
+### 1. Update Toast Message in ChainCard.tsx
+**File**: `src/components/chains/ChainCard.tsx`
 
-### 2. Update MentChains Component (if needed)
-The component already imports from `@/assets/ment-chain-bg.png`, so by replacing the file with the same name, no code changes are required. The new image will automatically be used.
+Update the toast description from:
+- Current: `"+24 hours added to this chain"`
+- New: `"Timer reset to 24 hours"`
+
+This clarifies that using a token resets the countdown to a full 24 hours, rather than adding time to whatever is remaining.
+
+### 2. Remove pricePerToken from TokenPackage (Optional Cleanup)
+**File**: `src/pages/Store.tsx`
+
+Since the `pricePerToken` field is defined but never displayed, we can optionally remove it from the interface and package definitions for cleaner code:
+- Remove `pricePerToken` from the `TokenPackage` interface
+- Remove `pricePerToken` values from all three package objects
 
 ## Technical Notes
-- The existing gradient overlay (`bg-gradient-to-t from-background/95 via-background/80 to-background/50`) may need slight adjustment since the new image has a light/white background with sparkles rather than a darker theme
-- Consider reducing the gradient opacity to let more of the beautiful candy chain artwork show through
+- The core logic in `usePauseTokens.ts` is already correct - it creates a new Date and adds exactly 24 hours from NOW
+- The Store page info section already has the correct wording ("resets your chain's countdown back to 24 hours")
+- No database changes required
 
-## Visual Result
-The Ment Chains section on the homepage will display your new candy chain bracelet image as the background, featuring:
-- Green and white striped peppermint candies
-- Metallic green chain links connecting the candies
-- Sparkly green gradient background with light effects
+## Result
+Users will have consistent messaging that clearly communicates pause tokens reset the timer to 24 hours, not add time to the remaining countdown.
