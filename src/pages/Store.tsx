@@ -10,7 +10,6 @@ import { usePauseTokens } from '@/hooks/usePauseTokens';
 import { useGameStore } from '@/store/gameStore';
 import { useToast } from '@/hooks/use-toast';
 import confetti from 'canvas-confetti';
-
 interface TokenPackage {
   id: string;
   tokens: number;
@@ -19,44 +18,56 @@ interface TokenPackage {
   popular?: boolean;
   bestValue?: boolean;
 }
-
-const tokenPackages: TokenPackage[] = [
-  { id: 'pack-20', tokens: 20, price: '$2.49', pricePerToken: '$0.12' },
-  { id: 'pack-50', tokens: 50, price: '$5.00', pricePerToken: '$0.10', popular: true },
-  { id: 'pack-100', tokens: 100, price: '$7.49', pricePerToken: '$0.07', bestValue: true },
-];
-
+const tokenPackages: TokenPackage[] = [{
+  id: 'pack-20',
+  tokens: 20,
+  price: '$2.49',
+  pricePerToken: '$0.12'
+}, {
+  id: 'pack-50',
+  tokens: 50,
+  price: '$5.00',
+  pricePerToken: '$0.10',
+  popular: true
+}, {
+  id: 'pack-100',
+  tokens: 100,
+  price: '$7.49',
+  pricePerToken: '$0.07',
+  bestValue: true
+}];
 const Store = () => {
-  const { toast } = useToast();
-  const { worldKindnessCount } = useGameStore();
-  const { 
-    pauseTokens, 
-    daysUntilFreeToken, 
-    canClaimFreeToken, 
+  const {
+    toast
+  } = useToast();
+  const {
+    worldKindnessCount
+  } = useGameStore();
+  const {
+    pauseTokens,
+    daysUntilFreeToken,
+    canClaimFreeToken,
     totalTokensUsed,
     claimFreeToken,
-    isLoading 
+    isLoading
   } = usePauseTokens();
-  
   const [claimingFree, setClaimingFree] = useState(false);
   const [purchasingId, setPurchasingId] = useState<string | null>(null);
-
   const handleClaimFreeToken = async () => {
     setClaimingFree(true);
-    
     const success = await claimFreeToken();
-    
     if (success) {
       confetti({
         particleCount: 80,
         spread: 60,
-        origin: { y: 0.6 },
+        origin: {
+          y: 0.6
+        },
         colors: ['#2ECC71', '#27AE60', '#F1C40F', '#E74C3C']
       });
-      
       toast({
         title: "Free token claimed! 🎉",
-        description: "You received 1 free pause token!",
+        description: "You received 1 free pause token!"
       });
     } else {
       toast({
@@ -65,36 +76,32 @@ const Store = () => {
         variant: "destructive"
       });
     }
-    
     setClaimingFree(false);
   };
-
   const handlePurchase = async (pkg: TokenPackage) => {
     setPurchasingId(pkg.id);
-    
+
     // Simulate purchase delay (would connect to payment processor)
     await new Promise(resolve => setTimeout(resolve, 1500));
-    
     toast({
       title: "Coming Soon! 🛒",
-      description: "Token purchases will be available soon. Enjoy your free weekly token!",
+      description: "Token purchases will be available soon. Enjoy your free weekly token!"
     });
-    
     setPurchasingId(null);
   };
-
-  return (
-    <div className="min-h-screen bg-gradient-mint flex flex-col">
+  return <div className="min-h-screen bg-gradient-mint flex flex-col">
       <Header worldCount={worldKindnessCount} />
       
       <main className="container flex-1 py-8 px-4">
         {/* Header with token count */}
         <div className="text-center mb-8">
-          <motion.div
-            className="inline-flex items-center gap-3 bg-card rounded-full px-6 py-3 shadow-lg border border-border mb-4"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
+          <motion.div className="inline-flex items-center gap-3 bg-card rounded-full px-6 py-3 shadow-lg border border-border mb-4" initial={{
+          opacity: 0,
+          y: -20
+        }} animate={{
+          opacity: 1,
+          y: 0
+        }}>
             <Ticket className="h-6 w-6 text-primary" />
             <span className="text-2xl font-bold text-foreground">
               You have {isLoading ? '...' : pauseTokens} tokens 🎫
@@ -106,20 +113,21 @@ const Store = () => {
             Pause tokens give you extra time to pass chains without breaking them
           </p>
           
-          {totalTokensUsed > 0 && (
-            <p className="text-sm text-muted-foreground mt-2">
+          {totalTokensUsed > 0 && <p className="text-sm text-muted-foreground mt-2">
               You've used {totalTokensUsed} token{totalTokensUsed !== 1 ? 's' : ''} total
-            </p>
-          )}
+            </p>}
         </div>
 
         {/* Free Token Section */}
-        <motion.div
-          className="mb-8"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
+        <motion.div className="mb-8" initial={{
+        opacity: 0,
+        y: 20
+      }} animate={{
+        opacity: 1,
+        y: 0
+      }} transition={{
+        delay: 0.1
+      }}>
           <Card className={`border-2 ${canClaimFreeToken ? 'border-primary bg-primary/5' : 'border-border'}`}>
             <CardHeader className="text-center">
               <div className="mx-auto w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center mb-2">
@@ -127,43 +135,31 @@ const Store = () => {
               </div>
               <CardTitle className="flex items-center justify-center gap-2">
                 Weekly Free Token
-                {canClaimFreeToken && (
-                  <Badge className="bg-primary text-primary-foreground animate-pulse">
+                {canClaimFreeToken && <Badge className="bg-primary text-primary-foreground animate-pulse">
                     Available!
-                  </Badge>
-                )}
+                  </Badge>}
               </CardTitle>
               <CardDescription>
                 Every user gets 1 free pause token each week
               </CardDescription>
             </CardHeader>
             <CardContent className="text-center">
-              {canClaimFreeToken ? (
-                <Button
-                  size="lg"
-                  className="w-full max-w-xs"
-                  onClick={handleClaimFreeToken}
-                  disabled={claimingFree}
-                >
-                  {claimingFree ? (
-                    <>
-                      <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{ repeat: Infinity, duration: 1 }}
-                      >
+              {canClaimFreeToken ? <Button size="lg" className="w-full max-w-xs" onClick={handleClaimFreeToken} disabled={claimingFree}>
+                  {claimingFree ? <>
+                      <motion.div animate={{
+                  rotate: 360
+                }} transition={{
+                  repeat: Infinity,
+                  duration: 1
+                }}>
                         <Sparkles className="h-5 w-5 mr-2" />
                       </motion.div>
                       Claiming...
-                    </>
-                  ) : (
-                    <>
+                    </> : <>
                       <Gift className="h-5 w-5 mr-2" />
                       Claim Free Token
-                    </>
-                  )}
-                </Button>
-              ) : (
-                <div className="flex flex-col items-center gap-2">
+                    </>}
+                </Button> : <div className="flex flex-col items-center gap-2">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Clock className="h-5 w-5" />
                     <span>
@@ -171,15 +167,15 @@ const Store = () => {
                     </span>
                   </div>
                   <div className="w-full max-w-xs h-2 bg-muted rounded-full overflow-hidden mt-2">
-                    <motion.div
-                      className="h-full bg-primary rounded-full"
-                      initial={{ width: 0 }}
-                      animate={{ width: `${((7 - daysUntilFreeToken) / 7) * 100}%` }}
-                      transition={{ duration: 0.5 }}
-                    />
+                    <motion.div className="h-full bg-primary rounded-full" initial={{
+                  width: 0
+                }} animate={{
+                  width: `${(7 - daysUntilFreeToken) / 7 * 100}%`
+                }} transition={{
+                  duration: 0.5
+                }} />
                   </div>
-                </div>
-              )}
+                </div>}
             </CardContent>
           </Card>
         </motion.div>
@@ -192,27 +188,22 @@ const Store = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          {tokenPackages.map((pkg, index) => (
-            <motion.div
-              key={pkg.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 + index * 0.1 }}
-            >
-              <Card className={`relative overflow-hidden ${
-                pkg.bestValue ? 'border-2 border-primary shadow-lg' : 
-                pkg.popular ? 'border-2 border-yellow-400' : 'border-border'
-              }`}>
-                {pkg.bestValue && (
-                  <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-bl-lg">
+          {tokenPackages.map((pkg, index) => <motion.div key={pkg.id} initial={{
+          opacity: 0,
+          y: 20
+        }} animate={{
+          opacity: 1,
+          y: 0
+        }} transition={{
+          delay: 0.2 + index * 0.1
+        }}>
+              <Card className={`relative overflow-hidden ${pkg.bestValue ? 'border-2 border-primary shadow-lg' : pkg.popular ? 'border-2 border-yellow-400' : 'border-border'}`}>
+                {pkg.bestValue && <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-bl-lg">
                     Best Value
-                  </div>
-                )}
-                {pkg.popular && !pkg.bestValue && (
-                  <div className="absolute top-0 right-0 bg-yellow-400 text-yellow-900 text-xs font-bold px-3 py-1 rounded-bl-lg">
+                  </div>}
+                {pkg.popular && !pkg.bestValue && <div className="absolute top-0 right-0 bg-yellow-400 text-yellow-900 text-xs font-bold px-3 py-1 rounded-bl-lg">
                     Popular
-                  </div>
-                )}
+                  </div>}
                 
                 <CardHeader className="text-center pt-8">
                   <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
@@ -224,37 +215,27 @@ const Store = () => {
                 
                 <CardContent className="text-center">
                   <div className="text-2xl font-bold text-foreground mb-1">{pkg.price}</div>
-                  <div className="text-sm text-muted-foreground mb-4">
-                    {pkg.pricePerToken} per token
-                  </div>
                   
-                  <Button
-                    variant={pkg.bestValue ? 'default' : 'outline'}
-                    className="w-full"
-                    onClick={() => handlePurchase(pkg)}
-                    disabled={purchasingId === pkg.id}
-                  >
-                    {purchasingId === pkg.id ? (
-                      <>
-                        <motion.div
-                          animate={{ rotate: 360 }}
-                          transition={{ repeat: Infinity, duration: 1 }}
-                        >
+                  
+                  <Button variant={pkg.bestValue ? 'default' : 'outline'} className="w-full" onClick={() => handlePurchase(pkg)} disabled={purchasingId === pkg.id}>
+                    {purchasingId === pkg.id ? <>
+                        <motion.div animate={{
+                    rotate: 360
+                  }} transition={{
+                    repeat: Infinity,
+                    duration: 1
+                  }}>
                           <ShoppingCart className="h-4 w-4 mr-2" />
                         </motion.div>
                         Processing...
-                      </>
-                    ) : (
-                      <>
+                      </> : <>
                         <ShoppingCart className="h-4 w-4 mr-2" />
                         Purchase
-                      </>
-                    )}
+                      </>}
                   </Button>
                 </CardContent>
               </Card>
-            </motion.div>
-          ))}
+            </motion.div>)}
         </div>
 
         {/* Info Section */}
@@ -271,7 +252,7 @@ const Store = () => {
               </li>
               <li className="flex items-start gap-2">
                 <Check className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-                <span>Each token adds 24 hours to your chain's countdown</span>
+                <span>Each token resets your chain's countdown back to 24 hours</span>
               </li>
               <li className="flex items-start gap-2">
                 <Check className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
@@ -287,8 +268,6 @@ const Store = () => {
       </main>
       
       <Footer />
-    </div>
-  );
+    </div>;
 };
-
 export default Store;
