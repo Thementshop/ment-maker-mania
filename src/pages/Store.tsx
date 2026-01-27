@@ -14,26 +14,22 @@ interface TokenPackage {
   id: string;
   tokens: number;
   price: string;
-  pricePerToken: string;
   popular?: boolean;
   bestValue?: boolean;
 }
 const tokenPackages: TokenPackage[] = [{
   id: 'pack-20',
   tokens: 20,
-  price: '$2.49',
-  pricePerToken: '$0.12'
+  price: '$2.49'
 }, {
   id: 'pack-50',
   tokens: 50,
   price: '$5.00',
-  pricePerToken: '$0.10',
   popular: true
 }, {
   id: 'pack-100',
   tokens: 100,
   price: '$7.49',
-  pricePerToken: '$0.07',
   bestValue: true
 }];
 const Store = () => {
