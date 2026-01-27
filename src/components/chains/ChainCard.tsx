@@ -88,7 +88,7 @@ const ChainCard = ({
 
       toast({
         title: "Pause token used! ⏸️",
-        description: "+24 hours added to this chain",
+        description: "Timer reset to 24 hours",
       });
 
       await refetch();
