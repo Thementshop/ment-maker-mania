@@ -59,32 +59,44 @@ export type Database = {
         Row: {
           broken_at: string | null
           chain_id: string
+          chain_name: string | null
           created_at: string
           current_holder: string
           expires_at: string
+          is_queued: boolean | null
           links_count: number
+          share_count: number | null
           started_by: string
           status: string
+          tier: string | null
         }
         Insert: {
           broken_at?: string | null
           chain_id?: string
+          chain_name?: string | null
           created_at?: string
           current_holder: string
           expires_at: string
+          is_queued?: boolean | null
           links_count?: number
+          share_count?: number | null
           started_by: string
           status?: string
+          tier?: string | null
         }
         Update: {
           broken_at?: string | null
           chain_id?: string
+          chain_name?: string | null
           created_at?: string
           current_holder?: string
           expires_at?: string
+          is_queued?: boolean | null
           links_count?: number
+          share_count?: number | null
           started_by?: string
           status?: string
+          tier?: string | null
         }
         Relationships: []
       }
@@ -175,14 +187,46 @@ export type Database = {
         }
         Relationships: []
       }
+      used_chain_names: {
+        Row: {
+          chain_id: string | null
+          chain_name: string
+          claimed_at: string | null
+          id: string
+        }
+        Insert: {
+          chain_id?: string | null
+          chain_name: string
+          claimed_at?: string | null
+          id?: string
+        }
+        Update: {
+          chain_id?: string | null
+          chain_name?: string
+          claimed_at?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "used_chain_names_chain_id_fkey"
+            columns: ["chain_id"]
+            isOneToOne: false
+            referencedRelation: "ment_chains"
+            referencedColumns: ["chain_id"]
+          },
+        ]
+      }
       user_game_state: {
         Row: {
+          broken_chains_today: number | null
           chains_started_today: number
           created_at: string | null
           current_level: number
           id: string
           jar_count: number
+          last_chain_start_date: string | null
           last_free_token_date: string
+          legendary_chains_created: number | null
           pause_tokens: number
           total_sent: number
           total_tokens_used: number
@@ -191,12 +235,15 @@ export type Database = {
           your_turn_chains_count: number
         }
         Insert: {
+          broken_chains_today?: number | null
           chains_started_today?: number
           created_at?: string | null
           current_level?: number
           id?: string
           jar_count?: number
+          last_chain_start_date?: string | null
           last_free_token_date?: string
+          legendary_chains_created?: number | null
           pause_tokens?: number
           total_sent?: number
           total_tokens_used?: number
@@ -205,12 +252,15 @@ export type Database = {
           your_turn_chains_count?: number
         }
         Update: {
+          broken_chains_today?: number | null
           chains_started_today?: number
           created_at?: string | null
           current_level?: number
           id?: string
           jar_count?: number
+          last_chain_start_date?: string | null
           last_free_token_date?: string
+          legendary_chains_created?: number | null
           pause_tokens?: number
           total_sent?: number
           total_tokens_used?: number
