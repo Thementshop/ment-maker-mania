@@ -1,16 +1,21 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { getChainTier } from '@/utils/chainTiers';
 
 export interface MentChain {
   chain_id: string;
+  chain_name: string | null;
   started_by: string;
   current_holder: string;
   expires_at: string;
   status: 'active' | 'broken' | 'ended';
   links_count: number;
+  share_count: number | null;
+  tier: string | null;
   created_at: string;
   broken_at: string | null;
+  is_queued: boolean | null;
 }
 
 export interface ChainLink {
@@ -30,9 +35,10 @@ export interface UseMentChainsReturn {
   isLoading: boolean;
   error: Error | null;
   refetch: () => Promise<void>;
-  startChain: (recipientId: string, compliment: string, expiresAt: Date) => Promise<MentChain | null>;
+  startChain: (recipientId: string, compliment: string, expiresAt: Date, chainName?: string) => Promise<MentChain | null>;
   passChain: (chainId: string, passedTo: string, receivedCompliment: string, sentCompliment: string) => Promise<boolean>;
   getChainLinks: (chainId: string) => Promise<ChainLink[]>;
+  usePauseToken: (chainId: string) => Promise<boolean>;
 }
 
 export const useMentChains = (): UseMentChainsReturn => {
@@ -41,6 +47,7 @@ export const useMentChains = (): UseMentChainsReturn => {
   const [yourTurnChains, setYourTurnChains] = useState<MentChain[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const subscriptionRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   // Check and expire any chains that have timed out
   const checkAndExpireChains = useCallback(async () => {
@@ -48,22 +55,28 @@ export const useMentChains = (): UseMentChainsReturn => {
     
     const now = new Date().toISOString();
     
-    // Find expired chains that the user is involved with
-    const { data: expiredChains } = await supabase
-      .from('ment_chains')
-      .select('chain_id')
-      .eq('status', 'active')
-      .lt('expires_at', now)
-      .or(`started_by.eq.${user.id},current_holder.eq.${user.id}`);
-    
-    if (expiredChains && expiredChains.length > 0) {
-      await supabase
+    try {
+      // Find expired chains that the user is involved with
+      const { data: expiredChains } = await supabase
         .from('ment_chains')
-        .update({ 
-          status: 'broken', 
-          broken_at: now 
-        })
-        .in('chain_id', expiredChains.map(c => c.chain_id));
+        .select('chain_id')
+        .eq('status', 'active')
+        .lt('expires_at', now)
+        .or(`started_by.eq.${user.id},current_holder.eq.${user.id}`);
+      
+      if (expiredChains && expiredChains.length > 0) {
+        await supabase
+          .from('ment_chains')
+          .update({ 
+            status: 'broken', 
+            broken_at: now 
+          })
+          .in('chain_id', expiredChains.map(c => c.chain_id));
+        
+        console.log(`Auto-expired ${expiredChains.length} chains`);
+      }
+    } catch (err) {
+      console.error('Error expiring chains:', err);
     }
   }, [user]);
 
@@ -106,10 +119,43 @@ export const useMentChains = (): UseMentChainsReturn => {
     }
   }, [user, checkAndExpireChains]);
 
+  // Real-time subscription
+  useEffect(() => {
+    if (!user) return;
+
+    fetchChains();
+
+    // Subscribe to real-time changes
+    const channel = supabase
+      .channel('ment_chains_realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'ment_chains',
+        },
+        (payload) => {
+          console.log('Chain updated:', payload);
+          fetchChains(); // Refresh all chains on any change
+        }
+      )
+      .subscribe();
+
+    subscriptionRef.current = channel;
+
+    return () => {
+      if (subscriptionRef.current) {
+        supabase.removeChannel(subscriptionRef.current);
+      }
+    };
+  }, [user, fetchChains]);
+
   const startChain = useCallback(async (
     recipientId: string,
     compliment: string,
-    expiresAt: Date
+    expiresAt: Date,
+    chainName?: string
   ): Promise<MentChain | null> => {
     if (!user) return null;
 
@@ -118,11 +164,14 @@ export const useMentChains = (): UseMentChainsReturn => {
       const { data: chainData, error: chainError } = await supabase
         .from('ment_chains')
         .insert({
+          chain_name: chainName || null,
           started_by: user.id,
           current_holder: recipientId,
           expires_at: expiresAt.toISOString(),
           status: 'active',
-          links_count: 1
+          links_count: 1,
+          share_count: 1,
+          tier: 'small'
         })
         .select()
         .single();
@@ -138,7 +187,7 @@ export const useMentChains = (): UseMentChainsReturn => {
           passed_to: recipientId,
           received_compliment: '',
           sent_compliment: compliment,
-          was_forwarded: true
+          was_forwarded: false
         });
 
       if (linkError) throw linkError;
@@ -160,10 +209,10 @@ export const useMentChains = (): UseMentChainsReturn => {
     if (!user) return false;
 
     try {
-      // First get current links_count
+      // First get current chain data
       const { data: chainData, error: fetchError } = await supabase
         .from('ment_chains')
-        .select('links_count')
+        .select('links_count, share_count')
         .eq('chain_id', chainId)
         .single();
 
@@ -173,12 +222,17 @@ export const useMentChains = (): UseMentChainsReturn => {
       const newExpiresAt = new Date();
       newExpiresAt.setHours(newExpiresAt.getHours() + 24);
 
+      const newShareCount = (chainData?.share_count || 0) + 1;
+      const newTier = getChainTier(newShareCount);
+
       // Update the chain with new holder, incremented count, and reset timer
       const { error: updateError } = await supabase
         .from('ment_chains')
         .update({
           current_holder: passedTo,
           links_count: (chainData?.links_count || 0) + 1,
+          share_count: newShareCount,
+          tier: newTier,
           expires_at: newExpiresAt.toISOString()
         })
         .eq('chain_id', chainId);
@@ -194,7 +248,7 @@ export const useMentChains = (): UseMentChainsReturn => {
           passed_to: passedTo,
           received_compliment: receivedCompliment,
           sent_compliment: sentCompliment,
-          was_forwarded: true
+          was_forwarded: receivedCompliment === sentCompliment
         });
 
       if (linkError) throw linkError;
@@ -224,9 +278,52 @@ export const useMentChains = (): UseMentChainsReturn => {
     }
   }, []);
 
-  useEffect(() => {
-    fetchChains();
-  }, [fetchChains]);
+  const usePauseToken = useCallback(async (chainId: string): Promise<boolean> => {
+    if (!user) return false;
+
+    try {
+      // Get current user's pause tokens
+      const { data: gameState, error: gsError } = await supabase
+        .from('user_game_state')
+        .select('pause_tokens, total_tokens_used')
+        .eq('user_id', user.id)
+        .single();
+
+      if (gsError) throw gsError;
+      
+      if (!gameState || gameState.pause_tokens < 1) {
+        return false;
+      }
+
+      // Reset timer to NOW + 24 hours
+      const newExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+      // Update chain timer
+      const { error: chainError } = await supabase
+        .from('ment_chains')
+        .update({ expires_at: newExpiresAt.toISOString() })
+        .eq('chain_id', chainId);
+
+      if (chainError) throw chainError;
+
+      // Deduct pause token
+      const { error: tokenError } = await supabase
+        .from('user_game_state')
+        .update({
+          pause_tokens: gameState.pause_tokens - 1,
+          total_tokens_used: (gameState.total_tokens_used || 0) + 1
+        })
+        .eq('user_id', user.id);
+
+      if (tokenError) throw tokenError;
+
+      await fetchChains();
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Failed to use pause token'));
+      return false;
+    }
+  }, [user, fetchChains]);
 
   return {
     chains,
@@ -236,6 +333,8 @@ export const useMentChains = (): UseMentChainsReturn => {
     refetch: fetchChains,
     startChain,
     passChain,
-    getChainLinks
+    getChainLinks,
+    usePauseToken
   };
 };
+

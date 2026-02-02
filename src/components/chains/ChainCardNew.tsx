@@ -1,10 +1,16 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { MoreHorizontal, ChevronRight } from 'lucide-react';
+import { MoreHorizontal, ChevronRight, Pause, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCountdown } from '@/hooks/useCountdown';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import MintCircleGraphic from './MintCircleGraphic';
 import PassChainModal from './PassChainModal';
+import ChainDetailsModal from './ChainDetailsModal';
+import { useMentChains } from '@/hooks/useMentChains';
+import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -53,9 +59,34 @@ const ChainCardNew = ({
   onViewDetails,
   onChainPassed,
 }: ChainCardNewProps) => {
+  const { user } = useAuth();
   const countdown = useCountdown(chain.expires_at);
   const timerColorClass = getTimerColor(countdown.hours, countdown.minutes);
   const [showPassModal, setShowPassModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [isPausing, setIsPausing] = useState(false);
+  const [pauseTokens, setPauseTokens] = useState(0);
+  const { usePauseToken } = useMentChains();
+  const navigate = useNavigate();
+
+  // Fetch pause tokens
+  useEffect(() => {
+    if (!user) return;
+    
+    const fetchPauseTokens = async () => {
+      const { data } = await supabase
+        .from('user_game_state')
+        .select('pause_tokens')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (data) {
+        setPauseTokens(data.pause_tokens);
+      }
+    };
+    
+    fetchPauseTokens();
+  }, [user]);
 
   const handleShare = () => {
     if (isYourTurn && chain.status === 'active' && !chain.is_queued) {
@@ -66,11 +97,33 @@ const ChainCardNew = ({
   };
 
   const handleViewDetails = () => {
-    onViewDetails?.(chain.chain_id);
+    setShowDetailsModal(true);
   };
 
   const handlePassSuccess = () => {
     onChainPassed?.();
+  };
+
+  const handleUsePauseToken = async () => {
+    if (pauseTokens < 1) {
+      toast.error('No pause tokens available!');
+      return;
+    }
+
+    setIsPausing(true);
+    try {
+      const success = await usePauseToken(chain.chain_id);
+      if (success) {
+        toast.success('⏸️ Chain paused! Timer reset to 24:00:00');
+        onChainPassed?.();
+      } else {
+        toast.error('Failed to use pause token');
+      }
+    } catch (error) {
+      toast.error('Failed to pause chain');
+    } finally {
+      setIsPausing(false);
+    }
   };
 
   // Default compliment if none received
@@ -159,15 +212,39 @@ const ChainCardNew = ({
           )}
         </div>
 
-        {/* Action Button */}
-        <div className="px-4 pb-4">
+        {/* Action Buttons */}
+        <div className="px-4 pb-4 space-y-2">
           {isYourTurn && !chain.is_queued && chain.status === 'active' ? (
-            <Button 
-              className="w-full rounded-full bg-primary hover:bg-primary/90"
-              onClick={handleShare}
-            >
-              Share →
-            </Button>
+            <>
+              <Button 
+                className="w-full rounded-full bg-primary hover:bg-primary/90"
+                onClick={handleShare}
+              >
+                Share →
+              </Button>
+              
+              {/* Pause Token Button */}
+              {pauseTokens > 0 ? (
+                <Button
+                  variant="outline"
+                  className="w-full rounded-full text-sm"
+                  onClick={handleUsePauseToken}
+                  disabled={isPausing}
+                >
+                  <Pause className="h-4 w-4 mr-2" />
+                  {isPausing ? 'Pausing...' : `Use Pause Token (${pauseTokens})`}
+                </Button>
+              ) : countdown.hours < 2 ? (
+                <Button
+                  variant="ghost"
+                  className="w-full rounded-full text-xs text-muted-foreground"
+                  onClick={() => navigate('/store')}
+                >
+                  <ShoppingCart className="h-3 w-3 mr-1" />
+                  Need more time? Buy Pause Tokens
+                </Button>
+              ) : null}
+            </>
           ) : chain.is_queued ? (
             <div className="w-full py-2 rounded-full bg-muted text-center text-muted-foreground font-medium">
               ⏸️ Queued
@@ -199,8 +276,22 @@ const ChainCardNew = ({
         onClose={() => setShowPassModal(false)}
         onSuccess={handlePassSuccess}
       />
+
+      {/* Chain Details Modal */}
+      <ChainDetailsModal
+        chain={{
+          chain_id: chain.chain_id,
+          chain_name: chain.chain_name,
+          share_count: chain.share_count,
+          tier: chain.tier,
+          started_by: chain.started_by,
+          started_by_display_name: chain.started_by_display_name
+        }}
+        isOpen={showDetailsModal}
+        onClose={() => setShowDetailsModal(false)}
+      />
     </>
   );
 };
 
-export default ChainCardNew;
+export default React.memo(ChainCardNew);

@@ -334,4 +334,4 @@ const MintCircleGraphic: React.FC<MintCircleGraphicProps> = ({
   );
 };
 
-export default MintCircleGraphic;
+export default React.memo(MintCircleGraphic);

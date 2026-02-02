@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Trophy, Link, Share2, Loader2, User, Clock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -266,4 +266,4 @@ Download: https://thementshop.com`;
   );
 };
 
-export default Leaderboard;
+export default React.memo(Leaderboard);
