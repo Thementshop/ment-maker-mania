@@ -4,6 +4,7 @@ import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import ChainCardNew, { ChainData } from './ChainCardNew';
+import StartChainModal from './StartChainModal';
 import { getChainTier } from '@/utils/chainTiers';
 
 const tabs = [
@@ -120,6 +121,7 @@ function sortChains(chains: ChainData[], currentUserId: string): ChainData[] {
 const ChainDashboard = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('active');
+  const [showStartModal, setShowStartModal] = useState(false);
   const currentUserId = user?.id || 'currentUser';
 
   // Filter chains based on active tab
@@ -156,8 +158,12 @@ const ChainDashboard = () => {
   };
 
   const handleStartChain = () => {
-    console.log('Start new chain');
-    // TODO: Implement start chain modal
+    setShowStartModal(true);
+  };
+
+  const handleChainCreated = () => {
+    // TODO: Refresh chains from database
+    console.log('Chain created, refresh list');
   };
 
   return (
@@ -232,6 +238,13 @@ const ChainDashboard = () => {
           🔗 Start A Chain
         </Button>
       </div>
+
+      {/* Start Chain Modal */}
+      <StartChainModal
+        isOpen={showStartModal}
+        onClose={() => setShowStartModal(false)}
+        onSuccess={handleChainCreated}
+      />
     </div>
   );
 };
