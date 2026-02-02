@@ -242,3 +242,17 @@
 .animate-shake {
   animation: shake 0.5s ease-in-out;
 }
+
+/* Legendary tier glow animation */
+@keyframes legendary-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 15px rgba(46, 204, 113, 0.6));
+  }
+  50% {
+    filter: drop-shadow(0 0 30px rgba(46, 204, 113, 0.9));
+  }
+}
+
+.animate-legendary-glow {
+  animation: legendary-glow 2s ease-in-out infinite;
+}
