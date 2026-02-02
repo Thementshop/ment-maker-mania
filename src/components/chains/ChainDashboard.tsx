@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import ChainCardNew, { ChainData } from './ChainCardNew';
 import StartChainModal from './StartChainModal';
+import Leaderboard from './Leaderboard';
 import { getChainTier } from '@/utils/chainTiers';
 
 const tabs = [
@@ -205,34 +206,39 @@ const ChainDashboard = () => {
         ))}
       </div>
 
-      {/* Chain Cards Grid */}
-      {sortedChains.length > 0 ? (
-        <motion.div 
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3 }}
-        >
-          {sortedChains.map(chain => (
-            <ChainCardNew
-              key={chain.chain_id}
-              chain={chain}
-              isYourTurn={chain.current_holder === currentUserId}
-              currentUserId={currentUserId}
-              onShare={handleShare}
-              onViewDetails={handleViewDetails}
-              onChainPassed={handleChainCreated}
-            />
-          ))}
-        </motion.div>
+      {/* Leaderboard Tab Content */}
+      {activeTab === 'leaderboard' ? (
+        <Leaderboard />
       ) : (
-        /* Empty State */
-        <div className="text-center py-12 text-muted-foreground">
-          <p className="text-lg">No chains in this category yet</p>
-          {activeTab === 'yourTurn' && (
-            <p className="text-sm mt-2">Chains waiting for you to share will appear here</p>
-          )}
-        </div>
+        /* Chain Cards Grid */
+        sortedChains.length > 0 ? (
+          <motion.div 
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            {sortedChains.map(chain => (
+              <ChainCardNew
+                key={chain.chain_id}
+                chain={chain}
+                isYourTurn={chain.current_holder === currentUserId}
+                currentUserId={currentUserId}
+                onShare={handleShare}
+                onViewDetails={handleViewDetails}
+                onChainPassed={handleChainCreated}
+              />
+            ))}
+          </motion.div>
+        ) : (
+          /* Empty State */
+          <div className="text-center py-12 text-muted-foreground">
+            <p className="text-lg">No chains in this category yet</p>
+            {activeTab === 'yourTurn' && (
+              <p className="text-sm mt-2">Chains waiting for you to share will appear here</p>
+            )}
+          </div>
+        )
       )}
 
       {/* Start Chain Button (bottom floating) */}
