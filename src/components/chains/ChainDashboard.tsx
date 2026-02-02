@@ -16,8 +16,8 @@ const tabs = [
   { id: 'leaderboard', label: 'Leaderboard', icon: '🏆' }
 ];
 
-// Mock data for testing
-const mockChains: ChainData[] = [
+// Generate mock data with actual user ID
+const getMockChains = (userId: string): ChainData[] => [
   {
     chain_id: '1',
     chain_name: 'Positivity Wave',
@@ -26,7 +26,7 @@ const mockChains: ChainData[] = [
     expires_at: new Date(Date.now() + 14 * 60 * 60 * 1000).toISOString(), // 14 hours
     started_by: 'user123',
     started_by_display_name: 'Sarah',
-    current_holder: 'currentUser',
+    current_holder: userId, // YOUR TURN
     current_holder_display_name: 'You',
     status: 'active',
     is_queued: false,
@@ -38,7 +38,7 @@ const mockChains: ChainData[] = [
     share_count: 156,
     tier: 'legendary',
     expires_at: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // 2 hours
-    started_by: 'currentUser',
+    started_by: userId,
     started_by_display_name: 'You',
     current_holder: 'user456',
     current_holder_display_name: 'Mike',
@@ -51,10 +51,10 @@ const mockChains: ChainData[] = [
     chain_name: 'Kindness Ripple',
     share_count: 12,
     tier: 'small',
-    expires_at: new Date(Date.now() + 45 * 60 * 1000).toISOString(), // 45 min
+    expires_at: new Date(Date.now() + 45 * 60 * 1000).toISOString(), // 45 min - URGENT
     started_by: 'user789',
     started_by_display_name: 'Alex',
-    current_holder: 'currentUser',
+    current_holder: userId, // YOUR TURN
     current_holder_display_name: 'You',
     status: 'active',
     is_queued: false,
@@ -65,10 +65,10 @@ const mockChains: ChainData[] = [
     chain_name: 'Joy Express',
     share_count: 67,
     tier: 'large',
-    expires_at: new Date(Date.now() + 8 * 60 * 1000).toISOString(), // 8 minutes - urgent!
-    started_by: 'currentUser',
+    expires_at: new Date(Date.now() + 8 * 60 * 1000).toISOString(), // 8 minutes - VERY URGENT!
+    started_by: userId,
     started_by_display_name: 'You',
-    current_holder: 'currentUser',
+    current_holder: userId, // YOUR TURN
     current_holder_display_name: 'You',
     status: 'active',
     is_queued: false,
@@ -94,7 +94,7 @@ const mockChains: ChainData[] = [
     share_count: 28,
     tier: 'medium',
     expires_at: new Date(Date.now() + 20 * 60 * 60 * 1000).toISOString(),
-    started_by: 'currentUser',
+    started_by: userId,
     started_by_display_name: 'You',
     current_holder: 'user111',
     current_holder_display_name: 'Taylor',
@@ -131,6 +131,9 @@ const ChainDashboard = () => {
   const [showStartModal, setShowStartModal] = useState(false);
   const currentUserId = user?.id || 'currentUser';
 
+  // Generate mock chains with actual user ID
+  const mockChains = useMemo(() => getMockChains(currentUserId), [currentUserId]);
+
   // Filter chains based on active tab
   const filteredChains = useMemo(() => {
     switch (activeTab) {
@@ -147,7 +150,7 @@ const ChainDashboard = () => {
       default:
         return mockChains;
     }
-  }, [activeTab, currentUserId]);
+  }, [activeTab, currentUserId, mockChains]);
 
   // Sort the filtered chains
   const sortedChains = useMemo(() => {
