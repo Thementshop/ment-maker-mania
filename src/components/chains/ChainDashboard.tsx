@@ -28,7 +28,8 @@ const mockChains: ChainData[] = [
     current_holder: 'currentUser',
     current_holder_display_name: 'You',
     status: 'active',
-    is_queued: false
+    is_queued: false,
+    received_compliment: "You've got this! I believe in you 💪"
   },
   {
     chain_id: '2',
@@ -41,7 +42,8 @@ const mockChains: ChainData[] = [
     current_holder: 'user456',
     current_holder_display_name: 'Mike',
     status: 'active',
-    is_queued: false
+    is_queued: false,
+    received_compliment: "You make my heart smile every single day 💚"
   },
   {
     chain_id: '3',
@@ -54,7 +56,8 @@ const mockChains: ChainData[] = [
     current_holder: 'currentUser',
     current_holder_display_name: 'You',
     status: 'active',
-    is_queued: false
+    is_queued: false,
+    received_compliment: "You're the G.O.A.T. and everyone knows it 🐐"
   },
   {
     chain_id: '4',
@@ -67,7 +70,8 @@ const mockChains: ChainData[] = [
     current_holder: 'currentUser',
     current_holder_display_name: 'You',
     status: 'active',
-    is_queued: false
+    is_queued: false,
+    received_compliment: "Your strength inspires everyone around you"
   },
   {
     chain_id: '5',
@@ -80,7 +84,8 @@ const mockChains: ChainData[] = [
     current_holder: 'user999',
     current_holder_display_name: 'Jamie',
     status: 'broken',
-    is_queued: false
+    is_queued: false,
+    received_compliment: "Be the reason someone smiles today 😊"
   },
   {
     chain_id: '6',
@@ -93,7 +98,8 @@ const mockChains: ChainData[] = [
     current_holder: 'user111',
     current_holder_display_name: 'Taylor',
     status: 'active',
-    is_queued: true
+    is_queued: true,
+    received_compliment: "Thinking of you during this difficult time 🕊️"
   }
 ];
 
@@ -215,6 +221,7 @@ const ChainDashboard = () => {
               currentUserId={currentUserId}
               onShare={handleShare}
               onViewDetails={handleViewDetails}
+              onChainPassed={handleChainCreated}
             />
           ))}
         </motion.div>
