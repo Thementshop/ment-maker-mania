@@ -140,6 +140,16 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
 
     setStep('sending');
     
+    // Global timeout for entire chain creation
+    const timeoutId = setTimeout(() => {
+      toast({
+        title: "Taking too long",
+        description: "Chain creation timed out. Please try again.",
+        variant: "destructive"
+      });
+      setStep('name');
+    }, 15000);
+    
     try {
       // 1. Check daily limit
       const { data: gameState, error: gameStateError } = await supabase
@@ -245,6 +255,7 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
       }
 
       // 8. Success!
+      clearTimeout(timeoutId);
       setStep('success');
       
       // Fire confetti!
@@ -262,10 +273,11 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
       }, 2500);
 
     } catch (error) {
+      clearTimeout(timeoutId);
       console.error('Error starting chain:', error);
       toast({
         title: "Failed to start chain",
-        description: "Please try again",
+        description: error instanceof Error ? error.message : "Please try again",
         variant: "destructive"
       });
       setStep('name');
