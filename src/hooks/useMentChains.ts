@@ -50,7 +50,7 @@ export const useMentChains = (): UseMentChainsReturn => {
   const { user } = useAuth();
   const [chains, setChains] = useState<MentChain[]>([]);
   const [yourTurnChains, setYourTurnChains] = useState<MentChain[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const subscriptionRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
@@ -192,7 +192,15 @@ export const useMentChains = (): UseMentChainsReturn => {
       return;
     }
 
-    fetchChains();
+    // Safety timeout to prevent infinite spinner (10 seconds)
+    const timeoutId = setTimeout(() => {
+      console.warn('Chain fetch timed out, clearing loading state');
+      setIsLoading(false);
+    }, 10000);
+
+    fetchChains().finally(() => {
+      clearTimeout(timeoutId);
+    });
 
     // Subscribe to real-time changes
     const channel = supabase
@@ -214,6 +222,7 @@ export const useMentChains = (): UseMentChainsReturn => {
     subscriptionRef.current = channel;
 
     return () => {
+      clearTimeout(timeoutId);
       if (subscriptionRef.current) {
         supabase.removeChannel(subscriptionRef.current);
       }
