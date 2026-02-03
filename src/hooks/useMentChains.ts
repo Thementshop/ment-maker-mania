@@ -185,7 +185,12 @@ export const useMentChains = (): UseMentChainsReturn => {
 
   // Real-time subscription
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setIsLoading(false);
+      setChains([]);
+      setYourTurnChains([]);
+      return;
+    }
 
     fetchChains();
 
