@@ -106,6 +106,18 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
     return Promise.race([promise, timeoutPromise]);
   };
 
+  // Helper for critical queries that must succeed (throws on timeout)
+  const criticalQueryWithTimeout = async <T,>(
+    promise: PromiseLike<T>,
+    timeoutMs: number,
+    label: string
+  ): Promise<T> => {
+    const timeoutPromise = new Promise<never>((_, reject) => 
+      setTimeout(() => reject(new Error(`${label} timed out - database may be slow`)), timeoutMs)
+    );
+    return Promise.race([promise, timeoutPromise]);
+  };
+
   // Lenient validation for testing
   const validateRecipient = (): boolean => {
     if (recipientType === 'email') {
@@ -230,24 +242,28 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
         }
       }
 
-      // 4. Create chain (critical - no timeout fallback)
+      // 4. Create chain (with 8s timeout)
       console.log('Step 4: Creating chain...');
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-      const { data: newChain, error: chainError } = await supabase
-        .from('ment_chains')
-        .insert({
-          chain_name: finalName,
-          started_by: user.id,
-          current_holder: recipientValue.trim(),
-          expires_at: expiresAt.toISOString(),
-          status: 'active',
-          share_count: 1,
-          tier: 'small',
-          links_count: 1
-        })
-        .select()
-        .single();
+      const { data: newChain, error: chainError } = await criticalQueryWithTimeout(
+        supabase
+          .from('ment_chains')
+          .insert({
+            chain_name: finalName,
+            started_by: user.id,
+            current_holder: recipientValue.trim(),
+            expires_at: expiresAt.toISOString(),
+            status: 'active',
+            share_count: 1,
+            tier: 'small',
+            links_count: 1
+          })
+          .select()
+          .single(),
+        8000,
+        'Chain creation'
+      );
 
       if (chainError) {
         console.error('Chain creation error:', chainError);
@@ -270,18 +286,22 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
           });
       }
 
-      // 6. Create first link (critical - no timeout fallback)
+      // 6. Create first link (with 8s timeout)
       console.log('Step 6: Creating first chain link...');
-      const { error: linkError } = await supabase
-        .from('chain_links')
-        .insert({
-          chain_id: newChain.chain_id,
-          passed_by: user.id,
-          passed_to: recipientValue.trim(),
-          received_compliment: '',
-          sent_compliment: compliment,
-          was_forwarded: false
-        });
+      const { error: linkError } = await criticalQueryWithTimeout(
+        supabase
+          .from('chain_links')
+          .insert({
+            chain_id: newChain.chain_id,
+            passed_by: user.id,
+            passed_to: recipientValue.trim(),
+            received_compliment: '',
+            sent_compliment: compliment,
+            was_forwarded: false
+          }),
+        8000,
+        'Link creation'
+      );
 
       if (linkError) {
         console.error('Link creation error:', linkError);
@@ -326,12 +346,17 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
         handleClose();
       }, 2500);
 
-    } catch (error) {
+    } catch (error: any) {
       clearTimeout(timeoutId);
-      console.error('Error starting chain:', error);
+      console.error('Chain creation failed:', error);
+      
+      const message = error?.message?.includes('timed out')
+        ? 'Database is slow right now. Please try again.'
+        : error?.message || 'Something went wrong. Please try again.';
+        
       toast({
-        title: "Failed to start chain",
-        description: error instanceof Error ? error.message : "Please try again",
+        title: "Couldn't start chain",
+        description: message,
         variant: "destructive"
       });
       setStep('name');
