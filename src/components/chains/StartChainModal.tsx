@@ -152,6 +152,7 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
     
     try {
       // 1. Check daily limit
+      console.log('Step 1: Checking daily limit...');
       const { data: gameState, error: gameStateError } = await supabase
         .from('user_game_state')
         .select('chains_started_today, last_chain_start_date')
@@ -159,6 +160,7 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
         .maybeSingle();
 
       if (gameStateError) throw gameStateError;
+      console.log('Step 1 complete');
 
       const lastStart = new Date(gameState?.last_chain_start_date || 0);
       const now = new Date();
@@ -181,8 +183,11 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
 
       // 3. Check name availability if custom
       if (chainName.trim()) {
+        console.log('Step 2: Checking name availability...');
         const isAvailable = await isChainNameAvailable(chainName.trim());
+        console.log('Step 2 complete, available:', isAvailable);
         if (!isAvailable) {
+          clearTimeout(timeoutId);
           toast({
             title: "Name taken",
             description: "That chain name is already in use. Choose another!",
@@ -194,6 +199,7 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
       }
 
       // 4. Create chain
+      console.log('Step 3: Creating chain...');
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
       const { data: newChain, error: chainError } = await supabase
@@ -212,18 +218,28 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
         .single();
 
       if (chainError) throw chainError;
+      console.log('Step 3 complete, chain created:', newChain.chain_id);
 
-      // 5. Claim chain name if custom
+      // 5. Claim chain name if custom (non-blocking - don't let this fail the chain)
       if (chainName.trim() && newChain) {
-        await supabase
+        console.log('Step 4: Claiming chain name (non-blocking)...');
+        const { error: nameError } = await supabase
           .from('used_chain_names')
           .insert({
             chain_name: finalName,
             chain_id: newChain.chain_id
           });
+        
+        // Don't throw - name claiming is non-critical
+        if (nameError) {
+          console.error('Error claiming chain name (non-critical):', nameError);
+        } else {
+          console.log('Step 4 complete');
+        }
       }
 
       // 6. Create first link
+      console.log('Step 5: Creating first chain link...');
       const { error: linkError } = await supabase
         .from('chain_links')
         .insert({
@@ -239,8 +255,10 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
         console.error('Error creating chain link:', linkError);
         throw linkError;
       }
+      console.log('Step 5 complete');
 
       // 7. Update user stats
+      console.log('Step 6: Updating user stats...');
       const { error: statsError } = await supabase
         .from('user_game_state')
         .update({
@@ -253,6 +271,7 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
         console.error('Error updating user stats:', statsError);
         throw statsError;
       }
+      console.log('Step 6 complete');
 
       // 8. Success!
       clearTimeout(timeoutId);
