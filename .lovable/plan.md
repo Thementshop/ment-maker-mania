@@ -1,116 +1,100 @@
 
-# Plan: Connect ChainDashboard to Real Database Data
+# Fix: Chains Dashboard Infinite Loading Issue
 
-## Overview
-Replace the mock chain data in `ChainDashboard.tsx` with real chains fetched from the database via the `useMentChains` hook, and create test chains in the database.
+## Root Cause Analysis
 
----
+The chains dashboard shows a perpetual spinner because of **two issues**:
 
-## Part 1: Update useMentChains Hook
+### Issue 1: Test Data Mismatch
+The test chains were created with user ID `2ed84311-c745-4915-905c-ddbf847994e7`, but you're likely logged in as user `83e6e380-5042-4fcd-b504-8e040f3dff3b`. The RLS policy blocks access because:
+- `started_by` doesn't match your user ID
+- `current_holder` doesn't match your user ID
 
-### 1.1 Enhance the MentChain Interface
-Add display name fields to the `MentChain` interface:
-- `started_by_display_name?: string`
-- `current_holder_display_name?: string`
+Result: The query returns **zero chains**, but the UI should show an empty state, not a spinner.
 
-### 1.2 Modify fetchChains to Join with Profiles
-Update the Supabase query to join the `ment_chains` table with `profiles` to get the starter's display name:
-
-```text
-Query approach:
-1. Fetch chains the user is involved with
-2. For each chain, lookup started_by in profiles to get display_name
-3. For current_holder:
-   - If it's a UUID (registered user), lookup in profiles
-   - If it's email/phone/name (unregistered), use it directly
+### Issue 2: Profiles RLS Policy Too Restrictive
+The `useMentChains` hook tries to fetch display names for all chain participants:
+```typescript
+const { data: profiles } = await supabase
+  .from('profiles')
+  .select('id, display_name')
+  .in('id', Array.from(userIds));
 ```
 
----
-
-## Part 2: Update ChainDashboard.tsx
-
-### 2.1 Replace Mock Data with useMentChains Hook
-```text
-Current:
-  const mockChains = useMemo(() => getMockChains(currentUserId), [currentUserId]);
-
-Replace with:
-  const { chains, isLoading, error, refetch } = useMentChains();
+But the profiles RLS policy only allows:
+```sql
+SELECT ... WHERE auth.uid() = id  -- Can only view YOUR OWN profile
 ```
 
-### 2.2 Update Data Transformation
-Map `MentChain[]` from the hook to `ChainData[]` expected by `ChainCardNew`:
-- Handle null/undefined values for optional fields
-- Provide fallbacks for display names
-- Set proper default tier if null
-
-### 2.3 Add Loading and Error States
-- Show loading spinner while chains are being fetched
-- Display error message if fetch fails
-- Show empty state when no chains exist
-
-### 2.4 Wire Up Chain Refresh
-Connect `onChainPassed` and `onSuccess` callbacks to `refetch()` to update the list after mutations.
+This means when fetching other users' display names, the query fails or returns empty, potentially causing issues.
 
 ---
 
-## Part 3: Create Test Chains in Database
+## Fix Plan
 
-### 3.1 Test Chain Data
-Insert 3 test chains with varying states:
+### Step 1: Update Test Chains to Use Current User
+Update the existing test chains to use the correct user ID so they appear for the logged-in user.
 
-| Chain Name | Status | Share Count | Current Holder | Timer |
-|------------|--------|-------------|----------------|-------|
-| Kindness Wave | active | 12 | Current user (your turn) | 14 hours |
-| Love Loop | active | 45 | test@example.com | 3 hours |
-| Joy Express | broken | 8 | previous holder | Expired |
+```sql
+UPDATE ment_chains 
+SET started_by = '83e6e380-5042-4fcd-b504-8e040f3dff3b',
+    current_holder = '83e6e380-5042-4fcd-b504-8e040f3dff3b'
+WHERE chain_name = 'Kindness Wave';
 
-### 3.2 Insert Chain Links
-Create corresponding chain_links entries to establish history:
-- First link for each chain showing initial pass
+UPDATE ment_chains 
+SET started_by = '83e6e380-5042-4fcd-b504-8e040f3dff3b'
+WHERE chain_name IN ('Love Loop', 'Joy Express');
+
+UPDATE chain_links
+SET passed_by = '83e6e380-5042-4fcd-b504-8e040f3dff3b'
+WHERE chain_id IN (
+  SELECT chain_id FROM ment_chains 
+  WHERE started_by = '2ed84311-c745-4915-905c-ddbf847994e7'
+);
+```
+
+### Step 2: Add RLS Policy for Profile Visibility
+Create a new RLS policy that allows authenticated users to view basic profile info (display names) of other users. This is needed for chain cards to show who started/holds a chain.
+
+```sql
+CREATE POLICY "Authenticated users can view all display names" 
+  ON profiles FOR SELECT
+  TO authenticated
+  USING (true);
+```
+
+**Note**: This is a common pattern for social apps. Only `display_name` is shown on chain cards - no sensitive data is exposed.
+
+### Step 3: Add Error Boundary to useMentChains
+Ensure the hook's `fetchChains` always sets `isLoading = false` even if profile fetching fails:
+
+```typescript
+// In useMentChains.ts fetchChains():
+try {
+  // ... existing fetch logic
+} catch (err) {
+  setError(err instanceof Error ? err : new Error('Failed to fetch chains'));
+} finally {
+  setIsLoading(false); // Already exists - but verify no code path skips this
+}
+```
 
 ---
 
 ## Files to Modify
 
-| File | Changes |
-|------|---------|
-| `src/hooks/useMentChains.ts` | Add display name fields, enhance query with profile joins |
-| `src/components/chains/ChainDashboard.tsx` | Replace mock data with hook, add loading/error states |
+| File | Change |
+|------|--------|
+| Database | Update test chains to use correct user ID |
+| Database | Add profiles RLS policy for display name visibility |
+| `src/hooks/useMentChains.ts` | Add defensive error handling (optional, for robustness) |
 
 ---
 
-## Technical Details
-
-### Profile Lookup Strategy
-Since `current_holder` can be:
-1. A UUID (if passed to a registered user)
-2. An email address
-3. A phone number
-4. A name
-
-We need conditional logic:
-- Try to match `current_holder` against `profiles.id` 
-- If no match found, treat it as the display value itself (email/phone/name)
-
-### Query Optimization
-Use a single query with a LEFT JOIN to profiles on `started_by`:
-```sql
-SELECT mc.*, p.display_name as started_by_display_name
-FROM ment_chains mc
-LEFT JOIN profiles p ON mc.started_by = p.id
-WHERE mc.started_by = $userId OR mc.current_holder = $userId
-```
-
-Since Supabase JS client doesn't directly support this join pattern for non-foreign-key relationships, we'll:
-1. Fetch chains first
-2. Batch fetch profile display names for unique user IDs
-3. Map display names back to chains
-
----
-
-## Expected Outcome
-- ChainDashboard shows real chains from the database
-- Real-time updates work when chains are passed/created
-- Test chains appear immediately after creation
-- "Your Turn" tab correctly shows chains where you're the current holder
+## Expected Result
+After these changes:
+1. The "Kindness Wave" chain appears in "Active" and "Your Turn" tabs
+2. "Love Loop" appears in "Active" (held by test@example.com)  
+3. "Joy Express" appears in "Ended" (broken chain)
+4. Chain cards display starter names correctly
+5. No more infinite spinner
