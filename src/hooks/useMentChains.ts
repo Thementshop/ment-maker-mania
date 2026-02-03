@@ -16,6 +16,11 @@ export interface MentChain {
   created_at: string;
   broken_at: string | null;
   is_queued: boolean | null;
+  // Display names resolved from profiles
+  started_by_display_name?: string;
+  current_holder_display_name?: string;
+  // Last received compliment for the current holder
+  received_compliment?: string;
 }
 
 export interface ChainLink {
@@ -104,7 +109,66 @@ export const useMentChains = (): UseMentChainsReturn => {
 
       if (fetchError) throw fetchError;
 
-      const typedChains = (data || []) as MentChain[];
+      const rawChains = (data || []) as MentChain[];
+
+      // Collect unique user IDs for profile lookup
+      const userIds = new Set<string>();
+      rawChains.forEach(chain => {
+        userIds.add(chain.started_by);
+        // Only add current_holder if it looks like a UUID
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (uuidRegex.test(chain.current_holder)) {
+          userIds.add(chain.current_holder);
+        }
+      });
+
+      // Batch fetch profiles for all unique user IDs
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, display_name')
+        .in('id', Array.from(userIds));
+
+      const profileMap = new Map<string, string>();
+      (profiles || []).forEach(p => {
+        profileMap.set(p.id, p.display_name || 'Anonymous');
+      });
+
+      // Fetch received compliments for chains where user is current holder
+      const chainIds = rawChains
+        .filter(c => c.current_holder === user.id)
+        .map(c => c.chain_id);
+      
+      let complimentMap = new Map<string, string>();
+      if (chainIds.length > 0) {
+        const { data: links } = await supabase
+          .from('chain_links')
+          .select('chain_id, sent_compliment, passed_at')
+          .in('chain_id', chainIds)
+          .order('passed_at', { ascending: false });
+        
+        // Get the most recent compliment for each chain
+        (links || []).forEach(link => {
+          if (!complimentMap.has(link.chain_id)) {
+            complimentMap.set(link.chain_id, link.sent_compliment);
+          }
+        });
+      }
+
+      // Enhance chains with display names and compliments
+      const typedChains: MentChain[] = rawChains.map(chain => {
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        const isCurrentHolderUuid = uuidRegex.test(chain.current_holder);
+        
+        return {
+          ...chain,
+          started_by_display_name: profileMap.get(chain.started_by) || 'Anonymous',
+          current_holder_display_name: isCurrentHolderUuid 
+            ? (profileMap.get(chain.current_holder) || 'Anonymous')
+            : chain.current_holder, // Use raw value if it's email/phone/name
+          received_compliment: complimentMap.get(chain.chain_id),
+        };
+      });
+
       setChains(typedChains);
 
       // Filter chains where it's the user's turn
