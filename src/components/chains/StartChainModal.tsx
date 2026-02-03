@@ -214,7 +214,7 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
       }
 
       // 6. Create first link
-      await supabase
+      const { error: linkError } = await supabase
         .from('chain_links')
         .insert({
           chain_id: newChain.chain_id,
@@ -225,14 +225,24 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
           was_forwarded: false
         });
 
+      if (linkError) {
+        console.error('Error creating chain link:', linkError);
+        throw linkError;
+      }
+
       // 7. Update user stats
-      await supabase
+      const { error: statsError } = await supabase
         .from('user_game_state')
         .update({
           chains_started_today: isNewDay ? 1 : (gameState?.chains_started_today || 0) + 1,
           last_chain_start_date: now.toISOString()
         })
         .eq('user_id', user.id);
+
+      if (statsError) {
+        console.error('Error updating user stats:', statsError);
+        throw statsError;
+      }
 
       // 8. Success!
       setStep('success');
