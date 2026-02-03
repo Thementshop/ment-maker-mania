@@ -56,10 +56,18 @@ export const CHAIN_NAME_SUGGESTIONS = [
 // Get 3 random available suggestions
 export async function getAvailableChainNames(): Promise<string[]> {
   try {
-    // Fetch currently used names
-    const { data: usedNames, error } = await supabase
+    console.log('Fetching available chain names...');
+    
+    // Fetch currently used names with timeout
+    const timeoutPromise = new Promise<never>((_, reject) => 
+      setTimeout(() => reject(new Error('Timeout fetching chain names')), 5000)
+    );
+    
+    const fetchPromise = supabase
       .from('used_chain_names')
       .select('chain_name');
+    
+    const { data: usedNames, error } = await Promise.race([fetchPromise, timeoutPromise]) as Awaited<typeof fetchPromise>;
     
     if (error) {
       console.error('Error fetching used names:', error);
@@ -69,6 +77,7 @@ export async function getAvailableChainNames(): Promise<string[]> {
         .slice(0, 3);
     }
     
+    console.log('Used names fetched:', usedNames?.length || 0, 'names in use');
     const usedSet = new Set(usedNames?.map((n) => n.chain_name) || []);
     
     // Filter to only available names
