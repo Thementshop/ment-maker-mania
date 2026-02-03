@@ -102,16 +102,32 @@ export async function getAvailableChainNames(): Promise<string[]> {
 
 // Check if a specific name is available
 export async function isChainNameAvailable(name: string): Promise<boolean> {
-  const { data, error } = await supabase
-    .from('used_chain_names')
-    .select('chain_name')
-    .eq('chain_name', name.trim())
-    .maybeSingle();
-  
-  if (error) {
-    console.error('Error checking name availability:', error);
-    return false;
+  try {
+    console.log('Checking name availability for:', name.trim());
+    
+    const timeoutPromise = new Promise<never>((_, reject) => 
+      setTimeout(() => reject(new Error('Timeout checking name availability')), 5000)
+    );
+    
+    const fetchPromise = supabase
+      .from('used_chain_names')
+      .select('chain_name')
+      .eq('chain_name', name.trim())
+      .maybeSingle();
+    
+    const { data, error } = await Promise.race([fetchPromise, timeoutPromise]) as Awaited<typeof fetchPromise>;
+    
+    if (error) {
+      console.error('Error checking name availability:', error);
+      // On error, optimistically assume available
+      return true;
+    }
+    
+    console.log('Name availability check result:', data === null ? 'available' : 'taken');
+    return data === null;
+  } catch (err) {
+    console.error('Timeout or error checking name availability:', err);
+    // On timeout, optimistically assume available to avoid blocking
+    return true;
   }
-  
-  return data === null;
 }
