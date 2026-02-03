@@ -1,68 +1,78 @@
 
 
-# Fix Chain Creation Hanging on Supabase Queries
+# Fix Chain Creation Timeout - Missing Error Handling
 
 ## Problem Identified
 
-The chain creation is stuck because multiple Supabase queries are timing out:
+The chain creation times out after 15 seconds because **step 5** (claiming chain name) has no error handling. The code at lines 217-224 doesn't capture or throw errors:
 
-1. **`getAvailableChainNames()`** - Already has a 5-second timeout, but is timing out (visible in console logs)
-2. **`isChainNameAvailable()`** - Has **NO timeout**, so if the database query hangs, the entire chain creation hangs forever
+```typescript
+// Current code - NO ERROR HANDLING!
+if (chainName.trim() && newChain) {
+  await supabase
+    .from('used_chain_names')
+    .insert({
+      chain_name: finalName,
+      chain_id: newChain.chain_id
+    });
+}
+```
 
-When you enter a custom chain name like "Sunrise Smilers", the code must check if that name is available before proceeding. This query is hanging indefinitely.
+If this insert fails or hangs, it silently blocks the entire chain creation, triggering the timeout.
 
 ---
 
 ## Root Cause
 
-The `used_chain_names` table queries are consistently timing out. This suggests either:
-- Network latency between browser and database
-- RLS policy overhead on the `used_chain_names` table
+The `used_chain_names` INSERT has an RLS policy that requires a subquery:
+```sql
+EXISTS (SELECT 1 FROM ment_chains WHERE chain_id = ... AND started_by = auth.uid())
+```
+
+This policy check can be slow, especially if the `ment_chains` insert at step 4 hasn't fully committed yet.
 
 ---
 
 ## Solution
 
-### 1. Add Timeout to `isChainNameAvailable()`
+### 1. Add Error Handling for Chain Name Claim
 
-Currently (no timeout):
+Capture and handle errors from the `used_chain_names` insert:
+
 ```typescript
-export async function isChainNameAvailable(name: string): Promise<boolean> {
-  const { data, error } = await supabase
+// 5. Claim chain name if custom
+if (chainName.trim() && newChain) {
+  const { error: nameError } = await supabase
     .from('used_chain_names')
-    .select('chain_name')
-    .eq('chain_name', name.trim())
-    .maybeSingle();
-  // ...
+    .insert({
+      chain_name: finalName,
+      chain_id: newChain.chain_id
+    });
+  
+  // Don't throw - name claiming is non-critical
+  // Chain is created successfully even if name claim fails
+  if (nameError) {
+    console.error('Error claiming chain name:', nameError);
+  }
 }
 ```
 
-Fixed (with 5-second timeout):
+### 2. Make Name Claiming Non-Blocking
+
+Since the chain is already created successfully at this point, a name claim failure shouldn't block the entire operation. The chain will still work - the name just won't be "reserved."
+
+### 3. Add Debug Logging
+
+Add console logs before each database operation so we can identify exactly where the hang occurs:
+
 ```typescript
-export async function isChainNameAvailable(name: string): Promise<boolean> {
-  const timeoutPromise = new Promise<never>((_, reject) => 
-    setTimeout(() => reject(new Error('Timeout checking name')), 5000)
-  );
-  
-  const fetchPromise = supabase
-    .from('used_chain_names')
-    .select('chain_name')
-    .eq('chain_name', name.trim())
-    .maybeSingle();
-  
-  const { data, error } = await Promise.race([fetchPromise, timeoutPromise]);
-  // If timeout occurs, assume name is available to avoid blocking
-  // ...
-}
+console.log('Step 1: Checking daily limit...');
+// ... query
+console.log('Step 2: Checking name availability...');
+// ... query
+console.log('Step 3: Creating chain...');
+// etc.
 ```
-
-### 2. Add Global Timeout to Chain Creation
-
-Wrap the entire `handleSend()` operation in a 15-second timeout to prevent infinite hangs regardless of which query fails.
-
-### 3. Optimistic Fallback for Name Checking
-
-If the name availability check times out, allow the chain creation to proceed (optimistically assume available). The unique constraint on `used_chain_names` will catch duplicates if they occur.
 
 ---
 
@@ -70,27 +80,24 @@ If the name availability check times out, allow the chain creation to proceed (o
 
 | File | Changes |
 |------|---------|
-| `src/utils/chainNames.ts` | Add timeout to `isChainNameAvailable()` |
-| `src/components/chains/StartChainModal.tsx` | Add global timeout wrapper for `handleSend()` |
+| `src/components/chains/StartChainModal.tsx` | Add error handling to step 5 (chain name claim), add debug logging for all steps |
 
 ---
 
-## Code Changes Summary
+## Code Changes
 
-**chainNames.ts:**
-- Add 5-second timeout with `Promise.race()` to `isChainNameAvailable()`
-- Return `true` (assume available) on timeout to avoid blocking
+In `handleSend()`:
 
-**StartChainModal.tsx:**
-- Wrap `handleSend()` async logic in a 15-second timeout
-- Show error toast and reset to name step if timeout occurs
+1. Add error handling for `used_chain_names` insert (make it non-blocking)
+2. Add console.log statements before each database call
+3. Keep the 15-second global timeout as a safety net
 
 ---
 
 ## Expected Result
 
 After these changes:
-1. If any database query takes longer than 5 seconds, it will timeout gracefully
-2. If the entire chain creation takes longer than 15 seconds, users see an error message
-3. No more infinite spinning - the modal will always either succeed or show an error
+1. Chain creation will complete successfully even if name claiming fails
+2. Console logs will show exactly which step is slow for debugging
+3. Users won't be blocked by the non-critical name claiming step
 
