@@ -1,12 +1,12 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Plus } from 'lucide-react';
+import { Plus, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import ChainCardNew, { ChainData } from './ChainCardNew';
 import StartChainModal from './StartChainModal';
 import Leaderboard from './Leaderboard';
-import { getChainTier } from '@/utils/chainTiers';
+import { useMentChains, MentChain } from '@/hooks/useMentChains';
 
 const tabs = [
   { id: 'active', label: 'Active', icon: '🔥' },
@@ -16,93 +16,23 @@ const tabs = [
   { id: 'leaderboard', label: 'Leaderboard', icon: '🏆' }
 ];
 
-// Generate mock data with actual user ID
-const getMockChains = (userId: string): ChainData[] => [
-  {
-    chain_id: '1',
-    chain_name: 'Positivity Wave',
-    share_count: 34,
-    tier: 'medium',
-    expires_at: new Date(Date.now() + 14 * 60 * 60 * 1000).toISOString(), // 14 hours
-    started_by: 'user123',
-    started_by_display_name: 'Sarah',
-    current_holder: userId, // YOUR TURN
-    current_holder_display_name: 'You',
-    status: 'active',
-    is_queued: false,
-    received_compliment: "You've got this! I believe in you 💪"
-  },
-  {
-    chain_id: '2',
-    chain_name: 'Love Loop',
-    share_count: 156,
-    tier: 'legendary',
-    expires_at: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // 2 hours
-    started_by: userId,
-    started_by_display_name: 'You',
-    current_holder: 'user456',
-    current_holder_display_name: 'Mike',
-    status: 'active',
-    is_queued: false,
-    received_compliment: "You make my heart smile every single day 💚"
-  },
-  {
-    chain_id: '3',
-    chain_name: 'Kindness Ripple',
-    share_count: 12,
-    tier: 'small',
-    expires_at: new Date(Date.now() + 45 * 60 * 1000).toISOString(), // 45 min - URGENT
-    started_by: 'user789',
-    started_by_display_name: 'Alex',
-    current_holder: userId, // YOUR TURN
-    current_holder_display_name: 'You',
-    status: 'active',
-    is_queued: false,
-    received_compliment: "You're the G.O.A.T. and everyone knows it 🐐"
-  },
-  {
-    chain_id: '4',
-    chain_name: 'Joy Express',
-    share_count: 67,
-    tier: 'large',
-    expires_at: new Date(Date.now() + 8 * 60 * 1000).toISOString(), // 8 minutes - VERY URGENT!
-    started_by: userId,
-    started_by_display_name: 'You',
-    current_holder: userId, // YOUR TURN
-    current_holder_display_name: 'You',
-    status: 'active',
-    is_queued: false,
-    received_compliment: "Your strength inspires everyone around you"
-  },
-  {
-    chain_id: '5',
-    chain_name: 'Smile Chain',
-    share_count: 5,
-    tier: 'small',
-    expires_at: new Date(Date.now() - 1000).toISOString(), // expired
-    started_by: 'user999',
-    started_by_display_name: 'Jamie',
-    current_holder: 'user999',
-    current_holder_display_name: 'Jamie',
-    status: 'broken',
-    is_queued: false,
-    received_compliment: "Be the reason someone smiles today 😊"
-  },
-  {
-    chain_id: '6',
-    chain_name: 'Gratitude Flow',
-    share_count: 28,
-    tier: 'medium',
-    expires_at: new Date(Date.now() + 20 * 60 * 60 * 1000).toISOString(),
-    started_by: userId,
-    started_by_display_name: 'You',
-    current_holder: 'user111',
-    current_holder_display_name: 'Taylor',
-    status: 'active',
-    is_queued: true,
-    received_compliment: "Thinking of you during this difficult time 🕊️"
-  }
-];
+// Transform MentChain from hook to ChainData expected by ChainCardNew
+function transformChainToCardData(chain: MentChain): ChainData {
+  return {
+    chain_id: chain.chain_id,
+    chain_name: chain.chain_name || `Chain #${chain.chain_id.slice(0, 6)}`,
+    share_count: chain.share_count || 1,
+    tier: (chain.tier as 'small' | 'medium' | 'large' | 'legendary') || 'small',
+    expires_at: chain.expires_at,
+    started_by: chain.started_by,
+    started_by_display_name: chain.started_by_display_name || 'Anonymous',
+    current_holder: chain.current_holder,
+    current_holder_display_name: chain.current_holder_display_name,
+    status: chain.status === 'ended' ? 'broken' : chain.status as 'active' | 'broken',
+    is_queued: chain.is_queued || false,
+    received_compliment: chain.received_compliment,
+  };
+}
 
 function sortChains(chains: ChainData[], currentUserId: string): ChainData[] {
   return [...chains].sort((a, b) => {
@@ -129,28 +59,33 @@ const ChainDashboard = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('active');
   const [showStartModal, setShowStartModal] = useState(false);
-  const currentUserId = user?.id || 'currentUser';
+  const currentUserId = user?.id || '';
 
-  // Generate mock chains with actual user ID
-  const mockChains = useMemo(() => getMockChains(currentUserId), [currentUserId]);
+  // Fetch real chains from database
+  const { chains, isLoading, error, refetch } = useMentChains();
+
+  // Transform MentChain[] to ChainData[]
+  const chainData = useMemo(() => {
+    return chains.map(transformChainToCardData);
+  }, [chains]);
 
   // Filter chains based on active tab
   const filteredChains = useMemo(() => {
     switch (activeTab) {
       case 'active':
-        return mockChains.filter(c => c.status === 'active' && !c.is_queued);
+        return chainData.filter(c => c.status === 'active' && !c.is_queued);
       case 'yourTurn':
-        return mockChains.filter(c => c.current_holder === currentUserId && c.status === 'active' && !c.is_queued);
+        return chainData.filter(c => c.current_holder === currentUserId && c.status === 'active' && !c.is_queued);
       case 'queued':
-        return mockChains.filter(c => c.is_queued);
+        return chainData.filter(c => c.is_queued);
       case 'ended':
-        return mockChains.filter(c => c.status === 'broken');
+        return chainData.filter(c => c.status === 'broken');
       case 'leaderboard':
-        return [...mockChains].sort((a, b) => b.share_count - a.share_count).slice(0, 10);
+        return [...chainData].sort((a, b) => b.share_count - a.share_count).slice(0, 10);
       default:
-        return mockChains;
+        return chainData;
     }
-  }, [activeTab, currentUserId, mockChains]);
+  }, [activeTab, currentUserId, chainData]);
 
   // Sort the filtered chains
   const sortedChains = useMemo(() => {
@@ -159,12 +94,10 @@ const ChainDashboard = () => {
 
   const handleShare = (chainId: string) => {
     console.log('Share chain:', chainId);
-    // TODO: Implement share modal
   };
 
   const handleViewDetails = (chainId: string) => {
     console.log('View details:', chainId);
-    // TODO: Implement details modal
   };
 
   const handleStartChain = () => {
@@ -172,9 +105,29 @@ const ChainDashboard = () => {
   };
 
   const handleChainCreated = () => {
-    // TODO: Refresh chains from database
-    console.log('Chain created, refresh list');
+    refetch();
   };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="w-full flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="w-full text-center py-12">
+        <p className="text-destructive font-medium">Failed to load chains</p>
+        <Button onClick={refetch} variant="outline" className="mt-4">
+          Try Again
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full">
@@ -239,6 +192,9 @@ const ChainDashboard = () => {
             <p className="text-lg">No chains in this category yet</p>
             {activeTab === 'yourTurn' && (
               <p className="text-sm mt-2">Chains waiting for you to share will appear here</p>
+            )}
+            {activeTab === 'active' && (
+              <p className="text-sm mt-2">Start a new chain to spread kindness!</p>
             )}
           </div>
         )
