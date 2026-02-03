@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Link, Clock, User, Share2, ArrowRight, Forward, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { tierConfig, getChainTier } from '@/utils/chainTiers';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 
 interface ChainLink {
   link_id: string;
@@ -45,11 +46,40 @@ function formatTimeAgo(date: string): string {
 const ChainDetailsModal = ({ chain, isOpen, onClose }: ChainDetailsModalProps) => {
   const [links, setLinks] = useState<ChainLink[]>([]);
   const [loading, setLoading] = useState(true);
+  const channelRef = useRef<RealtimeChannel | null>(null);
   
   useEffect(() => {
     if (isOpen) {
       fetchChainLinks();
+      
+      // Subscribe to real-time updates for this chain's links
+      const channel = supabase
+        .channel(`chain_links_${chain.chain_id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'chain_links',
+            filter: `chain_id=eq.${chain.chain_id}`,
+          },
+          (payload) => {
+            console.log('New chain link added:', payload);
+            fetchChainLinks(); // Refresh the list
+          }
+        )
+        .subscribe();
+      
+      channelRef.current = channel;
     }
+    
+    // Cleanup subscription when modal closes
+    return () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+    };
   }, [isOpen, chain.chain_id]);
   
   async function fetchChainLinks() {
