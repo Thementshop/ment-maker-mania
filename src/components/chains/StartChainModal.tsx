@@ -107,45 +107,58 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
     return Promise.race([promise, timeoutPromise]);
   };
 
-  // Helper for critical queries that must succeed (throws on timeout)
-  const criticalQueryWithTimeout = async <T,>(
-    promise: PromiseLike<T>,
-    timeoutMs: number,
-    label: string
-  ): Promise<T> => {
-    const timeoutPromise = new Promise<never>((_, reject) => 
-      setTimeout(() => reject(new Error(`${label} timed out - database may be slow`)), timeoutMs)
-    );
-    return Promise.race([promise, timeoutPromise]);
-  };
-
-  // Retry helper for critical operations that may timeout
-  const retryWithTimeout = async <T,>(
-    operation: () => Promise<T>,
+  // Retry helper that returns result objects (doesn't throw)
+  const retryOperation = async <T,>(
+    operation: () => Promise<{ data: T | null; error: any }>,
     timeoutMs: number,
     operationName: string,
     maxRetries: number = 1
-  ): Promise<T> => {
-    let lastError: Error | null = null;
+  ): Promise<{ data: T | null; error: any }> => {
+    let lastResult: { data: T | null; error: any } = { data: null, error: { message: 'No attempts made' } };
     
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      console.log(`${operationName}: Attempt ${attempt + 1}/${maxRetries + 1} starting at ${new Date().toISOString()}`);
+      
+      // Create timeout promise
+      const timeoutPromise = new Promise<{ data: T | null; error: any }>((resolve) => 
+        setTimeout(() => {
+          console.log(`${operationName}: Attempt ${attempt + 1} timed out after ${timeoutMs}ms`);
+          resolve({ data: null, error: { message: `${operationName} timed out` } });
+        }, timeoutMs)
+      );
+      
       try {
-        console.log(`${operationName}: Attempt ${attempt + 1}/${maxRetries + 1} starting...`);
-        const result = await criticalQueryWithTimeout(operation(), timeoutMs, operationName);
-        console.log(`${operationName}: Attempt ${attempt + 1} succeeded`);
-        return result;
-      } catch (error: any) {
-        lastError = error;
-        console.warn(`${operationName}: Attempt ${attempt + 1} failed:`, error.message);
+        // Race the operation against timeout
+        const result = await Promise.race([operation(), timeoutPromise]);
+        console.log(`${operationName}: Attempt ${attempt + 1} completed at ${new Date().toISOString()}`);
         
-        if (attempt < maxRetries && error.message?.includes('timed out')) {
+        // Check if we got real data (success)
+        if (result.data && !result.error) {
+          console.log(`${operationName}: Attempt ${attempt + 1} succeeded`);
+          return result;
+        }
+        
+        // Store result for potential retry
+        lastResult = result;
+        console.warn(`${operationName}: Attempt ${attempt + 1} failed:`, result.error?.message);
+        
+        // Retry if we have attempts left and it was a timeout
+        if (attempt < maxRetries && result.error?.message?.includes('timed out')) {
           console.log(`${operationName}: Retrying in 1 second...`);
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      } catch (error: any) {
+        console.error(`${operationName}: Attempt ${attempt + 1} threw:`, error);
+        lastResult = { data: null, error: { message: error.message || 'Unknown error' } };
+        
+        if (attempt < maxRetries) {
+          console.log(`${operationName}: Retrying after exception in 1 second...`);
           await new Promise(resolve => setTimeout(resolve, 1000));
         }
       }
     }
     
-    throw lastError;
+    return lastResult;
   };
 
   // Lenient validation for testing
@@ -296,13 +309,11 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
         }
       }
 
-      // 4. Create chain (with 15s timeout to accommodate cold starts)
+      // 4. Create chain (with 15s timeout per attempt, 2 attempts total)
       console.log('Step 4: Creating chain...');
       console.log('Step 4: Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
-      console.log('Step 4: About to call supabase.from("ment_chains").insert()...');
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-      // Log exact values being sent
       const chainPayload = {
         chain_name: finalName,
         started_by: user.id,
@@ -313,28 +324,28 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
         tier: 'small',
         links_count: 1
       };
-      console.log('Step 4: Payload being sent:', chainPayload);
-      console.log('Step 4: user.id type:', typeof user.id);
-      console.log('Step 4: user.id value:', user.id);
-      console.log('Step 4: Request starting at:', new Date().toISOString());
+      console.log('Step 4: Payload:', JSON.stringify(chainPayload, null, 2));
 
-      const { data: newChain, error: chainError } = await retryWithTimeout(
-        async () => supabase
-          .from('ment_chains')
-          .insert(chainPayload)
-          .select()
-          .single(),
+      const chainResult = await retryOperation<{ chain_id: string; chain_name: string }>(
+        async () => {
+          const res = await supabase
+            .from('ment_chains')
+            .insert(chainPayload)
+            .select()
+            .single();
+          return res;
+        },
         15000,
         'Chain creation',
         1  // 1 retry = 2 total attempts
       );
-      console.log('Step 4: Response received at:', new Date().toISOString());
 
-      if (chainError) {
-        console.error('Chain creation error:', chainError);
-        throw new Error(`Failed to create chain: ${chainError.message}`);
+      if (chainResult.error || !chainResult.data) {
+        console.error('Chain creation failed:', chainResult.error);
+        throw new Error(`Failed to create chain: ${chainResult.error?.message || 'Unknown error'}`);
       }
-      console.log('Step 4 complete, chain created:', newChain.chain_id);
+      const newChain = chainResult.data;
+      console.log('Step 4 complete, chain_id:', newChain.chain_id);
 
       // 5. Claim chain name if custom (fire-and-forget, non-blocking)
       if (chainName.trim() && newChain) {
@@ -351,27 +362,31 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
           });
       }
 
-      // 6. Create first link (with 15s timeout to accommodate cold starts)
+      // 6. Create first link (with 15s timeout per attempt, 2 attempts total)
       console.log('Step 6: Creating first chain link...');
-      const { error: linkError } = await retryWithTimeout(
-        async () => supabase
-          .from('chain_links')
-          .insert({
-            chain_id: newChain.chain_id,
-            passed_by: user.id,
-            passed_to: recipientValue.trim(),
-            received_compliment: '',
-            sent_compliment: compliment,
-            was_forwarded: false
-          }),
+      const linkResult = await retryOperation<{ link_id: string }[]>(
+        async () => {
+          const res = await supabase
+            .from('chain_links')
+            .insert({
+              chain_id: newChain.chain_id,
+              passed_by: user.id,
+              passed_to: recipientValue.trim(),
+              received_compliment: '',
+              sent_compliment: compliment,
+              was_forwarded: false
+            })
+            .select();
+          return res;
+        },
         15000,
         'Link creation',
         1  // 1 retry = 2 total attempts
       );
 
-      if (linkError) {
-        console.error('Link creation error:', linkError);
-        throw new Error(`Failed to create link: ${linkError.message}`);
+      if (linkResult.error) {
+        console.error('Link creation failed:', linkResult.error);
+        throw new Error(`Failed to create link: ${linkResult.error?.message || 'Unknown error'}`);
       }
       console.log('Step 6 complete');
 
