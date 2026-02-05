@@ -1,127 +1,129 @@
 
-
-# Add Comprehensive Console Logging to Chain Creation
+# Add Automatic Retry Logic for Chain Creation
 
 ## Problem
-Chain creation is still timing out even with the authentication debug logging. We need more granular logging to trace exactly where the process stalls.
+Chain creation times out after 15 seconds, even though the database is responsive. The logs show requests are sent but responses aren't received in time. Adding automatic retry logic will give the operation a second chance before showing an error.
+
+## Solution
+Wrap the critical database operations (Steps 4 and 6) in a retry helper that automatically attempts the operation again if the first try times out.
 
 ## Changes
 
 ### File: `src/components/chains/StartChainModal.tsx`
 
-**1. Add logging when Start Chain button is clicked (in `MentChains.tsx`)**
-
-Add a log when the modal opens:
-```typescript
-// In handleComplimentSelect - when user makes final selection
-console.log('=== CHAIN CREATION STARTED ===');
-console.log('Timestamp:', new Date().toISOString());
-console.log('Compliment selected:', compliment);
-```
-
-**2. Add logging for each user interaction step**
-
-Log when user progresses through each step:
-```typescript
-// handleNameNext
-console.log('[Step: Name] Chain name entered:', chainName || '(default)');
-
-// handleRecipientNext  
-console.log('[Step: Recipient] Type:', recipientType, 'Value:', recipientValue);
-
-// handleCategorySelect
-console.log('[Step: Category] Selected:', category.name);
-
-// handleComplimentSelect
-console.log('[Step: Compliment] Selected:', compliment);
-```
-
-**3. Enhanced Step 4 logging with detailed error capture**
+**1. Add a retry helper function (near the top of the component)**
 
 ```typescript
-console.log('Step 4: Creating chain...');
-console.log('Step 4: Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
-console.log('Step 4: About to call supabase.from("ment_chains").insert()...');
-
-try {
-  const { data: newChain, error: chainError } = await criticalQueryWithTimeout(...);
-  console.log('Step 4: Response received at:', new Date().toISOString());
-  console.log('Step 4: Response data:', newChain);
-  console.log('Step 4: Response error:', chainError);
-} catch (timeoutError) {
-  console.error('Step 4: TIMEOUT or EXCEPTION:', timeoutError);
-  console.error('Step 4: Error type:', typeof timeoutError);
-  console.error('Step 4: Error message:', timeoutError?.message);
-  throw timeoutError;
-}
+const retryWithTimeout = async <T,>(
+  operation: () => Promise<T>,
+  timeoutMs: number,
+  operationName: string,
+  maxRetries: number = 1
+): Promise<T> => {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`${operationName}: Attempt ${attempt + 1}/${maxRetries + 1} starting...`);
+      const result = await criticalQueryWithTimeout(operation(), timeoutMs, operationName);
+      console.log(`${operationName}: Attempt ${attempt + 1} succeeded`);
+      return result;
+    } catch (error: any) {
+      lastError = error;
+      console.warn(`${operationName}: Attempt ${attempt + 1} failed:`, error.message);
+      
+      if (attempt < maxRetries && error.message?.includes('timed out')) {
+        console.log(`${operationName}: Retrying in 1 second...`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+  }
+  
+  throw lastError;
+};
 ```
 
-**4. Add catch block with full error details**
+**2. Update Step 4 (chain creation) to use retry logic**
 
+Replace the current `criticalQueryWithTimeout` call:
 ```typescript
-} catch (error: any) {
-  clearTimeout(timeoutId);
-  console.error('=== CHAIN CREATION FAILED ===');
-  console.error('Error object:', error);
-  console.error('Error name:', error?.name);
-  console.error('Error message:', error?.message);
-  console.error('Error stack:', error?.stack);
-  console.error('Failed at timestamp:', new Date().toISOString());
-  // ... existing toast logic
-}
+// Before
+const { data: newChain, error: chainError } = await criticalQueryWithTimeout(
+  supabase.from('ment_chains').insert(chainPayload).select().single(),
+  15000,
+  'Chain creation'
+);
+
+// After
+const { data: newChain, error: chainError } = await retryWithTimeout(
+  () => supabase.from('ment_chains').insert(chainPayload).select().single(),
+  15000,
+  'Chain creation',
+  1  // 1 retry = 2 total attempts
+);
 ```
 
----
+**3. Update Step 6 (link creation) to use retry logic**
 
-## Summary of New Logs
+Replace the current `criticalQueryWithTimeout` call:
+```typescript
+// Before
+const { error: linkError } = await criticalQueryWithTimeout(
+  supabase.from('chain_links').insert({...}),
+  15000,
+  'Link creation'
+);
 
-| When | Log Message |
-|------|-------------|
-| Modal opens | `[Modal] StartChainModal opened` |
-| Name step next | `[Step: Name] Chain name entered: X` |
-| Recipient step next | `[Step: Recipient] Type: X Value: Y` |
-| Category selected | `[Step: Category] Selected: X` |
-| Compliment selected | `[Step: Compliment] Selected: X` → `=== CHAIN CREATION STARTED ===` |
-| Before Step 4 | `Step 4: About to call supabase.from("ment_chains").insert()...` |
-| Step 4 result | `Step 4: Response data/error` |
-| On failure | `=== CHAIN CREATION FAILED ===` with full error details |
-
----
-
-## Expected Console Output After Changes
-
-When you try to create a chain, you'll see:
+// After  
+const { error: linkError } = await retryWithTimeout(
+  () => supabase.from('chain_links').insert({
+    chain_id: newChain.chain_id,
+    passed_by: user.id,
+    passed_to: recipientValue.trim(),
+    received_compliment: '',
+    sent_compliment: compliment,
+    was_forwarded: false
+  }),
+  15000,
+  'Link creation',
+  1  // 1 retry = 2 total attempts
+);
 ```
-[Modal] StartChainModal opened
-[Step: Name] Chain name entered: test chain 1
-[Step: Recipient] Type: email Value: test@example.com
-[Step: Category] Selected: Friendship
-[Step: Compliment] Selected: You're such an amazing friend!
-=== CHAIN CREATION STARTED ===
-Timestamp: 2026-02-05T18:40:00.000Z
-=== AUTH DEBUG ===
-user object: {...}
-user.id: 2ed84311-c745-4915-905c-ddbf847994e7
-Auth status: AUTHENTICATED
-Step 1: Checking daily limit...
-Step 1 complete: {chains_started_today: 0, ...}
-Step 2: Using chain name: test chain 1
-Step 3: Checking name availability...
-Step 3 complete, available: true
+
+**4. Update the global timeout to accommodate retries**
+
+Change from 25 seconds to 45 seconds to allow for 2 attempts at each critical step:
+```typescript
+// Before
+const timeoutId = setTimeout(() => {...}, 25000);
+
+// After
+const timeoutId = setTimeout(() => {...}, 45000);
+```
+
+## Expected Console Output with Retry
+
+```
 Step 4: Creating chain...
-Step 4: Payload being sent: {...}
-Step 4: About to call supabase.from("ment_chains").insert()...
-Step 4: Request starting at: 2026-02-05T18:40:01.000Z
-[... if timeout ...]
-Step 4: TIMEOUT or EXCEPTION: Error: Chain creation timed out - database may be slow
-=== CHAIN CREATION FAILED ===
-Error message: Chain creation timed out - database may be slow
-Failed at timestamp: 2026-02-05T18:40:16.000Z
+Chain creation: Attempt 1/2 starting...
+Chain creation: Attempt 1 failed: Chain creation timed out
+Chain creation: Retrying in 1 second...
+Chain creation: Attempt 2/2 starting...
+Chain creation: Attempt 2 succeeded
+Step 4 complete, chain created: abc123...
 ```
 
-This will help us see:
-1. Whether the process starts correctly
-2. What values are being used at each step
-3. Exactly when the timeout occurs (request start time vs failure time)
-4. The full error details when it fails
+## Technical Details
 
+| Setting | Value |
+|---------|-------|
+| Per-attempt timeout | 15 seconds |
+| Retry delay | 1 second |
+| Max retries | 1 (2 total attempts) |
+| Global timeout | 45 seconds |
+| Steps with retry | Step 4 (chain insert), Step 6 (link insert) |
+
+## Why This Helps
+- If the first request is slow due to a cold start or network hiccup, the second attempt often succeeds
+- Users only see an error after both attempts fail
+- Logging shows exactly which attempt succeeded or failed
