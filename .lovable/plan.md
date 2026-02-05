@@ -1,136 +1,147 @@
 
-# Fix Endless Spinner After Chain Creation
+
+# Fix Chain Loading Failure After Timeout
 
 ## Problem Identified
 
-After chain creation succeeds and confetti shows, the flow triggers a chain list refresh:
+When you reload the page, the console shows:
+```
+[useMentChains] Error: checkAndExpireChains timed out after 5000ms
+```
 
-1. Modal sets `step = 'success'` → Confetti shows ✓
-2. After 2.5 seconds, `onSuccess()` is called
-3. `onSuccess` calls `handleChainCreated()` in ChainDashboard
-4. `handleChainCreated()` calls `refetch()` → triggers `fetchChains()` in useMentChains
-5. **`fetchChains()` sets `isLoading = true`** and ChainDashboard shows spinner
-6. `fetchChains()` makes multiple Supabase queries that hang indefinitely
+This causes the entire chain loading to fail because:
 
-Additionally, the **realtime subscription** also calls `fetchChains()` when it detects the new chain insert - this fires BEFORE the modal even closes, starting another fetch that can hang.
+1. The `checkAndExpireChains()` function times out after 5 seconds
+2. This throws an error that propagates to the main `fetchChains` try/catch
+3. `setError()` is called, which triggers the error state in the UI
+4. **The code stops completely** - no chains are ever fetched
+5. The error UI only shows "Failed to load chains" + "Try Again" button (no "Start Chain" button visible)
 
 ## Root Cause
 
-The `fetchChains()` function in `useMentChains.ts` makes **4 sequential database queries**:
-1. `checkAndExpireChains()` - finds and updates expired chains
-2. `ment_chains` table query
-3. `profiles` table query  
-4. `chain_links` table query
+The `checkAndExpireChains` timeout is treated as a fatal error that blocks ALL chain loading. But this function is just a "nice to have" optimization - if it fails, we should still try to load the chains.
 
-If any query hangs (due to the same Supabase client issues), the loading state never clears. The 10-second timeout exists but may not be triggering correctly.
+Additionally, the inner `checkAndExpireChains` function makes Supabase queries WITHOUT the `withTimeout` wrapper, so it can hang indefinitely. When wrapped with `withTimeout` in `fetchChains`, the 5-second timeout kicks in but then crashes everything.
 
 ## Solution
 
-### 1. Add timeout protection to each query in `fetchChains()`
+### 1. Make `checkAndExpireChains` non-blocking (fail gracefully)
 
-Wrap each Supabase query with a Promise.race timeout so no single query can block forever.
+Wrap the `checkAndExpireChains` call in a try/catch so its failure doesn't stop the main chain loading:
 
-### 2. Don't set loading=true on realtime-triggered refetch
-
-When the realtime subscription triggers a refetch, don't show the loading spinner - just update data silently in the background.
-
-### 3. Add console logs to track which query is stuck
-
-## Changes
-
-### File: `src/hooks/useMentChains.ts`
-
-**Add a helper function for query timeouts (after line 4)**
 ```typescript
-// Helper to add timeout to any promise
-const withTimeout = <T>(promise: Promise<T>, ms: number, name: string): Promise<T> => {
-  const timeout = new Promise<never>((_, reject) =>
-    setTimeout(() => reject(new Error(`${name} timed out after ${ms}ms`)), ms)
-  );
-  return Promise.race([promise, timeout]);
-};
-```
-
-**Update fetchChains to accept a silent mode parameter (line 88)**
-```typescript
-const fetchChains = useCallback(async (silent = false) => {
-  if (!user) {
-    setChains([]);
-    setYourTurnChains([]);
-    setIsLoading(false);
-    return;
-  }
-
-  try {
-    // Only show loading spinner if not a silent refresh
-    if (!silent) {
-      setIsLoading(true);
-    }
-    setError(null);
-    
-    console.log('[useMentChains] Fetching chains...');
-```
-
-**Wrap each query with timeout and logging (lines 100-155)**
-```typescript
-// Check and expire any chains that have timed out (with timeout)
-console.log('[useMentChains] Checking expired chains...');
-await withTimeout(checkAndExpireChains(), 5000, 'checkAndExpireChains');
-console.log('[useMentChains] Expired chains checked');
-
-// Fetch all chains the user is involved with (with timeout)
-console.log('[useMentChains] Fetching ment_chains...');
-const { data, error: fetchError } = await withTimeout(
-  supabase
-    .from('ment_chains')
-    .select('*')
-    .or(`started_by.eq.${user.id},current_holder.eq.${user.id}`)
-    .order('created_at', { ascending: false }),
-  8000,
-  'ment_chains query'
-);
-console.log('[useMentChains] ment_chains fetched:', data?.length || 0, 'chains');
-```
-
-**Update realtime subscription to use silent mode (line 217)**
-```typescript
-(payload) => {
-  console.log('Chain updated:', payload);
-  fetchChains(true); // Silent refresh - don't show loading spinner
+// Don't let expire check block main loading
+try {
+  console.log('[useMentChains] Checking expired chains...');
+  await withTimeout(checkAndExpireChains(), 5000, 'checkAndExpireChains');
+  console.log('[useMentChains] Expired chains checked');
+} catch (expireError) {
+  console.warn('[useMentChains] Expire check failed (non-fatal):', expireError);
+  // Continue loading chains anyway
 }
 ```
 
-**Update the refetch return to support both modes (line 411)**
+### 2. Add timeout to the inner Supabase queries in `checkAndExpireChains`
+
+The `checkAndExpireChains` function itself has two sequential Supabase queries with no timeout protection. Add the `withTimeout` helper to those inner queries:
+
 ```typescript
-refetch: (silent?: boolean) => fetchChains(silent ?? false),
+const checkAndExpireChains = useCallback(async () => {
+  if (!user) return;
+  
+  const now = new Date().toISOString();
+  
+  try {
+    // Find expired chains (with timeout)
+    const { data: expiredChains } = await withTimeout(
+      Promise.resolve(
+        supabase
+          .from('ment_chains')
+          .select('chain_id')
+          .eq('status', 'active')
+          .lt('expires_at', now)
+          .or(`started_by.eq.${user.id},current_holder.eq.${user.id}`)
+      ),
+      3000,
+      'find expired chains'
+    );
+    
+    if (expiredChains && expiredChains.length > 0) {
+      // Update expired chains (with timeout)
+      await withTimeout(
+        Promise.resolve(
+          supabase
+            .from('ment_chains')
+            .update({ status: 'broken', broken_at: now })
+            .in('chain_id', expiredChains.map(c => c.chain_id))
+        ),
+        3000,
+        'update expired chains'
+      );
+      
+      console.log(`Auto-expired ${expiredChains.length} chains`);
+    }
+  } catch (err) {
+    // Log but don't throw - this is a background optimization
+    console.warn('Error expiring chains (non-fatal):', err);
+  }
+}, [user]);
 ```
 
-## Why This Fixes the Endless Spinner
+### 3. Update ChainDashboard error state to still show "Start Chain" button
 
-| Issue | Fix |
-|-------|-----|
-| Individual queries can hang forever | Each query has 5-8 second timeout |
-| Realtime triggers loading spinner | Silent mode updates data without spinner |
-| No visibility into which query hangs | Console logs for each step |
-| 10 second global timeout not granular enough | Per-query timeouts catch issues faster |
+Even when there's an error loading chains, users should still be able to start a new chain:
 
-## Expected Console Output (Success)
-```
-[useMentChains] Fetching chains...
-[useMentChains] Checking expired chains...
-[useMentChains] Expired chains checked
-[useMentChains] Fetching ment_chains...
-[useMentChains] ment_chains fetched: 5 chains
-[useMentChains] Fetching profiles...
-[useMentChains] Profiles fetched
-[useMentChains] Fetching chain_links...
-[useMentChains] Chain links fetched
-[useMentChains] Done - 5 chains loaded
+```tsx
+// Error state - but still allow starting chains
+if (error) {
+  return (
+    <div className="w-full">
+      {/* Header with Start Chain button */}
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
+          🔥 Ment Chains
+        </h2>
+        <Button
+          onClick={handleStartChain}
+          className="rounded-full bg-primary hover:bg-primary/90"
+        >
+          <Plus className="h-4 w-4 mr-1" />
+          Start Chain
+        </Button>
+      </div>
+      
+      {/* Error message with retry */}
+      <div className="text-center py-12">
+        <p className="text-destructive font-medium">Failed to load chains</p>
+        <Button onClick={() => refetch()} variant="outline" className="mt-4">
+          Try Again
+        </Button>
+      </div>
+      
+      {/* Start Chain Modal */}
+      <StartChainModal
+        isOpen={showStartModal}
+        onClose={() => setShowStartModal(false)}
+        onSuccess={handleChainCreated}
+      />
+    </div>
+  );
+}
 ```
 
-## Expected Console Output (Timeout)
-```
-[useMentChains] Fetching chains...
-[useMentChains] Checking expired chains...
-Error: checkAndExpireChains timed out after 5000ms
-```
+## Files to Change
+
+| File | Change |
+|------|--------|
+| `src/hooks/useMentChains.ts` | 1. Make `checkAndExpireChains` catch its own errors<br>2. Wrap inner queries with `withTimeout`<br>3. Wrap outer call in try/catch so it fails gracefully |
+| `src/components/chains/ChainDashboard.tsx` | Update error state to include header with "Start Chain" button and the modal |
+
+## Expected Behavior After Fix
+
+| Scenario | Before | After |
+|----------|--------|-------|
+| Expire check times out | Entire page shows error, no Start Chain button | Chains still load, warning logged |
+| All queries time out | Error state, no Start Chain button | Error state WITH Start Chain button visible |
+| Database is slow | 5s timeout crashes everything | Graceful fallback, user can retry |
+
