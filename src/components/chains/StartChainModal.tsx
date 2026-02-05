@@ -170,6 +170,24 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
     }
 
     setStep('sending');
+
+    // === AUTH DEBUG START ===
+    console.log('=== AUTH DEBUG ===');
+    console.log('user object:', user);
+    console.log('user.id:', user?.id);
+    console.log('profile:', profile);
+    console.log('Auth status:', user ? 'AUTHENTICATED' : 'NOT AUTHENTICATED');
+
+    if (!user?.id) {
+      toast({
+        title: "Not authenticated",
+        description: "Your session may have expired. Please refresh and try again.",
+        variant: "destructive"
+      });
+      setStep('name');
+      return;
+    }
+    // === AUTH DEBUG END ===
     
     // Global timeout for entire chain creation (25s to accommodate cold starts)
     const timeoutId = setTimeout(() => {
@@ -246,24 +264,32 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
       console.log('Step 4: Creating chain...');
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
+      // Log exact values being sent
+      const chainPayload = {
+        chain_name: finalName,
+        started_by: user.id,
+        current_holder: recipientValue.trim(),
+        expires_at: expiresAt.toISOString(),
+        status: 'active',
+        share_count: 1,
+        tier: 'small',
+        links_count: 1
+      };
+      console.log('Step 4: Payload being sent:', chainPayload);
+      console.log('Step 4: user.id type:', typeof user.id);
+      console.log('Step 4: user.id value:', user.id);
+      console.log('Step 4: Request starting at:', new Date().toISOString());
+
       const { data: newChain, error: chainError } = await criticalQueryWithTimeout(
         supabase
           .from('ment_chains')
-          .insert({
-            chain_name: finalName,
-            started_by: user.id,
-            current_holder: recipientValue.trim(),
-            expires_at: expiresAt.toISOString(),
-            status: 'active',
-            share_count: 1,
-            tier: 'small',
-            links_count: 1
-          })
+          .insert(chainPayload)
           .select()
           .single(),
         15000,
         'Chain creation'
       );
+      console.log('Step 4: Response received at:', new Date().toISOString());
 
       if (chainError) {
         console.error('Chain creation error:', chainError);
