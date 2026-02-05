@@ -1,60 +1,74 @@
 
-# Fix CORS Headers in Edge Function
 
-## Problem
-The chain creation is stuck spinning because the browser's preflight (OPTIONS) request is being rejected. The network tab shows "No results" for the create-chain request because the browser never sends the actual POST request after the preflight fails.
+# Fix Chain Creation Hanging on Session Refresh
 
-The edge function's CORS headers are missing several headers that the Supabase JavaScript client sends automatically.
+## Problem Identified
+
+Through browser debugging, I discovered that the chain creation is **not reaching the edge function call at all**. The code stops executing at line 162:
+
+```javascript
+const { data: { session }, error: refreshError } = await supabase.auth.refreshSession();
+```
+
+The console logs show:
+- "Chain name: @info's Chain"  
+- "Recipient: Test User"  
+
+But the next expected log "Calling create-chain edge function..." **never appears**.
 
 ## Root Cause
 
-**Current CORS headers in edge function:**
-```javascript
-'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
-```
+The `refreshSession()` method was added in the previous fix attempt to get a "fresh token", but this method:
+- Makes a network request to Supabase Auth
+- Can hang indefinitely if there's a network issue
+- Blocks the entire chain creation flow
 
-**Required CORS headers (per Supabase documentation):**
-```javascript
-'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version'
-```
-
-The Supabase JS client automatically includes platform/runtime tracking headers, and when the browser's preflight check sees these headers aren't allowed, it blocks the request entirely.
+The original `getSession()` method returns immediately from cache, while `refreshSession()` requires a network round-trip that can stall.
 
 ## Solution
 
-Update the CORS headers in `supabase/functions/create-chain/index.ts` to include all required headers.
+Revert to using `getSession()` but add proper handling:
+1. Use `getSession()` to get the cached session immediately
+2. The Supabase client already handles token refresh automatically via `autoRefreshToken: true` in the client config
+3. Add a simple check that the token exists, not that it's "fresh"
 
 ## Changes
 
-### File: `supabase/functions/create-chain/index.ts`
+### File: `src/components/chains/StartChainModal.tsx`
 
-**Line 3-6: Update corsHeaders**
+**Lines 160-166: Replace refreshSession with getSession**
 
+Change from:
 ```typescript
-// Before
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-// After
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
-};
+// Force refresh the session to get a fresh token
+const { data: { session }, error: refreshError } = await supabase.auth.refreshSession();
+if (refreshError || !session?.access_token) {
+  console.error('Session refresh failed:', refreshError);
+  throw new Error('Session expired. Please log in again.');
+}
 ```
 
-## Why This Fixes It
+To:
+```typescript
+// Get session (Supabase auto-refreshes tokens)
+console.log('Getting session...');
+const { data: { session } } = await supabase.auth.getSession();
+console.log('Session retrieved:', session ? 'yes' : 'no');
+if (!session?.access_token) {
+  console.error('No active session');
+  throw new Error('Please log in to start a chain.');
+}
+```
 
-| Before | After |
-|--------|-------|
-| Browser sends OPTIONS preflight | Browser sends OPTIONS preflight |
-| Server responds with limited allowed headers | Server responds with all required headers |
-| Browser sees missing headers, blocks request | Browser approves, sends actual POST |
-| No network request visible, infinite spin | Request completes, chain created |
+## Why This Will Work
 
-## Technical Details
+| Issue | Fix |
+|-------|-----|
+| `refreshSession()` makes network request that hangs | `getSession()` returns immediately from cache |
+| No timeout on session refresh | Removes the blocking call entirely |
+| Token might be stale | Supabase client has `autoRefreshToken: true` which handles this automatically |
 
-When a browser makes a cross-origin request with custom headers, it first sends an OPTIONS request to check if the server allows those headers. The Supabase JS client automatically adds tracking headers like `x-supabase-client-platform`. If those aren't in the `Access-Control-Allow-Headers` list, the browser silently blocks the main request.
+## Additional Logging
 
-This is a single-line fix that will immediately resolve the spinning issue.
+Adding `console.log('Getting session...')` before and after will help confirm the flow is working and identify if any other step is blocking.
+
