@@ -117,14 +117,38 @@ const ChainDashboard = () => {
     );
   }
 
-  // Error state
+  // Error state - but still allow starting chains
   if (error) {
     return (
-      <div className="w-full text-center py-12">
-        <p className="text-destructive font-medium">Failed to load chains</p>
-        <Button onClick={refetch} variant="outline" className="mt-4">
-          Try Again
-        </Button>
+      <div className="w-full">
+        {/* Header with Start Chain button */}
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            🔥 Ment Chains
+          </h2>
+          <Button
+            onClick={handleStartChain}
+            className="rounded-full bg-primary hover:bg-primary/90"
+          >
+            <Plus className="h-4 w-4 mr-1" />
+            Start Chain
+          </Button>
+        </div>
+        
+        {/* Error message with retry */}
+        <div className="text-center py-12">
+          <p className="text-destructive font-medium">Failed to load chains</p>
+          <Button onClick={() => refetch()} variant="outline" className="mt-4">
+            Try Again
+          </Button>
+        </div>
+        
+        {/* Start Chain Modal */}
+        <StartChainModal
+          isOpen={showStartModal}
+          onClose={() => setShowStartModal(false)}
+          onSuccess={handleChainCreated}
+        />
       </div>
     );
   }

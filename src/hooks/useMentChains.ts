@@ -62,34 +62,48 @@ export const useMentChains = (): UseMentChainsReturn => {
   const [error, setError] = useState<Error | null>(null);
   const subscriptionRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
-  // Check and expire any chains that have timed out
+  // Check and expire any chains that have timed out (non-blocking)
   const checkAndExpireChains = useCallback(async () => {
     if (!user) return;
     
     const now = new Date().toISOString();
     
     try {
-      // Find expired chains that the user is involved with
-      const { data: expiredChains } = await supabase
-        .from('ment_chains')
-        .select('chain_id')
-        .eq('status', 'active')
-        .lt('expires_at', now)
-        .or(`started_by.eq.${user.id},current_holder.eq.${user.id}`);
+      // Find expired chains (with timeout)
+      const { data: expiredChains } = await withTimeout(
+        Promise.resolve(
+          supabase
+            .from('ment_chains')
+            .select('chain_id')
+            .eq('status', 'active')
+            .lt('expires_at', now)
+            .or(`started_by.eq.${user.id},current_holder.eq.${user.id}`)
+        ),
+        3000,
+        'find expired chains'
+      );
       
       if (expiredChains && expiredChains.length > 0) {
-        await supabase
-          .from('ment_chains')
-          .update({ 
-            status: 'broken', 
-            broken_at: now 
-          })
-          .in('chain_id', expiredChains.map(c => c.chain_id));
+        // Update expired chains (with timeout)
+        await withTimeout(
+          Promise.resolve(
+            supabase
+              .from('ment_chains')
+              .update({ 
+                status: 'broken', 
+                broken_at: now 
+              })
+              .in('chain_id', expiredChains.map(c => c.chain_id))
+          ),
+          3000,
+          'update expired chains'
+        );
         
         console.log(`Auto-expired ${expiredChains.length} chains`);
       }
     } catch (err) {
-      console.error('Error expiring chains:', err);
+      // Log but don't throw - this is a background optimization
+      console.warn('[useMentChains] Error expiring chains (non-fatal):', err);
     }
   }, [user]);
 
@@ -110,10 +124,15 @@ export const useMentChains = (): UseMentChainsReturn => {
 
       console.log('[useMentChains] Fetching chains...');
 
-      // Check and expire any chains that have timed out (with timeout)
-      console.log('[useMentChains] Checking expired chains...');
-      await withTimeout(checkAndExpireChains(), 5000, 'checkAndExpireChains');
-      console.log('[useMentChains] Expired chains checked');
+      // Check and expire any chains that have timed out (non-blocking)
+      try {
+        console.log('[useMentChains] Checking expired chains...');
+        await withTimeout(checkAndExpireChains(), 5000, 'checkAndExpireChains');
+        console.log('[useMentChains] Expired chains checked');
+      } catch (expireError) {
+        console.warn('[useMentChains] Expire check failed (non-fatal):', expireError);
+        // Continue loading chains anyway
+      }
 
       // Fetch all chains the user is involved with (with timeout)
       console.log('[useMentChains] Fetching ment_chains...');
