@@ -16,7 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { complimentCategories, type ComplimentCategory } from '@/data/compliments';
-import { getAvailableChainNames, isChainNameAvailable } from '@/utils/chainNames';
+import { getAvailableChainNames } from '@/utils/chainNames';
 import confetti from 'canvas-confetti';
 
 interface StartChainModalProps {
@@ -91,76 +91,6 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
     onClose();
   };
 
-  // Helper for query timeouts with fallbacks
-  const queryWithTimeout = async <T,>(
-    promise: PromiseLike<{ data: T; error: any }>,
-    timeoutMs: number,
-    fallbackData: T,
-    label: string
-  ): Promise<{ data: T; error: any }> => {
-    const timeoutPromise = new Promise<{ data: T; error: any }>((resolve) => 
-      setTimeout(() => {
-        console.warn(`${label} timed out after ${timeoutMs}ms, using fallback`);
-        resolve({ data: fallbackData, error: null });
-      }, timeoutMs)
-    );
-    return Promise.race([promise, timeoutPromise]);
-  };
-
-  // Retry helper that returns result objects (doesn't throw)
-  const retryOperation = async <T,>(
-    operation: () => Promise<{ data: T | null; error: any }>,
-    timeoutMs: number,
-    operationName: string,
-    maxRetries: number = 1
-  ): Promise<{ data: T | null; error: any }> => {
-    let lastResult: { data: T | null; error: any } = { data: null, error: { message: 'No attempts made' } };
-    
-    for (let attempt = 0; attempt <= maxRetries; attempt++) {
-      console.log(`${operationName}: Attempt ${attempt + 1}/${maxRetries + 1} starting at ${new Date().toISOString()}`);
-      
-      // Create timeout promise
-      const timeoutPromise = new Promise<{ data: T | null; error: any }>((resolve) => 
-        setTimeout(() => {
-          console.log(`${operationName}: Attempt ${attempt + 1} timed out after ${timeoutMs}ms`);
-          resolve({ data: null, error: { message: `${operationName} timed out` } });
-        }, timeoutMs)
-      );
-      
-      try {
-        // Race the operation against timeout
-        const result = await Promise.race([operation(), timeoutPromise]);
-        console.log(`${operationName}: Attempt ${attempt + 1} completed at ${new Date().toISOString()}`);
-        
-        // Check if we got real data (success)
-        if (result.data && !result.error) {
-          console.log(`${operationName}: Attempt ${attempt + 1} succeeded`);
-          return result;
-        }
-        
-        // Store result for potential retry
-        lastResult = result;
-        console.warn(`${operationName}: Attempt ${attempt + 1} failed:`, result.error?.message);
-        
-        // Retry if we have attempts left and it was a timeout
-        if (attempt < maxRetries && result.error?.message?.includes('timed out')) {
-          console.log(`${operationName}: Retrying in 1 second...`);
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-      } catch (error: any) {
-        console.error(`${operationName}: Attempt ${attempt + 1} threw:`, error);
-        lastResult = { data: null, error: { message: error.message || 'Unknown error' } };
-        
-        if (attempt < maxRetries) {
-          console.log(`${operationName}: Retrying after exception in 1 second...`);
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-      }
-    }
-    
-    return lastResult;
-  };
-
   // Lenient validation for testing
   const validateRecipient = (): boolean => {
     if (recipientType === 'email') {
@@ -219,193 +149,60 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
     }
 
     setStep('sending');
+    console.log('=== CHAIN CREATION VIA EDGE FUNCTION ===');
+    console.log('Timestamp:', new Date().toISOString());
 
-    // === AUTH DEBUG START ===
-    console.log('=== AUTH DEBUG ===');
-    console.log('user object:', user);
-    console.log('user.id:', user?.id);
-    console.log('profile:', profile);
-    console.log('Auth status:', user ? 'AUTHENTICATED' : 'NOT AUTHENTICATED');
+    // Finalize chain name
+    const finalName = chainName.trim() || `@${displayName}'s Chain`;
+    console.log('Chain name:', finalName);
+    console.log('Recipient:', recipientValue.trim());
 
-    if (!user?.id) {
-      toast({
-        title: "Not authenticated",
-        description: "Your session may have expired. Please refresh and try again.",
-        variant: "destructive"
-      });
-      setStep('name');
-      return;
-    }
-    // === AUTH DEBUG END ===
-    
-    // Global timeout for entire chain creation (45s to accommodate retries)
-    const timeoutId = setTimeout(() => {
-      toast({
-        title: "Taking too long",
-        description: "Chain creation timed out. Please try again.",
-        variant: "destructive"
-      });
-      setStep('name');
-    }, 45000);
-    
     try {
-      // 1. Check daily limit (with 5s timeout, fallback allows creation)
-      console.log('Step 1: Checking daily limit...');
-      const { data: gameState } = await queryWithTimeout(
-        supabase
-          .from('user_game_state')
-          .select('chains_started_today, last_chain_start_date')
-          .eq('user_id', user.id)
-          .maybeSingle(),
-        5000,
-        { chains_started_today: 0, last_chain_start_date: null },
-        'Daily limit check'
-      );
-      console.log('Step 1 complete:', gameState);
-
-      const lastStart = new Date(gameState?.last_chain_start_date || 0);
-      const now = new Date();
-      const isNewDay = now.getUTCDate() !== lastStart.getUTCDate() ||
-                       now.getUTCMonth() !== lastStart.getUTCMonth() ||
-                       now.getUTCFullYear() !== lastStart.getUTCFullYear();
-
-      if (!isNewDay && (gameState?.chains_started_today || 0) >= 1) {
-        clearTimeout(timeoutId);
-        toast({
-          title: "Daily limit reached",
-          description: "You've started your daily chain. Try again tomorrow!",
-          variant: "destructive"
-        });
-        setStep('name');
-        return;
+      // Get session for auth header
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('No active session');
       }
 
-      // 2. Finalize chain name
-      const finalName = chainName.trim() || `@${displayName}'s Chain`;
-      console.log('Step 2: Using chain name:', finalName);
+      // Call edge function with 30s timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-      // 3. Check name availability if custom (with 3s timeout, fallback assumes available)
-      if (chainName.trim()) {
-        console.log('Step 3: Checking name availability...');
-        const { data: isAvailable } = await queryWithTimeout(
-          (async () => {
-            const available = await isChainNameAvailable(chainName.trim());
-            return { data: available, error: null };
-          })(),
-          3000,
-          true,
-          'Name availability check'
-        );
-        console.log('Step 3 complete, available:', isAvailable);
-        if (!isAvailable) {
-          clearTimeout(timeoutId);
-          toast({
-            title: "Name taken",
-            description: "That chain name is already in use. Choose another!",
-            variant: "destructive"
-          });
-          setStep('name');
-          return;
+      console.log('Calling create-chain edge function...');
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-chain`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            chainName: finalName,
+            recipientValue: recipientValue.trim(),
+            compliment: compliment
+          }),
+          signal: controller.signal
         }
-      }
-
-      // 4. Create chain (with 15s timeout per attempt, 2 attempts total)
-      console.log('Step 4: Creating chain...');
-      console.log('Step 4: Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
-      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
-
-      const chainPayload = {
-        chain_name: finalName,
-        started_by: user.id,
-        current_holder: recipientValue.trim(),
-        expires_at: expiresAt.toISOString(),
-        status: 'active',
-        share_count: 1,
-        tier: 'small',
-        links_count: 1
-      };
-      console.log('Step 4: Payload:', JSON.stringify(chainPayload, null, 2));
-
-      const chainResult = await retryOperation<{ chain_id: string; chain_name: string }>(
-        async () => {
-          const res = await supabase
-            .from('ment_chains')
-            .insert(chainPayload)
-            .select()
-            .single();
-          return res;
-        },
-        15000,
-        'Chain creation',
-        1  // 1 retry = 2 total attempts
       );
 
-      if (chainResult.error || !chainResult.data) {
-        console.error('Chain creation failed:', chainResult.error);
-        throw new Error(`Failed to create chain: ${chainResult.error?.message || 'Unknown error'}`);
-      }
-      const newChain = chainResult.data;
-      console.log('Step 4 complete, chain_id:', newChain.chain_id);
-
-      // 5. Claim chain name if custom (fire-and-forget, non-blocking)
-      if (chainName.trim() && newChain) {
-        console.log('Step 5: Claiming chain name (fire-and-forget)...');
-        supabase
-          .from('used_chain_names')
-          .insert({
-            chain_name: finalName,
-            chain_id: newChain.chain_id
-          })
-          .then(({ error }) => {
-            if (error) console.warn('Name claim failed (non-critical):', error);
-            else console.log('Step 5 complete: Name claimed');
-          });
-      }
-
-      // 6. Create first link (with 15s timeout per attempt, 2 attempts total)
-      console.log('Step 6: Creating first chain link...');
-      const linkResult = await retryOperation<{ link_id: string }[]>(
-        async () => {
-          const res = await supabase
-            .from('chain_links')
-            .insert({
-              chain_id: newChain.chain_id,
-              passed_by: user.id,
-              passed_to: recipientValue.trim(),
-              received_compliment: '',
-              sent_compliment: compliment,
-              was_forwarded: false
-            })
-            .select();
-          return res;
-        },
-        15000,
-        'Link creation',
-        1  // 1 retry = 2 total attempts
-      );
-
-      if (linkResult.error) {
-        console.error('Link creation failed:', linkResult.error);
-        throw new Error(`Failed to create link: ${linkResult.error?.message || 'Unknown error'}`);
-      }
-      console.log('Step 6 complete');
-
-      // 7. Update user stats (fire-and-forget, non-blocking)
-      console.log('Step 7: Updating user stats (fire-and-forget)...');
-      supabase
-        .from('user_game_state')
-        .update({
-          chains_started_today: isNewDay ? 1 : (gameState?.chains_started_today || 0) + 1,
-          last_chain_start_date: now.toISOString()
-        })
-        .eq('user_id', user.id)
-        .then(({ error }) => {
-          if (error) console.warn('Stats update failed (non-critical):', error);
-          else console.log('Step 7 complete: Stats updated');
-        });
-
-      // 8. Success!
       clearTimeout(timeoutId);
+      console.log('Response status:', response.status);
+
+      const result = await response.json();
+      console.log('Response body:', result);
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to create chain');
+      }
+
+      if (!result.chain) {
+        throw new Error('No chain returned from server');
+      }
+
+      console.log('Chain created successfully:', result.chain.chain_id);
+
+      // Success!
       setStep('success');
       
       toast({
@@ -428,17 +225,15 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
       }, 2500);
 
     } catch (error: any) {
-      clearTimeout(timeoutId);
       console.error('=== CHAIN CREATION FAILED ===');
-      console.error('Error object:', error);
-      console.error('Error name:', error?.name);
-      console.error('Error message:', error?.message);
-      console.error('Error stack:', error?.stack);
-      console.error('Failed at timestamp:', new Date().toISOString());
+      console.error('Error:', error);
       
-      const message = error?.message?.includes('timed out')
-        ? 'Database is slow right now. Please try again.'
-        : error?.message || 'Something went wrong. Please try again.';
+      let message = 'Something went wrong. Please try again.';
+      if (error.name === 'AbortError') {
+        message = 'Request timed out. Please try again.';
+      } else if (error.message) {
+        message = error.message;
+      }
         
       toast({
         title: "Couldn't start chain",
