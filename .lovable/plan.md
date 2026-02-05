@@ -1,91 +1,136 @@
 
-
-# Fix Chain Creation - Use AuthContext Session
+# Fix Endless Spinner After Chain Creation
 
 ## Problem Identified
 
-Through browser debugging, I discovered that **`supabase.auth.getSession()` is hanging indefinitely**. The console shows:
-- `"Getting session..."` is logged
-- `"Session retrieved:"` **never appears**
-- No network request is made to the edge function
+After chain creation succeeds and confetti shows, the flow triggers a chain list refresh:
 
-This is a known issue with the Supabase JS client where `getSession()` can hang when the client is in certain states (e.g., during token refresh).
+1. Modal sets `step = 'success'` → Confetti shows ✓
+2. After 2.5 seconds, `onSuccess()` is called
+3. `onSuccess` calls `handleChainCreated()` in ChainDashboard
+4. `handleChainCreated()` calls `refetch()` → triggers `fetchChains()` in useMentChains
+5. **`fetchChains()` sets `isLoading = true`** and ChainDashboard shows spinner
+6. `fetchChains()` makes multiple Supabase queries that hang indefinitely
+
+Additionally, the **realtime subscription** also calls `fetchChains()` when it detects the new chain insert - this fires BEFORE the modal even closes, starting another fetch that can hang.
 
 ## Root Cause
 
-The `StartChainModal` component already uses `useAuth()` which provides access to the session via AuthContext, but the code is making a **redundant call** to `supabase.auth.getSession()` instead of using the session that's already available.
+The `fetchChains()` function in `useMentChains.ts` makes **4 sequential database queries**:
+1. `checkAndExpireChains()` - finds and updates expired chains
+2. `ment_chains` table query
+3. `profiles` table query  
+4. `chain_links` table query
 
-**Current code (line 38):**
-```typescript
-const { user, profile } = useAuth();  // ← session is NOT destructured!
-```
-
-**Current code (lines 162-163):**
-```typescript
-console.log('Getting session...');
-const { data: { session } } = await supabase.auth.getSession();  // ← HANGS!
-```
+If any query hangs (due to the same Supabase client issues), the loading state never clears. The 10-second timeout exists but may not be triggering correctly.
 
 ## Solution
 
-Use the session from AuthContext directly instead of calling `getSession()`:
+### 1. Add timeout protection to each query in `fetchChains()`
 
-1. Add `session` to the destructured values from `useAuth()`
-2. Remove the `getSession()` call entirely
-3. Use the cached session for the Authorization header
+Wrap each Supabase query with a Promise.race timeout so no single query can block forever.
+
+### 2. Don't set loading=true on realtime-triggered refetch
+
+When the realtime subscription triggers a refetch, don't show the loading spinner - just update data silently in the background.
+
+### 3. Add console logs to track which query is stuck
 
 ## Changes
 
-### File: `src/components/chains/StartChainModal.tsx`
+### File: `src/hooks/useMentChains.ts`
 
-**Line 38: Destructure session from useAuth**
+**Add a helper function for query timeouts (after line 4)**
 ```typescript
-// Before
-const { user, profile } = useAuth();
-
-// After  
-const { user, profile, session } = useAuth();
+// Helper to add timeout to any promise
+const withTimeout = <T>(promise: Promise<T>, ms: number, name: string): Promise<T> => {
+  const timeout = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error(`${name} timed out after ${ms}ms`)), ms)
+  );
+  return Promise.race([promise, timeout]);
+};
 ```
 
-**Lines 160-168: Remove getSession call and use cached session**
+**Update fetchChains to accept a silent mode parameter (line 88)**
 ```typescript
-// Before
-try {
-  // Get session (Supabase auto-refreshes tokens via autoRefreshToken: true)
-  console.log('Getting session...');
-  const { data: { session } } = await supabase.auth.getSession();
-  console.log('Session retrieved:', session ? 'yes' : 'no');
-  if (!session?.access_token) {
-    console.error('No active session');
-    throw new Error('Please log in to start a chain.');
+const fetchChains = useCallback(async (silent = false) => {
+  if (!user) {
+    setChains([]);
+    setYourTurnChains([]);
+    setIsLoading(false);
+    return;
   }
 
-// After
-try {
-  // Use session from AuthContext (already managed and auto-refreshed)
-  console.log('Using cached session from AuthContext');
-  if (!session?.access_token) {
-    console.error('No active session');
-    throw new Error('Please log in to start a chain.');
-  }
-  console.log('Session available:', !!session.access_token);
+  try {
+    // Only show loading spinner if not a silent refresh
+    if (!silent) {
+      setIsLoading(true);
+    }
+    setError(null);
+    
+    console.log('[useMentChains] Fetching chains...');
 ```
 
-## Why This Will Work
+**Wrap each query with timeout and logging (lines 100-155)**
+```typescript
+// Check and expire any chains that have timed out (with timeout)
+console.log('[useMentChains] Checking expired chains...');
+await withTimeout(checkAndExpireChains(), 5000, 'checkAndExpireChains');
+console.log('[useMentChains] Expired chains checked');
+
+// Fetch all chains the user is involved with (with timeout)
+console.log('[useMentChains] Fetching ment_chains...');
+const { data, error: fetchError } = await withTimeout(
+  supabase
+    .from('ment_chains')
+    .select('*')
+    .or(`started_by.eq.${user.id},current_holder.eq.${user.id}`)
+    .order('created_at', { ascending: false }),
+  8000,
+  'ment_chains query'
+);
+console.log('[useMentChains] ment_chains fetched:', data?.length || 0, 'chains');
+```
+
+**Update realtime subscription to use silent mode (line 217)**
+```typescript
+(payload) => {
+  console.log('Chain updated:', payload);
+  fetchChains(true); // Silent refresh - don't show loading spinner
+}
+```
+
+**Update the refetch return to support both modes (line 411)**
+```typescript
+refetch: (silent?: boolean) => fetchChains(silent ?? false),
+```
+
+## Why This Fixes the Endless Spinner
 
 | Issue | Fix |
 |-------|-----|
-| `getSession()` hangs indefinitely | No longer called - uses cached session |
-| Token might be stale | AuthContext has `onAuthStateChange` listener that auto-updates session |
-| Network request blocking | No network request needed - session is already in memory |
+| Individual queries can hang forever | Each query has 5-8 second timeout |
+| Realtime triggers loading spinner | Silent mode updates data without spinner |
+| No visibility into which query hangs | Console logs for each step |
+| 10 second global timeout not granular enough | Per-query timeouts catch issues faster |
 
-## Technical Details
+## Expected Console Output (Success)
+```
+[useMentChains] Fetching chains...
+[useMentChains] Checking expired chains...
+[useMentChains] Expired chains checked
+[useMentChains] Fetching ment_chains...
+[useMentChains] ment_chains fetched: 5 chains
+[useMentChains] Fetching profiles...
+[useMentChains] Profiles fetched
+[useMentChains] Fetching chain_links...
+[useMentChains] Chain links fetched
+[useMentChains] Done - 5 chains loaded
+```
 
-The AuthContext already:
-1. Calls `getSession()` once on app load (line 112)
-2. Listens to `onAuthStateChange` for all auth events (line 86)
-3. Updates the session state automatically when tokens are refreshed
-4. Provides the session via React context
-
-By using this cached session, we bypass the hanging `getSession()` call entirely while still getting a valid, auto-refreshed token.
-
+## Expected Console Output (Timeout)
+```
+[useMentChains] Fetching chains...
+[useMentChains] Checking expired chains...
+Error: checkAndExpireChains timed out after 5000ms
+```
