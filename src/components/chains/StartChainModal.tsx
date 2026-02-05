@@ -119,6 +119,35 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
     return Promise.race([promise, timeoutPromise]);
   };
 
+  // Retry helper for critical operations that may timeout
+  const retryWithTimeout = async <T,>(
+    operation: () => Promise<T>,
+    timeoutMs: number,
+    operationName: string,
+    maxRetries: number = 1
+  ): Promise<T> => {
+    let lastError: Error | null = null;
+    
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`${operationName}: Attempt ${attempt + 1}/${maxRetries + 1} starting...`);
+        const result = await criticalQueryWithTimeout(operation(), timeoutMs, operationName);
+        console.log(`${operationName}: Attempt ${attempt + 1} succeeded`);
+        return result;
+      } catch (error: any) {
+        lastError = error;
+        console.warn(`${operationName}: Attempt ${attempt + 1} failed:`, error.message);
+        
+        if (attempt < maxRetries && error.message?.includes('timed out')) {
+          console.log(`${operationName}: Retrying in 1 second...`);
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+    }
+    
+    throw lastError;
+  };
+
   // Lenient validation for testing
   const validateRecipient = (): boolean => {
     if (recipientType === 'email') {
@@ -196,7 +225,7 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
     }
     // === AUTH DEBUG END ===
     
-    // Global timeout for entire chain creation (25s to accommodate cold starts)
+    // Global timeout for entire chain creation (45s to accommodate retries)
     const timeoutId = setTimeout(() => {
       toast({
         title: "Taking too long",
@@ -204,7 +233,7 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
         variant: "destructive"
       });
       setStep('name');
-    }, 25000);
+    }, 45000);
     
     try {
       // 1. Check daily limit (with 5s timeout, fallback allows creation)
@@ -289,14 +318,15 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
       console.log('Step 4: user.id value:', user.id);
       console.log('Step 4: Request starting at:', new Date().toISOString());
 
-      const { data: newChain, error: chainError } = await criticalQueryWithTimeout(
-        supabase
+      const { data: newChain, error: chainError } = await retryWithTimeout(
+        async () => supabase
           .from('ment_chains')
           .insert(chainPayload)
           .select()
           .single(),
         15000,
-        'Chain creation'
+        'Chain creation',
+        1  // 1 retry = 2 total attempts
       );
       console.log('Step 4: Response received at:', new Date().toISOString());
 
@@ -323,8 +353,8 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
 
       // 6. Create first link (with 15s timeout to accommodate cold starts)
       console.log('Step 6: Creating first chain link...');
-      const { error: linkError } = await criticalQueryWithTimeout(
-        supabase
+      const { error: linkError } = await retryWithTimeout(
+        async () => supabase
           .from('chain_links')
           .insert({
             chain_id: newChain.chain_id,
@@ -335,7 +365,8 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
             was_forwarded: false
           }),
         15000,
-        'Link creation'
+        'Link creation',
+        1  // 1 retry = 2 total attempts
       );
 
       if (linkError) {
