@@ -35,7 +35,7 @@ const chainNameSchema = z.string().max(50, 'Chain name must be 50 characters or 
 
 const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) => {
   const { toast } = useToast();
-  const { user, profile } = useAuth();
+  const { user, profile, session } = useAuth();
   
   // Step management
   const [step, setStep] = useState<'name' | 'recipient' | 'category' | 'compliment' | 'sending' | 'success'>('name');
@@ -158,14 +158,13 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
     console.log('Recipient:', recipientValue.trim());
 
     try {
-      // Get session (Supabase auto-refreshes tokens via autoRefreshToken: true)
-      console.log('Getting session...');
-      const { data: { session } } = await supabase.auth.getSession();
-      console.log('Session retrieved:', session ? 'yes' : 'no');
+      // Use session from AuthContext (already managed and auto-refreshed)
+      console.log('Using cached session from AuthContext');
       if (!session?.access_token) {
         console.error('No active session');
         throw new Error('Please log in to start a chain.');
       }
+      console.log('Session available:', !!session.access_token);
 
       // Call edge function with 30s timeout
       const controller = new AbortController();
