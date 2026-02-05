@@ -171,7 +171,7 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
 
     setStep('sending');
     
-    // Global timeout for entire chain creation (reduced to 12s)
+    // Global timeout for entire chain creation (25s to accommodate cold starts)
     const timeoutId = setTimeout(() => {
       toast({
         title: "Taking too long",
@@ -179,7 +179,7 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
         variant: "destructive"
       });
       setStep('name');
-    }, 12000);
+    }, 25000);
     
     try {
       // 1. Check daily limit (with 5s timeout, fallback allows creation)
@@ -242,7 +242,7 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
         }
       }
 
-      // 4. Create chain (with 8s timeout)
+      // 4. Create chain (with 15s timeout to accommodate cold starts)
       console.log('Step 4: Creating chain...');
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
@@ -261,7 +261,7 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
           })
           .select()
           .single(),
-        8000,
+        15000,
         'Chain creation'
       );
 
@@ -286,7 +286,7 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
           });
       }
 
-      // 6. Create first link (with 8s timeout)
+      // 6. Create first link (with 15s timeout to accommodate cold starts)
       console.log('Step 6: Creating first chain link...');
       const { error: linkError } = await criticalQueryWithTimeout(
         supabase
@@ -299,7 +299,7 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
             sent_compliment: compliment,
             was_forwarded: false
           }),
-        8000,
+        15000,
         'Link creation'
       );
 
