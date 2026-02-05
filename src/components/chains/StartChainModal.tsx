@@ -59,6 +59,7 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
   // Load suggestions when modal opens
   useEffect(() => {
     if (isOpen) {
+      console.log('[Modal] StartChainModal opened');
       loadSuggestions();
     }
   }, [isOpen]);
@@ -141,20 +142,26 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
   };
 
   const handleNameNext = () => {
+    console.log('[Step: Name] Chain name entered:', chainName || '(default)');
     setStep('recipient');
   };
 
   const handleRecipientNext = () => {
     if (!validateRecipient()) return;
+    console.log('[Step: Recipient] Type:', recipientType, 'Value:', recipientValue);
     setStep('category');
   };
 
   const handleCategorySelect = (category: ComplimentCategory) => {
+    console.log('[Step: Category] Selected:', category.name);
     setSelectedCategory(category);
     setStep('compliment');
   };
 
   const handleComplimentSelect = (compliment: string) => {
+    console.log('[Step: Compliment] Selected:', compliment);
+    console.log('=== CHAIN CREATION STARTED ===');
+    console.log('Timestamp:', new Date().toISOString());
     setSelectedCompliment(compliment);
     handleSend(compliment);
   };
@@ -262,6 +269,8 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
 
       // 4. Create chain (with 15s timeout to accommodate cold starts)
       console.log('Step 4: Creating chain...');
+      console.log('Step 4: Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
+      console.log('Step 4: About to call supabase.from("ment_chains").insert()...');
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
       // Log exact values being sent
@@ -374,7 +383,12 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
 
     } catch (error: any) {
       clearTimeout(timeoutId);
-      console.error('Chain creation failed:', error);
+      console.error('=== CHAIN CREATION FAILED ===');
+      console.error('Error object:', error);
+      console.error('Error name:', error?.name);
+      console.error('Error message:', error?.message);
+      console.error('Error stack:', error?.stack);
+      console.error('Failed at timestamp:', new Date().toISOString());
       
       const message = error?.message?.includes('timed out')
         ? 'Database is slow right now. Please try again.'
