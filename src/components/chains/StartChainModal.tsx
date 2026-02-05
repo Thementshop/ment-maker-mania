@@ -158,11 +158,13 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
     console.log('Recipient:', recipientValue.trim());
 
     try {
-      // Force refresh the session to get a fresh token
-      const { data: { session }, error: refreshError } = await supabase.auth.refreshSession();
-      if (refreshError || !session?.access_token) {
-        console.error('Session refresh failed:', refreshError);
-        throw new Error('Session expired. Please log in again.');
+      // Get session (Supabase auto-refreshes tokens via autoRefreshToken: true)
+      console.log('Getting session...');
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('Session retrieved:', session ? 'yes' : 'no');
+      if (!session?.access_token) {
+        console.error('No active session');
+        throw new Error('Please log in to start a chain.');
       }
 
       // Call edge function with 30s timeout
