@@ -3,6 +3,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { getChainTier } from '@/utils/chainTiers';
 
+// Helper to add timeout to any promise
+const withTimeout = <T>(promise: Promise<T>, ms: number, name: string): Promise<T> => {
+  const timeout = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error(`${name} timed out after ${ms}ms`)), ms)
+  );
+  return Promise.race([promise, timeout]);
+};
+
 export interface MentChain {
   chain_id: string;
   chain_name: string | null;
@@ -85,7 +93,7 @@ export const useMentChains = (): UseMentChainsReturn => {
     }
   }, [user]);
 
-  const fetchChains = useCallback(async () => {
+  const fetchChains = useCallback(async (silent = false) => {
     if (!user) {
       setChains([]);
       setYourTurnChains([]);
@@ -94,18 +102,34 @@ export const useMentChains = (): UseMentChainsReturn => {
     }
 
     try {
-      setIsLoading(true);
+      // Only show loading spinner if not a silent refresh
+      if (!silent) {
+        setIsLoading(true);
+      }
       setError(null);
 
-      // Check and expire any chains that have timed out
-      await checkAndExpireChains();
+      console.log('[useMentChains] Fetching chains...');
 
-      // Fetch all chains the user is involved with
-      const { data, error: fetchError } = await supabase
-        .from('ment_chains')
-        .select('*')
-        .or(`started_by.eq.${user.id},current_holder.eq.${user.id}`)
-        .order('created_at', { ascending: false });
+      // Check and expire any chains that have timed out (with timeout)
+      console.log('[useMentChains] Checking expired chains...');
+      await withTimeout(checkAndExpireChains(), 5000, 'checkAndExpireChains');
+      console.log('[useMentChains] Expired chains checked');
+
+      // Fetch all chains the user is involved with (with timeout)
+      console.log('[useMentChains] Fetching ment_chains...');
+      const chainsResult = await withTimeout(
+        Promise.resolve(
+          supabase
+            .from('ment_chains')
+            .select('*')
+            .or(`started_by.eq.${user.id},current_holder.eq.${user.id}`)
+            .order('created_at', { ascending: false })
+        ),
+        8000,
+        'ment_chains query'
+      );
+      const { data, error: fetchError } = chainsResult;
+      console.log('[useMentChains] ment_chains fetched:', data?.length || 0, 'chains');
 
       if (fetchError) throw fetchError;
 
@@ -122,11 +146,20 @@ export const useMentChains = (): UseMentChainsReturn => {
         }
       });
 
-      // Batch fetch profiles for all unique user IDs
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, display_name')
-        .in('id', Array.from(userIds));
+      // Batch fetch profiles for all unique user IDs (with timeout)
+      console.log('[useMentChains] Fetching profiles...');
+      const profilesResult = await withTimeout(
+        Promise.resolve(
+          supabase
+            .from('profiles')
+            .select('id, display_name')
+            .in('id', Array.from(userIds))
+        ),
+        5000,
+        'profiles query'
+      );
+      const { data: profiles } = profilesResult;
+      console.log('[useMentChains] Profiles fetched');
 
       const profileMap = new Map<string, string>();
       (profiles || []).forEach(p => {
@@ -140,11 +173,20 @@ export const useMentChains = (): UseMentChainsReturn => {
       
       let complimentMap = new Map<string, string>();
       if (chainIds.length > 0) {
-        const { data: links } = await supabase
-          .from('chain_links')
-          .select('chain_id, sent_compliment, passed_at')
-          .in('chain_id', chainIds)
-          .order('passed_at', { ascending: false });
+        console.log('[useMentChains] Fetching chain_links...');
+        const linksResult = await withTimeout(
+          Promise.resolve(
+            supabase
+              .from('chain_links')
+              .select('chain_id, sent_compliment, passed_at')
+              .in('chain_id', chainIds)
+              .order('passed_at', { ascending: false })
+          ),
+          5000,
+          'chain_links query'
+        );
+        const { data: links } = linksResult;
+        console.log('[useMentChains] Chain links fetched');
         
         // Get the most recent compliment for each chain
         (links || []).forEach(link => {
@@ -176,7 +218,9 @@ export const useMentChains = (): UseMentChainsReturn => {
         chain => chain.current_holder === user.id && chain.status === 'active'
       );
       setYourTurnChains(yourTurn);
+      console.log('[useMentChains] Done -', typedChains.length, 'chains loaded');
     } catch (err) {
+      console.error('[useMentChains] Error:', err);
       setError(err instanceof Error ? err : new Error('Failed to fetch chains'));
     } finally {
       setIsLoading(false);
@@ -214,7 +258,7 @@ export const useMentChains = (): UseMentChainsReturn => {
         },
         (payload) => {
           console.log('Chain updated:', payload);
-          fetchChains(); // Refresh all chains on any change
+          fetchChains(true); // Silent refresh - don't show loading spinner
         }
       )
       .subscribe();
@@ -408,7 +452,7 @@ export const useMentChains = (): UseMentChainsReturn => {
     yourTurnChains,
     isLoading,
     error,
-    refetch: fetchChains,
+    refetch: (silent?: boolean) => fetchChains(silent ?? false),
     startChain,
     passChain,
     getChainLinks,
