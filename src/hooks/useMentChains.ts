@@ -21,9 +21,8 @@ const fetchWithRetry = async <T>(
     const result = await withTimeout(queryFn(), timeoutMs, name);
     return result;
   } catch (err) {
-    console.warn(`[useMentChains] ${name} failed, retrying after session refresh...`);
-    // Force session refresh before retry
-    await supabase.auth.getSession();
+    console.warn(`[useMentChains] ${name} failed, retrying...`);
+    // Just retry without calling getSession (which blocks)
     return await withTimeout(queryFn(), timeoutMs, `${name} (retry)`);
   }
 };
@@ -72,7 +71,7 @@ export interface UseMentChainsReturn {
 }
 
 export const useMentChains = (): UseMentChainsReturn => {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const [chains, setChains] = useState<MentChain[]>([]);
   const [yourTurnChains, setYourTurnChains] = useState<MentChain[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -130,9 +129,7 @@ export const useMentChains = (): UseMentChainsReturn => {
 
       console.log('[useMentChains] Fetching chains...');
 
-      // CRITICAL: Ensure Supabase client has resolved auth state
-      // This fixes the issue where queries hang during/after token refresh
-      const { data: { session } } = await supabase.auth.getSession();
+      // Use session from AuthContext (non-blocking, already resolved)
       if (!session) {
         console.warn('[useMentChains] No active session, skipping fetch');
         setChains([]);
@@ -140,7 +137,7 @@ export const useMentChains = (): UseMentChainsReturn => {
         setIsLoading(false);
         return;
       }
-      console.log('[useMentChains] Session confirmed, proceeding with fetch');
+      console.log('[useMentChains] Session available, proceeding with fetch');
 
       // Check and expire any chains that have timed out (non-blocking)
       try {
@@ -296,7 +293,7 @@ export const useMentChains = (): UseMentChainsReturn => {
         supabase.removeChannel(subscriptionRef.current);
       }
     };
-  }, [user, fetchChains]);
+  }, [user, session, fetchChains]);
 
   const startChain = useCallback(async (
     recipientId: string,
