@@ -58,6 +58,7 @@ export type Database = {
       ment_chains: {
         Row: {
           broken_at: string | null
+          broken_by: string | null
           chain_id: string
           chain_name: string | null
           created_at: string
@@ -72,6 +73,7 @@ export type Database = {
         }
         Insert: {
           broken_at?: string | null
+          broken_by?: string | null
           chain_id?: string
           chain_name?: string | null
           created_at?: string
@@ -86,6 +88,7 @@ export type Database = {
         }
         Update: {
           broken_at?: string | null
+          broken_by?: string | null
           chain_id?: string
           chain_name?: string | null
           created_at?: string
