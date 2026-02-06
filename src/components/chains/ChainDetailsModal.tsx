@@ -102,21 +102,17 @@ const ChainDetailsModal = ({ chain, isOpen, onClose }: ChainDetailsModalProps) =
   }
 
   function handleShareAchievement() {
-    const shareText = `🔗 Check out this kindness chain "${chain.chain_name}" with ${chain.share_count} shares!
-
-Join me in spreading positivity! 💚🍬
-
-#MentShop #SpreadKindness`;
+    const chainUrl = `${window.location.origin}/chain/${chain.chain_id}`;
     
     if (navigator.share) {
       navigator.share({
-        title: 'Ment Shop Chain',
-        text: shareText,
-        url: 'https://thementshop.com'
+        title: `Join "${chain.chain_name || 'Kindness Chain'}" 💚`,
+        text: `I'm part of a kindness chain with ${chain.share_count} shares! Join us in spreading positivity.`,
+        url: chainUrl
       }).catch(err => console.log('Share cancelled', err));
     } else {
-      navigator.clipboard.writeText(shareText);
-      toast.success('Chain info copied to clipboard!');
+      navigator.clipboard.writeText(chainUrl);
+      toast.success('Link copied to clipboard! 🔗');
     }
   }
 
