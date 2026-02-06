@@ -211,9 +211,20 @@ const ChainCardNew = ({
           ) : isYourTurn ? (
             <span className="text-sm text-primary font-semibold">🎯 Your turn!</span>
           ) : (
-            <span className="text-sm text-muted-foreground">
-              Waiting on <span className="text-primary font-medium">@{chain.current_holder_display_name || chain.current_holder.slice(0, 8)}</span>
-            </span>
+            <div className="space-y-1">
+              <span className="text-sm text-muted-foreground block">
+                Waiting on <span className="text-primary font-medium">@{chain.current_holder_display_name || chain.current_holder.slice(0, 8)}</span>
+              </span>
+              {/* Show timer for chains you started */}
+              {chain.started_by === currentUserId && chain.status === 'active' && (
+                <span className={`text-xs flex items-center justify-center gap-1 ${
+                  countdown.hours < 2 ? 'text-orange-500' : 
+                  countdown.hours < 6 ? 'text-yellow-600' : 'text-muted-foreground'
+                }`}>
+                  ⏳ {countdown.formattedTime} remaining
+                </span>
+              )}
+            </div>
           )}
         </div>
 
