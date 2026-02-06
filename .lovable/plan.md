@@ -1,131 +1,106 @@
 
 
-# Fix Supabase Client Query Blocking
+# Fix: Use AuthContext Session Instead of Calling getSession Directly
 
-## Problem Summary
+## Problem Identified
 
-Your chains are being created successfully (confetti proves it!), but the chain list fails to load. The console shows "ment_chains query timed out after 8000ms" but the actual HTTP request never appears in network logs.
+The console shows the fetch starts but immediately times out without ever showing "Session confirmed":
+```
+[useMentChains] Fetching chains...
+Chain fetch timed out, clearing loading state
+```
 
-**Root cause**: The Supabase JavaScript client is blocking database queries. The auth token refresh works, but database requests get stuck in a queue and never fire.
+This means `await supabase.auth.getSession()` on line 135 is **blocking/hanging**.
 
-## Technical Analysis
+**Root cause**: The Supabase JS client has an internal lock during auth state transitions. When `useMentChains` calls `supabase.auth.getSession()` directly, it can get stuck waiting for the AuthContext's competing `getSession()` call to complete first.
 
-| Observed Behavior | Explanation |
-|-------------------|-------------|
-| Token refresh at 19:51:40 returns 200 | Auth is working |
-| "ment_chains query timed out after 8000ms" | Query started but never completed |
-| No `/rest/v1/ment_chains` in network logs | HTTP request was never sent |
-| Direct database query returns 9 chains in ~100ms | Database is healthy |
-
-This is a known Supabase JS v2 behavior where the client can get into a blocked state where it queues requests but never sends them.
+The project's memory explicitly states:
+> "Components must access the current user session via the project's AuthContext rather than calling `supabase.auth.getSession()` directly."
 
 ## Solution
 
-Add explicit session initialization before making database queries. This ensures the Supabase client has resolved its auth state before attempting queries.
+Replace the direct `supabase.auth.getSession()` call with using the session already available from `useAuth()`.
 
 ### Changes
 
 **File: `src/hooks/useMentChains.ts`**
 
-1. **Add session check before queries** - Wait for the Supabase client to have a valid session state before making database requests:
+1. **Get session from AuthContext** - Already importing `useAuth`, just destructure `session` too:
 
 ```typescript
-const fetchChains = useCallback(async (silent = false) => {
-  if (!user) {
-    setChains([]);
-    setYourTurnChains([]);
-    setIsLoading(false);
-    return;
-  }
-
-  try {
-    if (!silent) {
-      setIsLoading(true);
-    }
-    setError(null);
-
-    console.log('[useMentChains] Fetching chains...');
-
-    // CRITICAL: Ensure Supabase client has resolved auth state
-    // This fixes the issue where queries hang during/after token refresh
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      console.warn('[useMentChains] No active session, skipping fetch');
-      setChains([]);
-      setYourTurnChains([]);
-      setIsLoading(false);
-      return;
-    }
-    console.log('[useMentChains] Session confirmed, proceeding with fetch');
-
-    // ... rest of fetch logic
-  }
-}
+// Line 75: Add session to destructure
+const { user, session } = useAuth();
 ```
 
-2. **Add retry logic** - If a query fails, retry once after re-confirming session:
+2. **Remove blocking getSession call** - Use the session from context instead:
 
 ```typescript
-// Retry wrapper for critical queries
+// Lines 133-143: Replace getSession() call with context check
+// BEFORE (blocks):
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) { ... }
+
+// AFTER (non-blocking):
+if (!session) {
+  console.warn('[useMentChains] No active session, skipping fetch');
+  setChains([]);
+  setYourTurnChains([]);
+  setIsLoading(false);
+  return;
+}
+console.log('[useMentChains] Session available, proceeding with fetch');
+```
+
+3. **Update fetchWithRetry** - Don't call getSession() on retry either:
+
+```typescript
+// Lines 23-27: Remove session refresh, just retry the query
 const fetchWithRetry = async <T>(
   queryFn: () => PromiseLike<{ data: T | null; error: any }>,
-  name: string
+  name: string,
+  timeoutMs: number = 5000
 ): Promise<{ data: T | null; error: any }> => {
   try {
-    const result = await withTimeout(queryFn(), 8000, name);
+    const result = await withTimeout(queryFn(), timeoutMs, name);
     return result;
   } catch (err) {
-    console.warn(`[useMentChains] ${name} failed, retrying after session refresh...`);
-    // Force session refresh before retry
-    await supabase.auth.getSession();
-    return await withTimeout(queryFn(), 8000, `${name} (retry)`);
+    console.warn(`[useMentChains] ${name} failed, retrying...`);
+    // Just retry without calling getSession (which blocks)
+    return await withTimeout(queryFn(), timeoutMs, `${name} (retry)`);
   }
 };
 ```
 
-3. **Reduce timeout for faster feedback** - Users shouldn't wait 8+ seconds for an error. Reduce to 5 seconds with a single retry:
+4. **Add session to useEffect dependency** - Ensure fetch triggers when session changes:
 
 ```typescript
-// Faster timeout (5s) with automatic retry
-const chainsQuery = () => supabase
-  .from('ment_chains')
-  .select('*')
-  .or(`started_by.eq.${user.id},current_holder.eq.${user.id}`)
-  .order('created_at', { ascending: false });
-
-const chainsResult = await fetchWithRetry(chainsQuery, 'ment_chains query');
+// Line 299: Add session to dependency array
+}, [user, session, fetchChains]);
 ```
 
-## Why This Fixes The Issue
+## Why This Works
 
 | Issue | Fix |
 |-------|-----|
-| Client blocks during auth transitions | `getSession()` call forces auth resolution before query |
-| First query often hangs | Retry logic catches first-query failures |
-| 8+ second wait for error | Reduced to 5s with faster retry |
-| No visibility into what's happening | Session confirmation logs |
+| `getSession()` blocks during auth transitions | Use session from AuthContext (already resolved) |
+| Retry logic also calls blocking `getSession()` | Remove that call, just retry the query |
+| Queries never fire | Without blocking, queries execute immediately |
 
-## Expected Behavior After Fix
+## Expected Console Output After Fix
 
 ```
 [useMentChains] Fetching chains...
-[useMentChains] Session confirmed, proceeding with fetch
+[useMentChains] Session available, proceeding with fetch
+[useMentChains] Checking expired chains...
+[useMentChains] Fetching ment_chains...
 [useMentChains] ment_chains fetched: 9 chains
-[useMentChains] Profiles fetched
+[useMentChains] Fetching profiles...
 [useMentChains] Done - 9 chains loaded
-```
-
-Or if first attempt fails:
-```
-[useMentChains] Fetching chains...
-[useMentChains] Session confirmed, proceeding with fetch
-[useMentChains] ment_chains query failed, retrying after session refresh...
-[useMentChains] ment_chains fetched: 9 chains (retry succeeded)
 ```
 
 ## Files to Change
 
-| File | Description |
-|------|-------------|
-| `src/hooks/useMentChains.ts` | Add session check and retry logic before database queries |
+| File | Changes |
+|------|---------|
+| `src/hooks/useMentChains.ts` | 1. Get `session` from `useAuth()`<br>2. Remove `await supabase.auth.getSession()` call<br>3. Use context session for the check<br>4. Remove `getSession()` from retry logic<br>5. Add `session` to useEffect deps |
 
