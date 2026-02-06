@@ -62,7 +62,7 @@ const ChainDashboard = () => {
   const currentUserId = user?.id || '';
 
   // Fetch real chains from database
-  const { chains, isLoading, error, refetch } = useMentChains();
+  const { chains, isLoading, error, refetch, usePauseToken } = useMentChains();
 
   // Transform MentChain[] to ChainData[]
   const chainData = useMemo(() => {
@@ -207,6 +207,7 @@ const ChainDashboard = () => {
                 onShare={handleShare}
                 onViewDetails={handleViewDetails}
                 onChainPassed={handleChainCreated}
+                onUsePauseToken={usePauseToken}
               />
             ))}
           </motion.div>

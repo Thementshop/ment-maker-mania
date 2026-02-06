@@ -8,7 +8,6 @@ import { supabase } from '@/integrations/supabase/client';
 import MintCircleGraphic from './MintCircleGraphic';
 import PassChainModal from './PassChainModal';
 import ChainDetailsModal from './ChainDetailsModal';
-import { useMentChains } from '@/hooks/useMentChains';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -40,6 +39,7 @@ interface ChainCardNewProps {
   onShare?: (chainId: string) => void;
   onViewDetails?: (chainId: string) => void;
   onChainPassed?: () => void;
+  onUsePauseToken?: (chainId: string) => Promise<boolean>;
 }
 
 const getTimerColor = (hours: number, minutes: number): string => {
@@ -58,6 +58,7 @@ const ChainCardNew = ({
   onShare, 
   onViewDetails,
   onChainPassed,
+  onUsePauseToken,
 }: ChainCardNewProps) => {
   const { user } = useAuth();
   const countdown = useCountdown(chain.expires_at);
@@ -66,7 +67,6 @@ const ChainCardNew = ({
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [isPausing, setIsPausing] = useState(false);
   const [pauseTokens, setPauseTokens] = useState(0);
-  const { usePauseToken } = useMentChains();
   const navigate = useNavigate();
 
   // Fetch pause tokens
@@ -110,9 +110,14 @@ const ChainCardNew = ({
       return;
     }
 
+    if (!onUsePauseToken) {
+      toast.error('Pause token feature not available');
+      return;
+    }
+
     setIsPausing(true);
     try {
-      const success = await usePauseToken(chain.chain_id);
+      const success = await onUsePauseToken(chain.chain_id);
       if (success) {
         toast.success('⏸️ Chain paused! Timer reset to 24:00:00');
         onChainPassed?.();
