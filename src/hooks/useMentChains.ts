@@ -3,27 +3,33 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { getChainTier } from '@/utils/chainTiers';
 
-// Helper to add timeout to any promise or PromiseLike (like Supabase query builders)
-const withTimeout = <T>(promiseLike: PromiseLike<T>, ms: number, name: string): Promise<T> => {
-  const timeout = new Promise<never>((_, reject) =>
-    setTimeout(() => reject(new Error(`${name} timed out after ${ms}ms`)), ms)
-  );
-  return Promise.race([Promise.resolve(promiseLike), timeout]);
-};
-
-// Retry wrapper for critical queries - handles Supabase client blocking issues
-const fetchWithRetry = async <T>(
-  queryFn: () => PromiseLike<{ data: T | null; error: any }>,
-  name: string,
-  timeoutMs: number = 5000
+// Direct REST API call - bypasses JS client blocking issues
+const supabaseRest = async <T>(
+  tableName: string,
+  queryParams: string,
+  accessToken: string
 ): Promise<{ data: T | null; error: any }> => {
   try {
-    const result = await withTimeout(queryFn(), timeoutMs, name);
-    return result;
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/${tableName}?${queryParams}`,
+      {
+        headers: {
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        }
+      }
+    );
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      return { data: null, error: { message: errorText } };
+    }
+    
+    const data = await response.json();
+    return { data, error: null };
   } catch (err) {
-    console.warn(`[useMentChains] ${name} failed, retrying...`);
-    // Just retry without calling getSession (which blocks)
-    return await withTimeout(queryFn(), timeoutMs, `${name} (retry)`);
+    return { data: null, error: err };
   }
 };
 
@@ -78,42 +84,8 @@ export const useMentChains = (): UseMentChainsReturn => {
   const [error, setError] = useState<Error | null>(null);
   const subscriptionRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
-  // Check and expire any chains that have timed out (non-blocking)
-  const checkAndExpireChains = useCallback(async () => {
-    if (!user) return;
-    
-    const now = new Date().toISOString();
-    
-    try {
-      // Find expired chains (with timeout)
-      const expiredChainsQuery = supabase
-        .from('ment_chains')
-        .select('chain_id')
-        .eq('status', 'active')
-        .lt('expires_at', now)
-        .or(`started_by.eq.${user.id},current_holder.eq.${user.id}`);
-      
-      const { data: expiredChains } = await withTimeout(expiredChainsQuery, 3000, 'find expired chains');
-      
-      if (expiredChains && expiredChains.length > 0) {
-        // Update expired chains (with timeout)
-        const updateQuery = supabase
-          .from('ment_chains')
-          .update({ status: 'broken', broken_at: now })
-          .in('chain_id', expiredChains.map(c => c.chain_id));
-        
-        await withTimeout(updateQuery, 3000, 'update expired chains');
-        
-        console.log(`Auto-expired ${expiredChains.length} chains`);
-      }
-    } catch (err) {
-      // Log but don't throw - this is a background optimization
-      console.warn('[useMentChains] Error expiring chains (non-fatal):', err);
-    }
-  }, [user]);
-
   const fetchChains = useCallback(async (silent = false) => {
-    if (!user) {
+    if (!user || !session) {
       setChains([]);
       setYourTurnChains([]);
       setIsLoading(false);
@@ -121,76 +93,51 @@ export const useMentChains = (): UseMentChainsReturn => {
     }
 
     try {
-      // Only show loading spinner if not a silent refresh
       if (!silent) {
         setIsLoading(true);
       }
       setError(null);
 
-      console.log('[useMentChains] Fetching chains...');
+      console.log('[useMentChains] Fetching chains via REST API...');
 
-      // Use session from AuthContext (non-blocking, already resolved)
-      if (!session) {
-        console.warn('[useMentChains] No active session, skipping fetch');
-        setChains([]);
-        setYourTurnChains([]);
-        setIsLoading(false);
-        return;
-      }
-      console.log('[useMentChains] Session available, proceeding with fetch');
+      // Fetch all chains the user is involved with using direct REST API
+      const chainsResult = await supabaseRest<MentChain[]>(
+        'ment_chains',
+        `select=*&or=(started_by.eq.${user.id},current_holder.eq.${user.id})&order=created_at.desc`,
+        session.access_token
+      );
 
-      // Check and expire any chains that have timed out (non-blocking)
-      try {
-        console.log('[useMentChains] Checking expired chains...');
-        await withTimeout(checkAndExpireChains(), 5000, 'checkAndExpireChains');
-        console.log('[useMentChains] Expired chains checked');
-      } catch (expireError) {
-        console.warn('[useMentChains] Expire check failed (non-fatal):', expireError);
-        // Continue loading chains anyway
+      if (chainsResult.error) {
+        throw new Error(chainsResult.error.message || 'Failed to fetch chains');
       }
 
-      // Fetch all chains the user is involved with (with retry logic)
-      console.log('[useMentChains] Fetching ment_chains...');
-      const chainsQuery = () => supabase
-        .from('ment_chains')
-        .select('*')
-        .or(`started_by.eq.${user.id},current_holder.eq.${user.id}`)
-        .order('created_at', { ascending: false });
-      
-      const chainsResult = await fetchWithRetry(chainsQuery, 'ment_chains query');
-      const { data, error: fetchError } = chainsResult;
-      console.log('[useMentChains] ment_chains fetched:', data?.length || 0, 'chains');
-
-      if (fetchError) throw fetchError;
-
-      const rawChains = (data || []) as MentChain[];
+      const rawChains = chainsResult.data || [];
+      console.log('[useMentChains] Fetched', rawChains.length, 'chains');
 
       // Collect unique user IDs for profile lookup
       const userIds = new Set<string>();
       rawChains.forEach(chain => {
         userIds.add(chain.started_by);
-        // Only add current_holder if it looks like a UUID
         const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
         if (uuidRegex.test(chain.current_holder)) {
           userIds.add(chain.current_holder);
         }
       });
 
-      // Batch fetch profiles for all unique user IDs (with retry)
-      console.log('[useMentChains] Fetching profiles...');
-      const profilesQuery = () => supabase
-        .from('profiles')
-        .select('id, display_name')
-        .in('id', Array.from(userIds));
-      
-      const profilesResult = await fetchWithRetry(profilesQuery, 'profiles query');
-      const { data: profiles } = profilesResult;
-      console.log('[useMentChains] Profiles fetched');
-
-      const profileMap = new Map<string, string>();
-      (profiles || []).forEach(p => {
-        profileMap.set(p.id, p.display_name || 'Anonymous');
-      });
+      // Batch fetch profiles using REST API
+      let profileMap = new Map<string, string>();
+      if (userIds.size > 0) {
+        const idsArray = Array.from(userIds);
+        const profilesResult = await supabaseRest<{ id: string; display_name: string | null }[]>(
+          'profiles',
+          `select=id,display_name&id=in.(${idsArray.join(',')})`,
+          session.access_token
+        );
+        
+        (profilesResult.data || []).forEach(p => {
+          profileMap.set(p.id, p.display_name || 'Anonymous');
+        });
+      }
 
       // Fetch received compliments for chains where user is current holder
       const chainIds = rawChains
@@ -199,19 +146,13 @@ export const useMentChains = (): UseMentChainsReturn => {
       
       let complimentMap = new Map<string, string>();
       if (chainIds.length > 0) {
-        console.log('[useMentChains] Fetching chain_links...');
-        const linksQuery = () => supabase
-          .from('chain_links')
-          .select('chain_id, sent_compliment, passed_at')
-          .in('chain_id', chainIds)
-          .order('passed_at', { ascending: false });
+        const linksResult = await supabaseRest<{ chain_id: string; sent_compliment: string; passed_at: string }[]>(
+          'chain_links',
+          `select=chain_id,sent_compliment,passed_at&chain_id=in.(${chainIds.join(',')})&order=passed_at.desc`,
+          session.access_token
+        );
         
-        const linksResult = await fetchWithRetry(linksQuery, 'chain_links query');
-        const { data: links } = linksResult;
-        console.log('[useMentChains] Chain links fetched');
-        
-        // Get the most recent compliment for each chain
-        (links || []).forEach(link => {
+        (linksResult.data || []).forEach(link => {
           if (!complimentMap.has(link.chain_id)) {
             complimentMap.set(link.chain_id, link.sent_compliment);
           }
@@ -228,7 +169,7 @@ export const useMentChains = (): UseMentChainsReturn => {
           started_by_display_name: profileMap.get(chain.started_by) || 'Anonymous',
           current_holder_display_name: isCurrentHolderUuid 
             ? (profileMap.get(chain.current_holder) || 'Anonymous')
-            : chain.current_holder, // Use raw value if it's email/phone/name
+            : chain.current_holder,
           received_compliment: complimentMap.get(chain.chain_id),
         };
       });
@@ -240,33 +181,25 @@ export const useMentChains = (): UseMentChainsReturn => {
         chain => chain.current_holder === user.id && chain.status === 'active'
       );
       setYourTurnChains(yourTurn);
-      console.log('[useMentChains] Done -', typedChains.length, 'chains loaded');
+      console.log('[useMentChains] Done -', typedChains.length, 'chains loaded,', yourTurn.length, 'your turn');
     } catch (err) {
       console.error('[useMentChains] Error:', err);
       setError(err instanceof Error ? err : new Error('Failed to fetch chains'));
     } finally {
       setIsLoading(false);
     }
-  }, [user, checkAndExpireChains]);
+  }, [user, session]);
 
-  // Real-time subscription
+  // Initial fetch and real-time subscription
   useEffect(() => {
-    if (!user) {
+    if (!user || !session) {
       setIsLoading(false);
       setChains([]);
       setYourTurnChains([]);
       return;
     }
 
-    // Safety timeout to prevent infinite spinner (10 seconds)
-    const timeoutId = setTimeout(() => {
-      console.warn('Chain fetch timed out, clearing loading state');
-      setIsLoading(false);
-    }, 10000);
-
-    fetchChains().finally(() => {
-      clearTimeout(timeoutId);
-    });
+    fetchChains();
 
     // Subscribe to real-time changes
     const channel = supabase
@@ -280,7 +213,7 @@ export const useMentChains = (): UseMentChainsReturn => {
         },
         (payload) => {
           console.log('Chain updated:', payload);
-          fetchChains(true); // Silent refresh - don't show loading spinner
+          fetchChains(true); // Silent refresh
         }
       )
       .subscribe();
@@ -288,7 +221,6 @@ export const useMentChains = (): UseMentChainsReturn => {
     subscriptionRef.current = channel;
 
     return () => {
-      clearTimeout(timeoutId);
       if (subscriptionRef.current) {
         supabase.removeChannel(subscriptionRef.current);
       }
@@ -406,21 +338,22 @@ export const useMentChains = (): UseMentChainsReturn => {
   }, [user, fetchChains]);
 
   const getChainLinks = useCallback(async (chainId: string): Promise<ChainLink[]> => {
+    if (!session) return [];
+    
     try {
-      const { data, error: fetchError } = await supabase
-        .from('chain_links')
-        .select('*')
-        .eq('chain_id', chainId)
-        .order('passed_at', { ascending: true });
+      const result = await supabaseRest<ChainLink[]>(
+        'chain_links',
+        `select=*&chain_id=eq.${chainId}&order=passed_at.asc`,
+        session.access_token
+      );
 
-      if (fetchError) throw fetchError;
-
-      return (data || []) as ChainLink[];
+      if (result.error) throw new Error(result.error.message);
+      return result.data || [];
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch chain links'));
       return [];
     }
-  }, []);
+  }, [session]);
 
   const usePauseToken = useCallback(async (chainId: string): Promise<boolean> => {
     if (!user) return false;
@@ -481,4 +414,3 @@ export const useMentChains = (): UseMentChainsReturn => {
     usePauseToken
   };
 };
-
