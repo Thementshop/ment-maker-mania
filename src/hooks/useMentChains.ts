@@ -3,12 +3,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { getChainTier } from '@/utils/chainTiers';
 
-// Helper to add timeout to any promise
-const withTimeout = <T>(promise: Promise<T>, ms: number, name: string): Promise<T> => {
+// Helper to add timeout to any promise or PromiseLike (like Supabase query builders)
+const withTimeout = <T>(promiseLike: PromiseLike<T>, ms: number, name: string): Promise<T> => {
   const timeout = new Promise<never>((_, reject) =>
     setTimeout(() => reject(new Error(`${name} timed out after ${ms}ms`)), ms)
   );
-  return Promise.race([promise, timeout]);
+  // Convert PromiseLike to Promise using Promise.resolve, then race
+  return Promise.race([Promise.resolve(promiseLike), timeout]);
 };
 
 export interface MentChain {
@@ -70,34 +71,23 @@ export const useMentChains = (): UseMentChainsReturn => {
     
     try {
       // Find expired chains (with timeout)
-      const { data: expiredChains } = await withTimeout(
-        Promise.resolve(
-          supabase
-            .from('ment_chains')
-            .select('chain_id')
-            .eq('status', 'active')
-            .lt('expires_at', now)
-            .or(`started_by.eq.${user.id},current_holder.eq.${user.id}`)
-        ),
-        3000,
-        'find expired chains'
-      );
+      const expiredChainsQuery = supabase
+        .from('ment_chains')
+        .select('chain_id')
+        .eq('status', 'active')
+        .lt('expires_at', now)
+        .or(`started_by.eq.${user.id},current_holder.eq.${user.id}`);
+      
+      const { data: expiredChains } = await withTimeout(expiredChainsQuery, 3000, 'find expired chains');
       
       if (expiredChains && expiredChains.length > 0) {
         // Update expired chains (with timeout)
-        await withTimeout(
-          Promise.resolve(
-            supabase
-              .from('ment_chains')
-              .update({ 
-                status: 'broken', 
-                broken_at: now 
-              })
-              .in('chain_id', expiredChains.map(c => c.chain_id))
-          ),
-          3000,
-          'update expired chains'
-        );
+        const updateQuery = supabase
+          .from('ment_chains')
+          .update({ status: 'broken', broken_at: now })
+          .in('chain_id', expiredChains.map(c => c.chain_id));
+        
+        await withTimeout(updateQuery, 3000, 'update expired chains');
         
         console.log(`Auto-expired ${expiredChains.length} chains`);
       }
@@ -136,17 +126,13 @@ export const useMentChains = (): UseMentChainsReturn => {
 
       // Fetch all chains the user is involved with (with timeout)
       console.log('[useMentChains] Fetching ment_chains...');
-      const chainsResult = await withTimeout(
-        Promise.resolve(
-          supabase
-            .from('ment_chains')
-            .select('*')
-            .or(`started_by.eq.${user.id},current_holder.eq.${user.id}`)
-            .order('created_at', { ascending: false })
-        ),
-        8000,
-        'ment_chains query'
-      );
+      const chainsQuery = supabase
+        .from('ment_chains')
+        .select('*')
+        .or(`started_by.eq.${user.id},current_holder.eq.${user.id}`)
+        .order('created_at', { ascending: false });
+      
+      const chainsResult = await withTimeout(chainsQuery, 8000, 'ment_chains query');
       const { data, error: fetchError } = chainsResult;
       console.log('[useMentChains] ment_chains fetched:', data?.length || 0, 'chains');
 
@@ -167,16 +153,12 @@ export const useMentChains = (): UseMentChainsReturn => {
 
       // Batch fetch profiles for all unique user IDs (with timeout)
       console.log('[useMentChains] Fetching profiles...');
-      const profilesResult = await withTimeout(
-        Promise.resolve(
-          supabase
-            .from('profiles')
-            .select('id, display_name')
-            .in('id', Array.from(userIds))
-        ),
-        5000,
-        'profiles query'
-      );
+      const profilesQuery = supabase
+        .from('profiles')
+        .select('id, display_name')
+        .in('id', Array.from(userIds));
+      
+      const profilesResult = await withTimeout(profilesQuery, 5000, 'profiles query');
       const { data: profiles } = profilesResult;
       console.log('[useMentChains] Profiles fetched');
 
@@ -193,17 +175,13 @@ export const useMentChains = (): UseMentChainsReturn => {
       let complimentMap = new Map<string, string>();
       if (chainIds.length > 0) {
         console.log('[useMentChains] Fetching chain_links...');
-        const linksResult = await withTimeout(
-          Promise.resolve(
-            supabase
-              .from('chain_links')
-              .select('chain_id, sent_compliment, passed_at')
-              .in('chain_id', chainIds)
-              .order('passed_at', { ascending: false })
-          ),
-          5000,
-          'chain_links query'
-        );
+        const linksQuery = supabase
+          .from('chain_links')
+          .select('chain_id, sent_compliment, passed_at')
+          .in('chain_id', chainIds)
+          .order('passed_at', { ascending: false });
+        
+        const linksResult = await withTimeout(linksQuery, 5000, 'chain_links query');
         const { data: links } = linksResult;
         console.log('[useMentChains] Chain links fetched');
         
