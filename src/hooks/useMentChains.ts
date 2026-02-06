@@ -8,8 +8,24 @@ const withTimeout = <T>(promiseLike: PromiseLike<T>, ms: number, name: string): 
   const timeout = new Promise<never>((_, reject) =>
     setTimeout(() => reject(new Error(`${name} timed out after ${ms}ms`)), ms)
   );
-  // Convert PromiseLike to Promise using Promise.resolve, then race
   return Promise.race([Promise.resolve(promiseLike), timeout]);
+};
+
+// Retry wrapper for critical queries - handles Supabase client blocking issues
+const fetchWithRetry = async <T>(
+  queryFn: () => PromiseLike<{ data: T | null; error: any }>,
+  name: string,
+  timeoutMs: number = 5000
+): Promise<{ data: T | null; error: any }> => {
+  try {
+    const result = await withTimeout(queryFn(), timeoutMs, name);
+    return result;
+  } catch (err) {
+    console.warn(`[useMentChains] ${name} failed, retrying after session refresh...`);
+    // Force session refresh before retry
+    await supabase.auth.getSession();
+    return await withTimeout(queryFn(), timeoutMs, `${name} (retry)`);
+  }
 };
 
 export interface MentChain {
@@ -114,6 +130,18 @@ export const useMentChains = (): UseMentChainsReturn => {
 
       console.log('[useMentChains] Fetching chains...');
 
+      // CRITICAL: Ensure Supabase client has resolved auth state
+      // This fixes the issue where queries hang during/after token refresh
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.warn('[useMentChains] No active session, skipping fetch');
+        setChains([]);
+        setYourTurnChains([]);
+        setIsLoading(false);
+        return;
+      }
+      console.log('[useMentChains] Session confirmed, proceeding with fetch');
+
       // Check and expire any chains that have timed out (non-blocking)
       try {
         console.log('[useMentChains] Checking expired chains...');
@@ -124,15 +152,15 @@ export const useMentChains = (): UseMentChainsReturn => {
         // Continue loading chains anyway
       }
 
-      // Fetch all chains the user is involved with (with timeout)
+      // Fetch all chains the user is involved with (with retry logic)
       console.log('[useMentChains] Fetching ment_chains...');
-      const chainsQuery = supabase
+      const chainsQuery = () => supabase
         .from('ment_chains')
         .select('*')
         .or(`started_by.eq.${user.id},current_holder.eq.${user.id}`)
         .order('created_at', { ascending: false });
       
-      const chainsResult = await withTimeout(chainsQuery, 8000, 'ment_chains query');
+      const chainsResult = await fetchWithRetry(chainsQuery, 'ment_chains query');
       const { data, error: fetchError } = chainsResult;
       console.log('[useMentChains] ment_chains fetched:', data?.length || 0, 'chains');
 
@@ -151,14 +179,14 @@ export const useMentChains = (): UseMentChainsReturn => {
         }
       });
 
-      // Batch fetch profiles for all unique user IDs (with timeout)
+      // Batch fetch profiles for all unique user IDs (with retry)
       console.log('[useMentChains] Fetching profiles...');
-      const profilesQuery = supabase
+      const profilesQuery = () => supabase
         .from('profiles')
         .select('id, display_name')
         .in('id', Array.from(userIds));
       
-      const profilesResult = await withTimeout(profilesQuery, 5000, 'profiles query');
+      const profilesResult = await fetchWithRetry(profilesQuery, 'profiles query');
       const { data: profiles } = profilesResult;
       console.log('[useMentChains] Profiles fetched');
 
@@ -175,13 +203,13 @@ export const useMentChains = (): UseMentChainsReturn => {
       let complimentMap = new Map<string, string>();
       if (chainIds.length > 0) {
         console.log('[useMentChains] Fetching chain_links...');
-        const linksQuery = supabase
+        const linksQuery = () => supabase
           .from('chain_links')
           .select('chain_id, sent_compliment, passed_at')
           .in('chain_id', chainIds)
           .order('passed_at', { ascending: false });
         
-        const linksResult = await withTimeout(linksQuery, 5000, 'chain_links query');
+        const linksResult = await fetchWithRetry(linksQuery, 'chain_links query');
         const { data: links } = linksResult;
         console.log('[useMentChains] Chain links fetched');
         
