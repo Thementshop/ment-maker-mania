@@ -1,147 +1,108 @@
 
-
-# Fix Chain Loading Failure After Timeout
+# Fix Supabase Query Timeouts
 
 ## Problem Identified
 
-When you reload the page, the console shows:
+All Supabase queries from the JavaScript client are timing out (3s, 5s, 8s), but when I query the database directly via the admin API, responses are **instant** (under 100ms).
+
+The issue is in how the `withTimeout` helper wraps the Supabase queries:
+
+```typescript
+await withTimeout(
+  Promise.resolve(supabase.from('ment_chains').select('*')...),
+  8000,
+  'ment_chains query'
+);
 ```
-[useMentChains] Error: checkAndExpireChains timed out after 5000ms
-```
 
-This causes the entire chain loading to fail because:
+The `Promise.resolve()` immediately resolves with the query builder object (which is PromiseLike but not yet executing), then the timeout starts counting. The actual HTTP request may not start until later, or the client may be in a blocked state.
 
-1. The `checkAndExpireChains()` function times out after 5 seconds
-2. This throws an error that propagates to the main `fetchChains` try/catch
-3. `setError()` is called, which triggers the error state in the UI
-4. **The code stops completely** - no chains are ever fetched
-5. The error UI only shows "Failed to load chains" + "Try Again" button (no "Start Chain" button visible)
+## Root Cause Analysis
 
-## Root Cause
+The Supabase JS client can get stuck in certain states:
+1. During token refresh cycles
+2. When the auth state is changing
+3. When there are network issues
 
-The `checkAndExpireChains` timeout is treated as a fatal error that blocks ALL chain loading. But this function is just a "nice to have" optimization - if it fails, we should still try to load the chains.
-
-Additionally, the inner `checkAndExpireChains` function makes Supabase queries WITHOUT the `withTimeout` wrapper, so it can hang indefinitely. When wrapped with `withTimeout` in `fetchChains`, the 5-second timeout kicks in but then crashes everything.
+The current `withTimeout` approach doesn't work correctly because:
+- `Promise.resolve(queryBuilder)` may not trigger the HTTP request immediately
+- The timeout race starts before the actual request begins
 
 ## Solution
 
-### 1. Make `checkAndExpireChains` non-blocking (fail gracefully)
+Remove the `Promise.resolve()` wrapper entirely. The Supabase query builder IS already awaitable - just use it directly with a simpler timeout approach.
 
-Wrap the `checkAndExpireChains` call in a try/catch so its failure doesn't stop the main chain loading:
+**New approach**: Create individual query functions that we can properly timeout, or restructure to not need `Promise.resolve()`.
 
-```typescript
-// Don't let expire check block main loading
-try {
-  console.log('[useMentChains] Checking expired chains...');
-  await withTimeout(checkAndExpireChains(), 5000, 'checkAndExpireChains');
-  console.log('[useMentChains] Expired chains checked');
-} catch (expireError) {
-  console.warn('[useMentChains] Expire check failed (non-fatal):', expireError);
-  // Continue loading chains anyway
-}
-```
+## Changes
 
-### 2. Add timeout to the inner Supabase queries in `checkAndExpireChains`
+### File: `src/hooks/useMentChains.ts`
 
-The `checkAndExpireChains` function itself has two sequential Supabase queries with no timeout protection. Add the `withTimeout` helper to those inner queries:
+**Simplify the query execution** - Remove `Promise.resolve()` and call the queries directly:
 
 ```typescript
-const checkAndExpireChains = useCallback(async () => {
-  if (!user) return;
-  
-  const now = new Date().toISOString();
-  
-  try {
-    // Find expired chains (with timeout)
-    const { data: expiredChains } = await withTimeout(
-      Promise.resolve(
-        supabase
-          .from('ment_chains')
-          .select('chain_id')
-          .eq('status', 'active')
-          .lt('expires_at', now)
-          .or(`started_by.eq.${user.id},current_holder.eq.${user.id}`)
-      ),
-      3000,
-      'find expired chains'
-    );
-    
-    if (expiredChains && expiredChains.length > 0) {
-      // Update expired chains (with timeout)
-      await withTimeout(
-        Promise.resolve(
-          supabase
-            .from('ment_chains')
-            .update({ status: 'broken', broken_at: now })
-            .in('chain_id', expiredChains.map(c => c.chain_id))
-        ),
-        3000,
-        'update expired chains'
-      );
-      
-      console.log(`Auto-expired ${expiredChains.length} chains`);
-    }
-  } catch (err) {
-    // Log but don't throw - this is a background optimization
-    console.warn('Error expiring chains (non-fatal):', err);
-  }
-}, [user]);
+// BEFORE (broken)
+const chainsResult = await withTimeout(
+  Promise.resolve(
+    supabase.from('ment_chains').select('*')...
+  ),
+  8000,
+  'ment_chains query'
+);
+
+// AFTER (working)
+const chainsPromise = supabase
+  .from('ment_chains')
+  .select('*')
+  .or(`started_by.eq.${user.id},current_holder.eq.${user.id}`)
+  .order('created_at', { ascending: false });
+
+const chainsResult = await withTimeout(chainsPromise, 8000, 'ment_chains query');
 ```
 
-### 3. Update ChainDashboard error state to still show "Start Chain" button
+The Supabase query builder returns a `PromiseLike` that can be directly passed to `Promise.race()` - no need for `Promise.resolve()`.
 
-Even when there's an error loading chains, users should still be able to start a new chain:
+**Apply this fix to all 4 query locations:**
 
-```tsx
-// Error state - but still allow starting chains
-if (error) {
-  return (
-    <div className="w-full">
-      {/* Header with Start Chain button */}
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-          🔥 Ment Chains
-        </h2>
-        <Button
-          onClick={handleStartChain}
-          className="rounded-full bg-primary hover:bg-primary/90"
-        >
-          <Plus className="h-4 w-4 mr-1" />
-          Start Chain
-        </Button>
-      </div>
-      
-      {/* Error message with retry */}
-      <div className="text-center py-12">
-        <p className="text-destructive font-medium">Failed to load chains</p>
-        <Button onClick={() => refetch()} variant="outline" className="mt-4">
-          Try Again
-        </Button>
-      </div>
-      
-      {/* Start Chain Modal */}
-      <StartChainModal
-        isOpen={showStartModal}
-        onClose={() => setShowStartModal(false)}
-        onSuccess={handleChainCreated}
-      />
-    </div>
-  );
-}
+1. Line 73-84: Find expired chains query
+2. Line 88-100: Update expired chains query  
+3. Line 139-149: Main ment_chains query
+4. Line 170-179: Profiles query
+5. Line 196-206: Chain links query
+
+### File: `src/utils/chainNames.ts`
+
+**Same issue exists here** - The timeout wrapper pattern is the same. Apply the same fix:
+
+```typescript
+// BEFORE
+const fetchPromise = supabase.from('used_chain_names').select('chain_name');
+const { data, error } = await Promise.race([fetchPromise, timeoutPromise]);
+
+// This is actually correct - fetchPromise IS the promise, not Promise.resolve(fetchPromise)
 ```
 
-## Files to Change
+Actually `chainNames.ts` is already correct - it passes the query directly without `Promise.resolve()`.
 
-| File | Change |
-|------|--------|
-| `src/hooks/useMentChains.ts` | 1. Make `checkAndExpireChains` catch its own errors<br>2. Wrap inner queries with `withTimeout`<br>3. Wrap outer call in try/catch so it fails gracefully |
-| `src/components/chains/ChainDashboard.tsx` | Update error state to include header with "Start Chain" button and the modal |
+## Summary of Changes
 
-## Expected Behavior After Fix
+| File | Lines | Change |
+|------|-------|--------|
+| `src/hooks/useMentChains.ts` | 73-84 | Remove `Promise.resolve()` wrapper |
+| `src/hooks/useMentChains.ts` | 88-100 | Remove `Promise.resolve()` wrapper |
+| `src/hooks/useMentChains.ts` | 139-149 | Remove `Promise.resolve()` wrapper |
+| `src/hooks/useMentChains.ts` | 170-179 | Remove `Promise.resolve()` wrapper |
+| `src/hooks/useMentChains.ts` | 196-206 | Remove `Promise.resolve()` wrapper |
 
-| Scenario | Before | After |
-|----------|--------|-------|
-| Expire check times out | Entire page shows error, no Start Chain button | Chains still load, warning logged |
-| All queries time out | Error state, no Start Chain button | Error state WITH Start Chain button visible |
-| Database is slow | 5s timeout crashes everything | Graceful fallback, user can retry |
+## Technical Explanation
 
+The Supabase query builder (returned by `supabase.from().select()`) implements the `PromiseLike` interface with a `.then()` method. When you call `Promise.race([queryBuilder, timeout])`, JavaScript automatically calls `.then()` on the query builder, which triggers the HTTP request.
+
+When you wrap it in `Promise.resolve(queryBuilder)`, it creates a new promise that resolves with the query builder as its value - but this doesn't trigger the HTTP request. The timing race then starts against a non-executing promise.
+
+## Expected Result
+
+After this fix:
+- Queries will execute immediately when passed to `withTimeout`
+- The 8-second timeout will only trigger if the actual HTTP request takes too long
+- Chain list should load in ~100-500ms (based on direct query tests)
