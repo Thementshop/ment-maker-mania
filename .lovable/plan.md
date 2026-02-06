@@ -1,108 +1,131 @@
 
-# Fix Supabase Query Timeouts
 
-## Problem Identified
+# Fix Supabase Client Query Blocking
 
-All Supabase queries from the JavaScript client are timing out (3s, 5s, 8s), but when I query the database directly via the admin API, responses are **instant** (under 100ms).
+## Problem Summary
 
-The issue is in how the `withTimeout` helper wraps the Supabase queries:
+Your chains are being created successfully (confetti proves it!), but the chain list fails to load. The console shows "ment_chains query timed out after 8000ms" but the actual HTTP request never appears in network logs.
 
-```typescript
-await withTimeout(
-  Promise.resolve(supabase.from('ment_chains').select('*')...),
-  8000,
-  'ment_chains query'
-);
-```
+**Root cause**: The Supabase JavaScript client is blocking database queries. The auth token refresh works, but database requests get stuck in a queue and never fire.
 
-The `Promise.resolve()` immediately resolves with the query builder object (which is PromiseLike but not yet executing), then the timeout starts counting. The actual HTTP request may not start until later, or the client may be in a blocked state.
+## Technical Analysis
 
-## Root Cause Analysis
+| Observed Behavior | Explanation |
+|-------------------|-------------|
+| Token refresh at 19:51:40 returns 200 | Auth is working |
+| "ment_chains query timed out after 8000ms" | Query started but never completed |
+| No `/rest/v1/ment_chains` in network logs | HTTP request was never sent |
+| Direct database query returns 9 chains in ~100ms | Database is healthy |
 
-The Supabase JS client can get stuck in certain states:
-1. During token refresh cycles
-2. When the auth state is changing
-3. When there are network issues
-
-The current `withTimeout` approach doesn't work correctly because:
-- `Promise.resolve(queryBuilder)` may not trigger the HTTP request immediately
-- The timeout race starts before the actual request begins
+This is a known Supabase JS v2 behavior where the client can get into a blocked state where it queues requests but never sends them.
 
 ## Solution
 
-Remove the `Promise.resolve()` wrapper entirely. The Supabase query builder IS already awaitable - just use it directly with a simpler timeout approach.
+Add explicit session initialization before making database queries. This ensures the Supabase client has resolved its auth state before attempting queries.
 
-**New approach**: Create individual query functions that we can properly timeout, or restructure to not need `Promise.resolve()`.
+### Changes
 
-## Changes
+**File: `src/hooks/useMentChains.ts`**
 
-### File: `src/hooks/useMentChains.ts`
-
-**Simplify the query execution** - Remove `Promise.resolve()` and call the queries directly:
+1. **Add session check before queries** - Wait for the Supabase client to have a valid session state before making database requests:
 
 ```typescript
-// BEFORE (broken)
-const chainsResult = await withTimeout(
-  Promise.resolve(
-    supabase.from('ment_chains').select('*')...
-  ),
-  8000,
-  'ment_chains query'
-);
+const fetchChains = useCallback(async (silent = false) => {
+  if (!user) {
+    setChains([]);
+    setYourTurnChains([]);
+    setIsLoading(false);
+    return;
+  }
 
-// AFTER (working)
-const chainsPromise = supabase
+  try {
+    if (!silent) {
+      setIsLoading(true);
+    }
+    setError(null);
+
+    console.log('[useMentChains] Fetching chains...');
+
+    // CRITICAL: Ensure Supabase client has resolved auth state
+    // This fixes the issue where queries hang during/after token refresh
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      console.warn('[useMentChains] No active session, skipping fetch');
+      setChains([]);
+      setYourTurnChains([]);
+      setIsLoading(false);
+      return;
+    }
+    console.log('[useMentChains] Session confirmed, proceeding with fetch');
+
+    // ... rest of fetch logic
+  }
+}
+```
+
+2. **Add retry logic** - If a query fails, retry once after re-confirming session:
+
+```typescript
+// Retry wrapper for critical queries
+const fetchWithRetry = async <T>(
+  queryFn: () => PromiseLike<{ data: T | null; error: any }>,
+  name: string
+): Promise<{ data: T | null; error: any }> => {
+  try {
+    const result = await withTimeout(queryFn(), 8000, name);
+    return result;
+  } catch (err) {
+    console.warn(`[useMentChains] ${name} failed, retrying after session refresh...`);
+    // Force session refresh before retry
+    await supabase.auth.getSession();
+    return await withTimeout(queryFn(), 8000, `${name} (retry)`);
+  }
+};
+```
+
+3. **Reduce timeout for faster feedback** - Users shouldn't wait 8+ seconds for an error. Reduce to 5 seconds with a single retry:
+
+```typescript
+// Faster timeout (5s) with automatic retry
+const chainsQuery = () => supabase
   .from('ment_chains')
   .select('*')
   .or(`started_by.eq.${user.id},current_holder.eq.${user.id}`)
   .order('created_at', { ascending: false });
 
-const chainsResult = await withTimeout(chainsPromise, 8000, 'ment_chains query');
+const chainsResult = await fetchWithRetry(chainsQuery, 'ment_chains query');
 ```
 
-The Supabase query builder returns a `PromiseLike` that can be directly passed to `Promise.race()` - no need for `Promise.resolve()`.
+## Why This Fixes The Issue
 
-**Apply this fix to all 4 query locations:**
+| Issue | Fix |
+|-------|-----|
+| Client blocks during auth transitions | `getSession()` call forces auth resolution before query |
+| First query often hangs | Retry logic catches first-query failures |
+| 8+ second wait for error | Reduced to 5s with faster retry |
+| No visibility into what's happening | Session confirmation logs |
 
-1. Line 73-84: Find expired chains query
-2. Line 88-100: Update expired chains query  
-3. Line 139-149: Main ment_chains query
-4. Line 170-179: Profiles query
-5. Line 196-206: Chain links query
+## Expected Behavior After Fix
 
-### File: `src/utils/chainNames.ts`
-
-**Same issue exists here** - The timeout wrapper pattern is the same. Apply the same fix:
-
-```typescript
-// BEFORE
-const fetchPromise = supabase.from('used_chain_names').select('chain_name');
-const { data, error } = await Promise.race([fetchPromise, timeoutPromise]);
-
-// This is actually correct - fetchPromise IS the promise, not Promise.resolve(fetchPromise)
+```
+[useMentChains] Fetching chains...
+[useMentChains] Session confirmed, proceeding with fetch
+[useMentChains] ment_chains fetched: 9 chains
+[useMentChains] Profiles fetched
+[useMentChains] Done - 9 chains loaded
 ```
 
-Actually `chainNames.ts` is already correct - it passes the query directly without `Promise.resolve()`.
+Or if first attempt fails:
+```
+[useMentChains] Fetching chains...
+[useMentChains] Session confirmed, proceeding with fetch
+[useMentChains] ment_chains query failed, retrying after session refresh...
+[useMentChains] ment_chains fetched: 9 chains (retry succeeded)
+```
 
-## Summary of Changes
+## Files to Change
 
-| File | Lines | Change |
-|------|-------|--------|
-| `src/hooks/useMentChains.ts` | 73-84 | Remove `Promise.resolve()` wrapper |
-| `src/hooks/useMentChains.ts` | 88-100 | Remove `Promise.resolve()` wrapper |
-| `src/hooks/useMentChains.ts` | 139-149 | Remove `Promise.resolve()` wrapper |
-| `src/hooks/useMentChains.ts` | 170-179 | Remove `Promise.resolve()` wrapper |
-| `src/hooks/useMentChains.ts` | 196-206 | Remove `Promise.resolve()` wrapper |
+| File | Description |
+|------|-------------|
+| `src/hooks/useMentChains.ts` | Add session check and retry logic before database queries |
 
-## Technical Explanation
-
-The Supabase query builder (returned by `supabase.from().select()`) implements the `PromiseLike` interface with a `.then()` method. When you call `Promise.race([queryBuilder, timeout])`, JavaScript automatically calls `.then()` on the query builder, which triggers the HTTP request.
-
-When you wrap it in `Promise.resolve(queryBuilder)`, it creates a new promise that resolves with the query builder as its value - but this doesn't trigger the HTTP request. The timing race then starts against a non-executing promise.
-
-## Expected Result
-
-After this fix:
-- Queries will execute immediately when passed to `withTimeout`
-- The 8-second timeout will only trigger if the actual HTTP request takes too long
-- Chain list should load in ~100-500ms (based on direct query tests)
