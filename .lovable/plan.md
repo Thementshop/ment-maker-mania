@@ -1,106 +1,108 @@
 
+# Fix: Bypass Supabase JS Client for Chain Queries
 
-# Fix: Use AuthContext Session Instead of Calling getSession Directly
+## Problem Summary
 
-## Problem Identified
+The Supabase JavaScript client's query builder gets stuck after initial auth. Network logs confirm that HTTP requests are **never sent** - the queries time out without making any network call.
 
-The console shows the fetch starts but immediately times out without ever showing "Session confirmed":
-```
-[useMentChains] Fetching chains...
-Chain fetch timed out, clearing loading state
-```
-
-This means `await supabase.auth.getSession()` on line 135 is **blocking/hanging**.
-
-**Root cause**: The Supabase JS client has an internal lock during auth state transitions. When `useMentChains` calls `supabase.auth.getSession()` directly, it can get stuck waiting for the AuthContext's competing `getSession()` call to complete first.
-
-The project's memory explicitly states:
-> "Components must access the current user session via the project's AuthContext rather than calling `supabase.auth.getSession()` directly."
+**Evidence:**
+- `StartChainModal` uses `fetch()` directly → **works** (chains created successfully)
+- `gameStore` queries during initial auth → **works** (game state loads)
+- `useMentChains` queries via `supabase.from()` later → **times out without network request**
 
 ## Solution
 
-Replace the direct `supabase.auth.getSession()` call with using the session already available from `useAuth()`.
+Replace the `supabase.from().select()` calls in `useMentChains` with direct `fetch()` calls to the Supabase REST API, using the same pattern that works in `StartChainModal`.
 
-### Changes
+## Technical Changes
 
-**File: `src/hooks/useMentChains.ts`**
+### File: `src/hooks/useMentChains.ts`
 
-1. **Get session from AuthContext** - Already importing `useAuth`, just destructure `session` too:
-
-```typescript
-// Line 75: Add session to destructure
-const { user, session } = useAuth();
-```
-
-2. **Remove blocking getSession call** - Use the session from context instead:
+**1. Add a REST API helper function:**
 
 ```typescript
-// Lines 133-143: Replace getSession() call with context check
-// BEFORE (blocks):
-const { data: { session } } = await supabase.auth.getSession();
-if (!session) { ... }
-
-// AFTER (non-blocking):
-if (!session) {
-  console.warn('[useMentChains] No active session, skipping fetch');
-  setChains([]);
-  setYourTurnChains([]);
-  setIsLoading(false);
-  return;
-}
-console.log('[useMentChains] Session available, proceeding with fetch');
-```
-
-3. **Update fetchWithRetry** - Don't call getSession() on retry either:
-
-```typescript
-// Lines 23-27: Remove session refresh, just retry the query
-const fetchWithRetry = async <T>(
-  queryFn: () => PromiseLike<{ data: T | null; error: any }>,
-  name: string,
-  timeoutMs: number = 5000
+// Direct REST API call - bypasses JS client blocking issues
+const supabaseRest = async <T>(
+  tableName: string,
+  queryParams: string,
+  accessToken: string
 ): Promise<{ data: T | null; error: any }> => {
   try {
-    const result = await withTimeout(queryFn(), timeoutMs, name);
-    return result;
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/${tableName}?${queryParams}`,
+      {
+        headers: {
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        }
+      }
+    );
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      return { data: null, error: { message: errorText } };
+    }
+    
+    const data = await response.json();
+    return { data, error: null };
   } catch (err) {
-    console.warn(`[useMentChains] ${name} failed, retrying...`);
-    // Just retry without calling getSession (which blocks)
-    return await withTimeout(queryFn(), timeoutMs, `${name} (retry)`);
+    return { data: null, error: err };
   }
 };
 ```
 
-4. **Add session to useEffect dependency** - Ensure fetch triggers when session changes:
+**2. Replace query calls in `fetchChains`:**
 
+Instead of:
 ```typescript
-// Line 299: Add session to dependency array
-}, [user, session, fetchChains]);
+const chainsQuery = supabase.from('ment_chains').select('*')...
 ```
+
+Use:
+```typescript
+const chainsResult = await supabaseRest<MentChain[]>(
+  'ment_chains',
+  `select=*&or=(started_by.eq.${user.id},current_holder.eq.${user.id})&order=created_at.desc`,
+  session.access_token
+);
+```
+
+**3. Update all query locations:**
+
+| Query | REST Endpoint |
+|-------|---------------|
+| Main chains fetch | `ment_chains?select=*&or=(started_by.eq.{id},current_holder.eq.{id})&order=created_at.desc` |
+| Profiles batch | `profiles?select=id,display_name&id=in.(${ids})` |
+| Chain links | `chain_links?select=*&chain_id=in.(${ids})&order=passed_at.desc` |
+
+**4. Remove the timeout wrappers:**
+
+Since `fetch()` has built-in timeout support and doesn't get stuck, we can simplify the code by removing `withTimeout` and `fetchWithRetry`.
+
+**5. Remove the expired chains check:**
+
+The auto-expire logic that runs before fetching was adding complexity and potential blocking. Move this to a background process or edge function instead of running it on every fetch.
 
 ## Why This Works
 
-| Issue | Fix |
-|-------|-----|
-| `getSession()` blocks during auth transitions | Use session from AuthContext (already resolved) |
-| Retry logic also calls blocking `getSession()` | Remove that call, just retry the query |
-| Queries never fire | Without blocking, queries execute immediately |
+| Problem | Solution |
+|---------|----------|
+| Supabase JS client internal queue blocks | Direct REST calls bypass the client entirely |
+| Queries never send HTTP requests | `fetch()` always sends immediately |
+| Timeout wrappers add complexity | Native fetch with AbortController is simpler |
+| Same pattern already works | `StartChainModal` proves this approach works |
 
-## Expected Console Output After Fix
-
-```
-[useMentChains] Fetching chains...
-[useMentChains] Session available, proceeding with fetch
-[useMentChains] Checking expired chains...
-[useMentChains] Fetching ment_chains...
-[useMentChains] ment_chains fetched: 9 chains
-[useMentChains] Fetching profiles...
-[useMentChains] Done - 9 chains loaded
-```
-
-## Files to Change
+## Files Changed
 
 | File | Changes |
 |------|---------|
-| `src/hooks/useMentChains.ts` | 1. Get `session` from `useAuth()`<br>2. Remove `await supabase.auth.getSession()` call<br>3. Use context session for the check<br>4. Remove `getSession()` from retry logic<br>5. Add `session` to useEffect deps |
+| `src/hooks/useMentChains.ts` | Replace `supabase.from()` with direct REST API calls |
 
+## Expected Result
+
+After this fix:
+- Chain list loads immediately (9 chains visible)
+- Network logs show actual `/rest/v1/ment_chains` requests
+- Console shows "Done - 9 chains loaded"
+- No more timeout errors
