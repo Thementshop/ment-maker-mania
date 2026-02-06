@@ -21,21 +21,17 @@ Deno.serve(async (req) => {
     const now = new Date().toISOString();
     console.log(`[expire-chains] Running at ${now}`);
 
-    // Find and update all expired active chains
-    const { data: expiredChains, error } = await supabase
+    // First, get chains that are about to expire so we can capture the current_holder
+    const { data: chainsToExpire, error: fetchError } = await supabase
       .from('ment_chains')
-      .update({ 
-        status: 'broken', 
-        broken_at: now 
-      })
+      .select('chain_id, chain_name, current_holder, started_by, share_count')
       .lt('expires_at', now)
-      .eq('status', 'active')
-      .select('chain_id, chain_name, expires_at');
+      .eq('status', 'active');
 
-    if (error) {
-      console.error('[expire-chains] Error:', error);
+    if (fetchError) {
+      console.error('[expire-chains] Error fetching chains:', fetchError);
       return new Response(
-        JSON.stringify({ error: error.message }),
+        JSON.stringify({ error: fetchError.message }),
         { 
           status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -43,19 +39,49 @@ Deno.serve(async (req) => {
       );
     }
 
-    const expiredCount = expiredChains?.length || 0;
-    console.log(`[expire-chains] Expired ${expiredCount} chains:`, 
-      expiredChains?.map(c => c.chain_name || c.chain_id)
-    );
+    if (!chainsToExpire || chainsToExpire.length === 0) {
+      console.log('[expire-chains] No chains to expire');
+      return new Response(
+        JSON.stringify({ success: true, expired_count: 0 }),
+        { 
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    // Update each chain with broken_by set to current_holder
+    const expiredChains = [];
+    for (const chain of chainsToExpire) {
+      const { error: updateError } = await supabase
+        .from('ment_chains')
+        .update({ 
+          status: 'broken', 
+          broken_at: now,
+          broken_by: chain.current_holder // Track who broke the chain
+        })
+        .eq('chain_id', chain.chain_id);
+
+      if (updateError) {
+        console.error(`[expire-chains] Error updating chain ${chain.chain_id}:`, updateError);
+      } else {
+        expiredChains.push(chain);
+        console.log(`[expire-chains] Chain "${chain.chain_name || chain.chain_id}" broken by ${chain.current_holder}`);
+      }
+    }
+
+    const expiredCount = expiredChains.length;
+    console.log(`[expire-chains] Expired ${expiredCount} chains`);
 
     return new Response(
       JSON.stringify({ 
         success: true,
         expired_count: expiredCount,
-        expired_chains: expiredChains?.map(c => ({
+        expired_chains: expiredChains.map(c => ({
           chain_id: c.chain_id,
           chain_name: c.chain_name,
-          expired_at: c.expires_at
+          broken_by: c.current_holder,
+          share_count: c.share_count
         }))
       }),
       { 

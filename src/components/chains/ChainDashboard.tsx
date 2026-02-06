@@ -6,8 +6,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import ChainCardNew, { ChainData } from './ChainCardNew';
 import StartChainModal from './StartChainModal';
 import ChainDetailsModal from './ChainDetailsModal';
+import ChainCompleteModal from './ChainCompleteModal';
 import Leaderboard from './Leaderboard';
 import { useMentChains, MentChain } from '@/hooks/useMentChains';
+import { useBrokenChainNotification } from '@/hooks/useBrokenChainNotification';
 
 const tabs = [
   { id: 'active', label: 'Active', icon: '🔥' },
@@ -65,6 +67,9 @@ const ChainDashboard = () => {
 
   // Fetch real chains from database
   const { chains, isLoading, error, refetch, usePauseToken } = useMentChains();
+
+  // Check for broken chains to show collection modal
+  const { brokenChain, markAsViewed } = useBrokenChainNotification();
 
   // Transform MentChain[] to ChainData[]
   const chainData = useMemo(() => {
@@ -261,6 +266,20 @@ const ChainDashboard = () => {
           }}
           isOpen={true}
           onClose={() => setSelectedChainForDetails(null)}
+        />
+      )}
+
+      {/* Broken Chain Collection Modal */}
+      {brokenChain && (
+        <ChainCompleteModal
+          isOpen={true}
+          onClose={() => markAsViewed(brokenChain.chain_id)}
+          chainName={brokenChain.chain_name || `Chain #${brokenChain.chain_id.slice(0, 6)}`}
+          chainId={brokenChain.chain_id}
+          totalShares={brokenChain.share_count}
+          links={brokenChain.links}
+          brokenBy={brokenChain.broken_by || undefined}
+          brokenByDisplayName={brokenChain.broken_by_display_name}
         />
       )}
     </div>
