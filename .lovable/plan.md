@@ -1,112 +1,225 @@
 
+# Implement Sharing, Countdown, and Chain Expiration
 
-# Fix View Details Modal and Improve Chain Visibility
+## Current Status
 
-## Summary of Findings
+| Feature | Current State | What's Missing |
+|---------|---------------|----------------|
+| Share Button | Uses Web Share API + clipboard fallback | Shares generic text, not a unique chain link |
+| Countdown Timer | Shows for "Your Turn" chains only | Needs to show for chain starters too (as observer) |
+| Chain Expiration | Timer reaches 0 but nothing happens | Need auto-break logic |
+| Recipient View | No special view exists | Need landing page for chain recipients |
+| Notifications | No reminder system | Need 12hr and 2hr reminders |
 
-| Issue | Status | Root Cause |
-|-------|--------|------------|
-| View Details does nothing | Bug | Handler only logs to console |
-| Chain in wrong place | False Alarm | Chain IS inside Active tab correctly |
-| Missing 8 chains | RLS Working Correctly | Those chains belong to different user (info@mentshop.com) |
-| Chain list structure | Working | Tabs filter chains by status/holder correctly |
+## Implementation Plan
 
-## Problem 1: View Details Button Not Working
+### 1. Create Shareable Chain Links
 
-The `ChainDetailsModal` is fully implemented with:
-- Chain flow timeline
-- Real-time updates via Supabase subscription
-- Share functionality
+**Generate unique chain URLs:**
+```
+Preview: https://id-preview--932358f2-26f5-465a-b493-c072c610ccf5.lovable.app/chain/[chain-id]
+Future: https://mentshop.app/chain/[chain-id]
+```
 
-But the click handler in `ChainDashboard.tsx` does nothing:
+**Update `ChainDetailsModal.tsx` share button:**
+- Generate link: `${window.location.origin}/chain/${chain.chain_id}`
+- Copy to clipboard with visual feedback
+- Show toast: "Link copied! 🔗"
+
+### 2. Create Chain Landing Page
+
+**New route: `/chain/:chainId`**
+
+This page will show different views based on who's viewing:
+
+| Viewer Type | What They See |
+|-------------|---------------|
+| Current Holder | Big countdown, CTA to pass, who sent it, compliment received |
+| Chain Starter | Status tracker, who has it now, time remaining for their turn |
+| Past Participant | Chain timeline, their contribution |
+| Not in Chain | Public chain stats (if we want to allow this) |
+
+**Current Holder View Components:**
+```
+┌─────────────────────────────────────────┐
+│         🔗 "Kindness Wave" Chain        │
+│                                         │
+│     ┌─────────────────────────────┐     │
+│     │    ⏳ 23:45:32               │     │
+│     │    TIME REMAINING           │     │
+│     └─────────────────────────────┘     │
+│                                         │
+│  💚 From @donna.pursley:                │
+│  "You're the kind of person who makes  │
+│   everyone feel welcome!"               │
+│                                         │
+│  ┌─────────────────────────────────┐    │
+│  │  Pass It Forward →              │    │
+│  └─────────────────────────────────┘    │
+│                                         │
+│  🔥 Don't let the chain break!          │
+│  Pass to someone in the next 23 hours   │
+└─────────────────────────────────────────┘
+```
+
+### 3. Enhanced Countdown for Chain Starters
+
+When viewing chains you started (not your turn):
+- Show timer in a lighter style
+- Label: "Waiting on @brent • 23:45:32 remaining"
+- Add "Send Reminder" button when < 6 hours left
+
+**Update `ChainCardNew.tsx`:**
+```typescript
+// For chains you started but it's not your turn
+{!isYourTurn && chain.started_by === currentUserId && (
+  <div className="text-sm text-muted-foreground">
+    ⏳ {countdown.formattedTime} for @{chain.current_holder_display_name}
+    {countdown.hours < 6 && (
+      <Button size="sm" variant="ghost">Send Nudge</Button>
+    )}
+  </div>
+)}
+```
+
+### 4. Chain Expiration Logic
+
+**Option A: Client-side check (immediate but not guaranteed)**
+- Already partially implemented in `useMentChains`
+- On each fetch, check if `expires_at < now` and update status
+
+**Option B: Database function + cron (reliable)**
+Create a scheduled edge function that runs every 15 minutes:
+```typescript
+// supabase/functions/expire-chains/index.ts
+await supabase
+  .from('ment_chains')
+  .update({ status: 'broken', broken_at: new Date() })
+  .lt('expires_at', new Date())
+  .eq('status', 'active');
+```
+
+**Recommended: Both A and B**
+- Client-side provides instant feedback
+- Cron ensures chains eventually break even if no one visits
+
+### 5. Reminder System (Future Enhancement)
+
+Since this requires server-side notifications (email/SMS), this would need:
+- A cron job to check chains approaching expiration
+- Integration with email service (Resend, SendGrid) or SMS (Twilio)
+- User notification preferences
+
+For now, focus on visual urgency cues in the UI.
+
+## Files to Create/Modify
+
+| File | Action | Purpose |
+|------|--------|---------|
+| `src/pages/ChainPage.tsx` | Create | Landing page for chain links |
+| `src/App.tsx` | Modify | Add route for `/chain/:chainId` |
+| `src/components/chains/ChainDetailsModal.tsx` | Modify | Fix share button to copy chain link |
+| `src/components/chains/ChainCardNew.tsx` | Modify | Show timer for chain starters |
+| `supabase/functions/expire-chains/index.ts` | Create | Cron job to expire chains |
+| `supabase/config.toml` | Modify | Add cron schedule |
+
+## Technical Details
+
+### ChainPage Component Structure
 
 ```typescript
-const handleViewDetails = (chainId: string) => {
-  console.log('View details:', chainId);  // Just logs, doesn't open modal!
+// src/pages/ChainPage.tsx
+const ChainPage = () => {
+  const { chainId } = useParams();
+  const { user } = useAuth();
+  
+  // Fetch chain data
+  const { data: chain } = useQuery({
+    queryKey: ['chain', chainId],
+    queryFn: () => fetchChainDetails(chainId)
+  });
+  
+  // Determine viewer type
+  const isCurrentHolder = chain?.current_holder === user?.id;
+  const isStarter = chain?.started_by === user?.id;
+  const isPastParticipant = checkIfParticipated(chainLinks, user?.id);
+  
+  // Use countdown hook
+  const countdown = useCountdown(chain?.expires_at);
+  
+  // Render appropriate view
+  if (isCurrentHolder) return <CurrentHolderView />;
+  if (isStarter) return <StarterView />;
+  return <PublicView />;
 };
 ```
 
-### Fix
-
-Add state to track which chain's details to show and render the modal:
+### Share Button Fix
 
 ```typescript
-const [selectedChainForDetails, setSelectedChainForDetails] = useState<ChainData | null>(null);
-
-const handleViewDetails = (chainId: string) => {
-  const chain = chainData.find(c => c.chain_id === chainId);
-  if (chain) {
-    setSelectedChainForDetails(chain);
+// ChainDetailsModal.tsx - handleShareAchievement()
+function handleShareAchievement() {
+  const chainUrl = `${window.location.origin}/chain/${chain.chain_id}`;
+  
+  if (navigator.share) {
+    navigator.share({
+      title: `Join "${chain.chain_name}" kindness chain!`,
+      text: `I'm part of a kindness chain with ${chain.share_count} shares! 💚`,
+      url: chainUrl
+    });
+  } else {
+    navigator.clipboard.writeText(chainUrl);
+    toast.success('Link copied to clipboard! 🔗');
   }
-};
+}
 ```
 
-Then render the modal:
-
-```tsx
-<ChainDetailsModal
-  chain={{
-    chain_id: selectedChainForDetails.chain_id,
-    chain_name: selectedChainForDetails.chain_name,
-    share_count: selectedChainForDetails.share_count,
-    tier: selectedChainForDetails.tier,
-    started_by: selectedChainForDetails.started_by,
-    started_by_display_name: selectedChainForDetails.started_by_display_name,
-  }}
-  isOpen={!!selectedChainForDetails}
-  onClose={() => setSelectedChainForDetails(null)}
-/>
-```
-
-## Problem 2: Missing Chains Explanation
-
-This is NOT a bug - RLS is working correctly!
-
-### Current Database Contents
-
-| Chain | Started By | Current Holder | Visible To |
-|-------|------------|----------------|------------|
-| test 10 | brentanddonna@yahoo.com | "brent" (text) | brentanddonna |
-| test 10 | info@mentshop.com | "brent" (text) | info@mentshop |
-| test 9 | info@mentshop.com | "brent" (text) | info@mentshop |
-| Test Chain | info@mentshop.com | test@example.com | info@mentshop |
-| (5 more) | info@mentshop.com | various | info@mentshop |
-
-### RLS Policy Logic
-
-```sql
--- Users can see chains they started OR are current holder of
-USING (
-  auth.uid() = started_by 
-  OR current_holder = auth.uid()::text
-)
-```
-
-Since `current_holder` is stored as text (email/name), not UUID, the `current_holder = auth.uid()::text` check fails for external recipients.
-
-### Why You Only See 1 Chain
-
-If logged in as `brentanddonna@yahoo.com`:
-- You started 1 chain ("test 10") - visible
-- 8 chains were started by different user - hidden correctly
-
-### To Test
-
-Log in as `info@mentshop.com` and you should see 8 chains!
-
-## Files to Change
-
-| File | Change |
-|------|--------|
-| `src/components/chains/ChainDashboard.tsx` | Add state and handler to open ChainDetailsModal |
-
-## Optional Enhancement: Add Console Logging
-
-Add better logging to help debug in the future:
+### Expire Chains Edge Function
 
 ```typescript
-console.log('[ChainDashboard] User ID:', currentUserId);
-console.log('[ChainDashboard] Total chains from API:', chains.length);
-console.log('[ChainDashboard] Filtered for active tab:', filteredChains.length);
+// supabase/functions/expire-chains/index.ts
+import { createClient } from '@supabase/supabase-js';
+
+Deno.serve(async () => {
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  );
+
+  const { data, error } = await supabase
+    .from('ment_chains')
+    .update({ 
+      status: 'broken', 
+      broken_at: new Date().toISOString() 
+    })
+    .lt('expires_at', new Date().toISOString())
+    .eq('status', 'active')
+    .select();
+
+  return new Response(JSON.stringify({ 
+    expired: data?.length || 0 
+  }));
+});
 ```
 
+## Priority Order
+
+1. **Fix Share Button** (5 min) - Quick win
+2. **Create ChainPage** (30 min) - Core recipient experience
+3. **Add Starter Timer** (10 min) - Better visibility
+4. **Expire Chains Cron** (15 min) - Data integrity
+5. **Reminder System** (Future) - Requires email/SMS integration
+
+## Questions for You
+
+1. **For unregistered recipients** (like "brent" who received via name only):
+   - Should they be able to view the chain without signing up?
+   - Or require login/signup to see and pass the chain?
+
+2. **Public visibility**:
+   - Can anyone with the link see chain stats?
+   - Or only participants?
+
+3. **Nudge/Reminder button**:
+   - What should happen when you click "Send Reminder"?
+   - In-app only? Or attempt to email/SMS if we have their contact?
