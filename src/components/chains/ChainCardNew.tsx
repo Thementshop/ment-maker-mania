@@ -211,18 +211,32 @@ const ChainCardNew = ({
           ) : isYourTurn ? (
             <span className="text-sm text-primary font-semibold">🎯 Your turn!</span>
           ) : (
-            <div className="space-y-1">
+            <div className="space-y-2">
               <span className="text-sm text-muted-foreground block">
                 Waiting on <span className="text-primary font-medium">@{chain.current_holder_display_name || chain.current_holder.slice(0, 8)}</span>
               </span>
               {/* Show timer for chains you started */}
               {chain.started_by === currentUserId && chain.status === 'active' && (
-                <span className={`text-xs flex items-center justify-center gap-1 ${
-                  countdown.hours < 2 ? 'text-orange-500' : 
-                  countdown.hours < 6 ? 'text-yellow-600' : 'text-muted-foreground'
-                }`}>
-                  ⏳ {countdown.formattedTime} remaining
-                </span>
+                <div className="flex flex-col items-center gap-1.5">
+                  <span className={`text-xs flex items-center gap-1 ${
+                    countdown.hours < 2 ? 'text-orange-500' : 
+                    countdown.hours < 6 ? 'text-yellow-600' : 'text-muted-foreground'
+                  }`}>
+                    ⏳ {countdown.formattedTime} remaining
+                  </span>
+                  {countdown.hours < 6 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs text-primary hover:text-primary/80"
+                      onClick={() => {
+                        toast.success(`Nudge sent to @${chain.current_holder_display_name || 'the current holder'}! 👋`);
+                      }}
+                    >
+                      👋 Send Nudge
+                    </Button>
+                  )}
+                </div>
               )}
             </div>
           )}
