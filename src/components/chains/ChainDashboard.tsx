@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import ChainCardNew, { ChainData } from './ChainCardNew';
 import StartChainModal from './StartChainModal';
+import ChainDetailsModal from './ChainDetailsModal';
 import Leaderboard from './Leaderboard';
 import { useMentChains, MentChain } from '@/hooks/useMentChains';
 
@@ -59,6 +60,7 @@ const ChainDashboard = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('active');
   const [showStartModal, setShowStartModal] = useState(false);
+  const [selectedChainForDetails, setSelectedChainForDetails] = useState<ChainData | null>(null);
   const currentUserId = user?.id || '';
 
   // Fetch real chains from database
@@ -97,7 +99,10 @@ const ChainDashboard = () => {
   };
 
   const handleViewDetails = (chainId: string) => {
-    console.log('View details:', chainId);
+    const chain = chainData.find(c => c.chain_id === chainId);
+    if (chain) {
+      setSelectedChainForDetails(chain);
+    }
   };
 
   const handleStartChain = () => {
@@ -242,6 +247,22 @@ const ChainDashboard = () => {
         onClose={() => setShowStartModal(false)}
         onSuccess={handleChainCreated}
       />
+
+      {/* Chain Details Modal */}
+      {selectedChainForDetails && (
+        <ChainDetailsModal
+          chain={{
+            chain_id: selectedChainForDetails.chain_id,
+            chain_name: selectedChainForDetails.chain_name,
+            share_count: selectedChainForDetails.share_count,
+            tier: selectedChainForDetails.tier,
+            started_by: selectedChainForDetails.started_by,
+            started_by_display_name: selectedChainForDetails.started_by_display_name,
+          }}
+          isOpen={true}
+          onClose={() => setSelectedChainForDetails(null)}
+        />
+      )}
     </div>
   );
 };
