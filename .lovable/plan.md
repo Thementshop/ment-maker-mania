@@ -1,64 +1,53 @@
 
 
-# Fix: Auto-Select First Tab With Data
+# Fix: "Share This Chain" Button
 
 ## Problem
 
-The dashboard defaults to the "Active" tab, but the only chain ("test 10") has `status: "broken"` and appears under "Ended." So the Active tab correctly shows "No chains in this category yet."
-
-This is not a data or RLS issue -- the chain data IS loading (1 chain fetched). It's a UX issue where the default tab has no matching chains.
+The Web Share API (`navigator.share`) is detected as available inside the preview iframe, so the code tries to use it. However, the iframe lacks permission, causing a `NotAllowedError`. The error is caught and silently logged ("Share cancelled"), but the code never falls back to copying to clipboard.
 
 ## Solution
 
-Update `ChainDashboard` to intelligently pick the default tab based on which categories have data, using this priority order:
+Change the share function to always copy to clipboard first (reliable), then optionally try `navigator.share` as a bonus. This ensures the user always gets feedback.
 
-1. **Your Turn** (most urgent -- needs action)
-2. **Active** (ongoing chains)
-3. **Queued** (waiting chains)
-4. **Ended** (historical)
+### File: `src/components/chains/ChainDetailsModal.tsx`
 
-If no tabs have data, default to "Active" as before.
-
-## Technical Changes
-
-### File: `src/components/chains/ChainDashboard.tsx`
-
-Add a `useMemo` or `useEffect` after `chainData` is computed to determine the best initial tab:
+Replace `handleShareAchievement` (~lines 118-130) with:
 
 ```typescript
-const defaultTab = useMemo(() => {
-  const hasYourTurn = chainData.some(c => c.current_holder === currentUserId && c.status === 'active' && !c.is_queued);
-  const hasActive = chainData.some(c => c.status === 'active' && !c.is_queued);
-  const hasQueued = chainData.some(c => c.is_queued);
-  const hasEnded = chainData.some(c => c.status === 'broken');
+async function handleShareAchievement() {
+  const chainUrl = `${window.location.origin}/chain/${chain.chain_id}`;
+  console.log('Share URL:', chainUrl);
 
-  if (hasYourTurn) return 'yourTurn';
-  if (hasActive) return 'active';
-  if (hasQueued) return 'queued';
-  if (hasEnded) return 'ended';
-  return 'active';
-}, [chainData, currentUserId]);
-```
-
-Then use a `useEffect` to set the active tab when data first loads:
-
-```typescript
-const [hasAutoSelected, setHasAutoSelected] = useState(false);
-
-useEffect(() => {
-  if (chainData.length > 0 && !hasAutoSelected) {
-    setActiveTab(defaultTab);
-    setHasAutoSelected(true);
+  // Always copy to clipboard first
+  try {
+    await navigator.clipboard.writeText(chainUrl);
+    toast.success('Link copied! 🔗');
+  } catch {
+    // Clipboard API may also fail in iframe — manual fallback
+    const textarea = document.createElement('textarea');
+    textarea.value = chainUrl;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+    toast.success('Link copied! 🔗');
   }
-}, [chainData, defaultTab, hasAutoSelected]);
+
+  // Optionally try native share (non-blocking)
+  if (navigator.share) {
+    navigator.share({
+      title: `Join "${chain.chain_name || 'Kindness Chain'}" 💚`,
+      text: `I'm part of a kindness chain with ${chain.share_count} shares!`,
+      url: chainUrl,
+    }).catch(() => {}); // silently ignore if denied
+  }
+}
 ```
 
-This ensures:
-- On first load, the tab with data is shown automatically
-- After the user manually switches tabs, their choice is respected
-- If all tabs are empty, "Active" remains the default
-
-## Files to Modify
-
-1. `src/components/chains/ChainDashboard.tsx` -- add smart default tab selection
+Key changes:
+- Clipboard copy happens **first and always**, so the user gets the toast immediately
+- Console logs the generated URL for debugging
+- `navigator.share` is attempted afterwards as a bonus (won't block the toast)
+- Includes a `document.execCommand('copy')` fallback for environments where the Clipboard API is also restricted
 
