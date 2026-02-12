@@ -39,6 +39,7 @@ const ChainPage = () => {
     queryKey: ['chain-page', chainId],
     queryFn: async (): Promise<ChainData | null> => {
       if (!chainId) return null;
+      console.log('Fetching chain:', chainId, 'User:', user?.id || 'anonymous');
 
       // Fetch chain
       const { data: chainData, error: chainError } = await supabase
