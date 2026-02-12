@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -62,6 +62,7 @@ const ChainDashboard = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('active');
   const [showStartModal, setShowStartModal] = useState(false);
+  const [hasAutoSelected, setHasAutoSelected] = useState(false);
   const [selectedChainForDetails, setSelectedChainForDetails] = useState<ChainData | null>(null);
   const currentUserId = user?.id || '';
 
@@ -75,6 +76,27 @@ const ChainDashboard = () => {
   const chainData = useMemo(() => {
     return chains.map(transformChainToCardData);
   }, [chains]);
+
+  // Smart default tab selection
+  const defaultTab = useMemo(() => {
+    const hasYourTurn = chainData.some(c => c.current_holder === currentUserId && c.status === 'active' && !c.is_queued);
+    const hasActive = chainData.some(c => c.status === 'active' && !c.is_queued);
+    const hasQueued = chainData.some(c => c.is_queued);
+    const hasEnded = chainData.some(c => c.status === 'broken');
+
+    if (hasYourTurn) return 'yourTurn';
+    if (hasActive) return 'active';
+    if (hasQueued) return 'queued';
+    if (hasEnded) return 'ended';
+    return 'active';
+  }, [chainData, currentUserId]);
+
+  useEffect(() => {
+    if (chainData.length > 0 && !hasAutoSelected) {
+      setActiveTab(defaultTab);
+      setHasAutoSelected(true);
+    }
+  }, [chainData, defaultTab, hasAutoSelected]);
 
   // Filter chains based on active tab
   const filteredChains = useMemo(() => {
