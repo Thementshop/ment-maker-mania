@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCountdown } from '@/hooks/useCountdown';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+// Direct REST API fetch is used instead of supabase client to avoid deadlocks for anonymous users
 import { tierConfig, getChainTier } from '@/utils/chainTiers';
 import { toast } from 'sonner';
 import { useState } from 'react';
@@ -39,52 +39,91 @@ const ChainPage = () => {
     queryKey: ['chain-page', chainId],
     queryFn: async (): Promise<ChainData | null> => {
       if (!chainId) return null;
-      console.log('Fetching chain:', chainId, 'User:', user?.id || 'anonymous');
+      console.log('[ChainPage] Starting chain fetch...', chainId, 'User:', user?.id || 'anonymous');
 
-      // Fetch chain
-      const { data: chainData, error: chainError } = await supabase
-        .from('ment_chains')
-        .select('*')
-        .eq('chain_id', chainId)
-        .single();
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000);
 
-      if (chainError) throw chainError;
+      try {
+        const baseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const apiKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+        const token = session?.access_token || apiKey;
 
-      // Fetch profiles for display names
-      const userIds = [chainData.started_by];
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      if (uuidRegex.test(chainData.current_holder)) {
-        userIds.push(chainData.current_holder);
+        // Fetch chain
+        const chainRes = await fetch(
+          `${baseUrl}/rest/v1/ment_chains?select=*&chain_id=eq.${chainId}`,
+          {
+            headers: {
+              'apikey': apiKey,
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+              'Accept': 'application/vnd.pgrst.object+json',
+            },
+            signal: controller.signal,
+          }
+        );
+
+        if (!chainRes.ok) throw new Error(`Chain fetch failed: ${chainRes.status}`);
+        const chainData = await chainRes.json();
+        console.log('[ChainPage] Chain data received:', chainData);
+
+        // Fetch profiles for display names
+        const userIds = [chainData.started_by];
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (uuidRegex.test(chainData.current_holder)) {
+          userIds.push(chainData.current_holder);
+        }
+
+        const profileRes = await fetch(
+          `${baseUrl}/rest/v1/profiles?select=id,display_name&id=in.(${userIds.join(',')})`,
+          {
+            headers: {
+              'apikey': apiKey,
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            signal: controller.signal,
+          }
+        );
+        const profiles = profileRes.ok ? await profileRes.json() : [];
+        const profileMap = new Map(profiles.map((p: any) => [p.id, p.display_name || 'Anonymous']));
+
+        // Fetch received compliment only if logged-in current holder
+        let receivedCompliment: string | undefined;
+        if (user && chainData.current_holder === user.id && session) {
+          const linksRes = await fetch(
+            `${baseUrl}/rest/v1/chain_links?select=sent_compliment&chain_id=eq.${chainId}&order=passed_at.desc&limit=1`,
+            {
+              headers: {
+                'apikey': apiKey,
+                'Authorization': `Bearer ${session.access_token}`,
+                'Content-Type': 'application/json',
+              },
+              signal: controller.signal,
+            }
+          );
+          const links = linksRes.ok ? await linksRes.json() : [];
+          receivedCompliment = links[0]?.sent_compliment;
+        }
+
+        return {
+          ...chainData,
+          started_by_display_name: profileMap.get(chainData.started_by) || 'Anonymous',
+          current_holder_display_name: uuidRegex.test(chainData.current_holder)
+            ? profileMap.get(chainData.current_holder) || 'Anonymous'
+            : chainData.current_holder,
+          received_compliment: receivedCompliment,
+        };
+      } catch (err: any) {
+        if (err.name === 'AbortError') {
+          console.error('[ChainPage] Fetch timed out after 15s');
+          throw new Error('Request timed out');
+        }
+        console.error('[ChainPage] Error fetching chain:', err);
+        throw err;
+      } finally {
+        clearTimeout(timeout);
       }
-
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, display_name')
-        .in('id', userIds);
-
-      const profileMap = new Map(profiles?.map(p => [p.id, p.display_name || 'Anonymous']) || []);
-
-      // Fetch received compliment if user is current holder
-      let receivedCompliment: string | undefined;
-      if (user && chainData.current_holder === user.id) {
-        const { data: links } = await supabase
-          .from('chain_links')
-          .select('sent_compliment')
-          .eq('chain_id', chainId)
-          .order('passed_at', { ascending: false })
-          .limit(1);
-        
-        receivedCompliment = links?.[0]?.sent_compliment;
-      }
-
-      return {
-        ...chainData,
-        started_by_display_name: profileMap.get(chainData.started_by) || 'Anonymous',
-        current_holder_display_name: uuidRegex.test(chainData.current_holder)
-          ? profileMap.get(chainData.current_holder) || 'Anonymous'
-          : chainData.current_holder,
-        received_compliment: receivedCompliment,
-      };
     },
     enabled: !!chainId,
   });
