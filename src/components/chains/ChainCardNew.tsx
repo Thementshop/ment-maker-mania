@@ -40,6 +40,7 @@ interface ChainCardNewProps {
   onViewDetails?: (chainId: string) => void;
   onChainPassed?: () => void;
   onUsePauseToken?: (chainId: string) => Promise<boolean>;
+  getChainLinks?: (chainId: string) => Promise<any[]>;
 }
 
 const getTimerColor = (hours: number, minutes: number): string => {
@@ -59,6 +60,7 @@ const ChainCardNew = ({
   onViewDetails,
   onChainPassed,
   onUsePauseToken,
+  getChainLinks,
 }: ChainCardNewProps) => {
   const { user } = useAuth();
   const countdown = useCountdown(chain.expires_at);
@@ -319,6 +321,7 @@ const ChainCardNew = ({
         }}
         isOpen={showDetailsModal}
         onClose={() => setShowDetailsModal(false)}
+        getChainLinks={getChainLinks}
       />
     </>
   );
