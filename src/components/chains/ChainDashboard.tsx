@@ -66,7 +66,7 @@ const ChainDashboard = () => {
   const currentUserId = user?.id || '';
 
   // Fetch real chains from database
-  const { chains, isLoading, error, refetch, usePauseToken } = useMentChains();
+  const { chains, isLoading, error, refetch, usePauseToken, getChainLinks } = useMentChains();
 
   // Check for broken chains to show collection modal
   const { brokenChain, markAsViewed } = useBrokenChainNotification();
@@ -218,6 +218,7 @@ const ChainDashboard = () => {
                 onViewDetails={handleViewDetails}
                 onChainPassed={handleChainCreated}
                 onUsePauseToken={usePauseToken}
+                getChainLinks={getChainLinks}
               />
             ))}
           </motion.div>
@@ -266,6 +267,7 @@ const ChainDashboard = () => {
           }}
           isOpen={true}
           onClose={() => setSelectedChainForDetails(null)}
+          getChainLinks={getChainLinks}
         />
       )}
 

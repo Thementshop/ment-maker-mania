@@ -32,6 +32,7 @@ interface ChainDetailsModalProps {
   };
   isOpen: boolean;
   onClose: () => void;
+  getChainLinks?: (chainId: string) => Promise<ChainLink[]>;
 }
 
 function formatTimeAgo(date: string): string {
@@ -43,7 +44,7 @@ function formatTimeAgo(date: string): string {
   return `${Math.floor(seconds / 86400)}d ago`;
 }
 
-const ChainDetailsModal = ({ chain, isOpen, onClose }: ChainDetailsModalProps) => {
+const ChainDetailsModal = ({ chain, isOpen, onClose, getChainLinks }: ChainDetailsModalProps) => {
   const [links, setLinks] = useState<ChainLink[]>([]);
   const [loading, setLoading] = useState(true);
   const channelRef = useRef<RealtimeChannel | null>(null);
@@ -85,14 +86,30 @@ const ChainDetailsModal = ({ chain, isOpen, onClose }: ChainDetailsModalProps) =
   async function fetchChainLinks() {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('chain_links')
-        .select('*')
-        .eq('chain_id', chain.chain_id)
-        .order('passed_at', { ascending: true });
-      
-      if (error) throw error;
-      setLinks(data || []);
+      if (getChainLinks) {
+        // Use the passed-in REST-based fetcher (avoids Supabase JS client deadlock)
+        const data = await getChainLinks(chain.chain_id);
+        setLinks(data || []);
+      } else {
+        // Fallback: direct REST API call
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData?.session?.access_token;
+        if (!accessToken) throw new Error('Not authenticated');
+        
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/chain_links?select=*&chain_id=eq.${chain.chain_id}&order=passed_at.asc`,
+          {
+            headers: {
+              'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json',
+            }
+          }
+        );
+        if (!response.ok) throw new Error('Failed to fetch');
+        const data = await response.json();
+        setLinks(data || []);
+      }
     } catch (error) {
       console.error('Error fetching chain links:', error);
       toast.error('Failed to load chain history');
