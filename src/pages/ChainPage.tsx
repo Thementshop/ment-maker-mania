@@ -343,6 +343,24 @@ const ChainPage = () => {
           </p>
         </div>
 
+        {/* Countdown Timer */}
+        <motion.div 
+          className={`${urgency.bg} rounded-2xl p-6 ${urgency.animate ? 'animate-pulse' : ''}`}
+          animate={urgency.animate ? { scale: [1, 1.02, 1] } : {}}
+          transition={{ repeat: Infinity, duration: 1 }}
+        >
+          <p className="text-sm text-muted-foreground mb-2">TIME REMAINING</p>
+          <p className={`text-4xl font-mono font-bold ${urgency.color}`}>
+            {urgency.icon} {countdown.formattedTime}
+          </p>
+          {countdown.hours < 2 && (
+            <p className="text-sm text-red-500 mt-2 flex items-center justify-center gap-1">
+              <Flame className="h-4 w-4" />
+              Don't let the chain break!
+            </p>
+          )}
+        </motion.div>
+
         {/* Stats */}
         <div className="bg-muted/50 rounded-xl p-4">
           <div className="flex justify-center gap-8">
