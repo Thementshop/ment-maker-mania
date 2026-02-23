@@ -1,1 +1,7 @@
 project_id = "cjnukzmjenfvuopooumb"
+
+[functions.create-chain]
+verify_jwt = false
+
+[functions.expire-chains]
+verify_jwt = false
