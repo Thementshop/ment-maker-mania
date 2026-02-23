@@ -420,7 +420,7 @@ const ChainPage = () => {
             <p className="text-sm text-muted-foreground">
               Sign in to join this kindness chain!
             </p>
-            <Button onClick={() => navigate('/auth')} className="w-full rounded-full">
+            <Button onClick={() => navigate(`/auth?returnTo=/chain/${chainId}`)} className="w-full rounded-full">
               Sign In to Participate
             </Button>
           </div>

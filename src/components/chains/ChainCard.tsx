@@ -54,14 +54,18 @@ const ChainCard = ({
   const timerColor = getTimerColor(countdown.hours, countdown.minutes);
 
   const handleShare = () => {
-    if (onShare) {
-      onShare(chain.chain_id);
-    } else {
-      navigator.clipboard.writeText(`Check out this Ment Chain! Chain #${chain.chain_id.slice(0, 8)}`);
-      toast({
-        title: "Link copied!",
-        description: "Chain link copied to clipboard",
-      });
+    const chainUrl = `${window.location.origin}/chain/${chain.chain_id}`;
+    navigator.clipboard.writeText(chainUrl).catch(() => {});
+    toast({
+      title: "Link copied! 🔗",
+      description: "Share this link with anyone",
+    });
+    if (navigator.share) {
+      navigator.share({
+        title: `Join this Kindness Chain! 💚`,
+        text: `Check out this Ment Chain with ${chain.links_count} links!`,
+        url: chainUrl
+      }).catch(() => {});
     }
   };
 
