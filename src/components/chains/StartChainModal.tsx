@@ -158,13 +158,14 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
     console.log('Recipient:', recipientValue.trim());
 
     try {
-      // Use session from AuthContext (already managed and auto-refreshed)
-      console.log('Using cached session from AuthContext');
-      if (!session?.access_token) {
-        console.error('No active session');
-        throw new Error('Please log in to start a chain.');
+      // Get a fresh session to avoid expired token errors
+      console.log('Refreshing session before creating chain...');
+      const { data: { session: freshSession }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !freshSession?.access_token) {
+        console.error('Session refresh failed:', sessionError);
+        throw new Error('Your session has expired. Please log in again.');
       }
-      console.log('Session available:', !!session.access_token);
+      console.log('Fresh session obtained:', !!freshSession.access_token);
 
       // Call edge function with 30s timeout
       const controller = new AbortController();
@@ -177,7 +178,7 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
+            'Authorization': `Bearer ${freshSession.access_token}`,
           },
           body: JSON.stringify({
             chainName: finalName,
