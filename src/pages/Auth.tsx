@@ -21,9 +21,13 @@ const Auth = () => {
   const [displayName, setDisplayName] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
+  // Read returnTo from URL params
+  const searchParams = new URLSearchParams(window.location.search);
+  const returnTo = searchParams.get('returnTo') || '/';
+
   // Redirect if already logged in
   if (!isLoading && user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to={returnTo} replace />;
   }
 
   const handleSignup = async (e: React.FormEvent) => {
