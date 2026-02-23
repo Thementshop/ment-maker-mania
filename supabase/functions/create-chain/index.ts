@@ -27,16 +27,16 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Create Supabase client with user's token
+    // Create admin client with service role key for auth verification
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } }
-    });
+    const adminClient = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Verify user
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    // Verify user token via admin client
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await adminClient.auth.getUser(token);
     if (userError || !user) {
       console.error('Auth error:', userError);
       return new Response(
@@ -44,8 +44,12 @@ Deno.serve(async (req) => {
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
     console.log('Authenticated user:', user.id);
+
+    // Create user-scoped client for RLS-respecting DB operations
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
 
     // Parse request body
     const body: CreateChainRequest = await req.json();
