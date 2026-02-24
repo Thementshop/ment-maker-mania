@@ -119,10 +119,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         clearTimeout(authTimeout);
         
         if (newSession?.user) {
+          // Reset stale state if switching users
+          if (loadedUserIdRef.current && loadedUserIdRef.current !== newSession.user.id) {
+            gameStateLoadedRef.current = false;
+            loadedUserIdRef.current = null;
+          }
           // Set immediate fallback profile from user metadata
           const meta = newSession.user.user_metadata;
           if (isSubscribed) {
-            setProfile(prev => prev ?? {
+            setProfile({
               id: newSession.user.id,
               display_name: meta?.full_name || newSession.user.email?.split('@')[0] || null,
               avatar_url: meta?.avatar_url || null,
@@ -157,7 +162,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         // Immediate fallback profile from metadata
         const meta = existingSession.user.user_metadata;
         if (isSubscribed) {
-          setProfile(prev => prev ?? {
+          setProfile({
             id: existingSession.user.id,
             display_name: meta?.full_name || existingSession.user.email?.split('@')[0] || null,
             avatar_url: meta?.avatar_url || null,
