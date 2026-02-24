@@ -16,9 +16,14 @@ interface HeaderProps {
 const Header = ({ worldCount }: HeaderProps) => {
   const [isHowItWorksOpen, setIsHowItWorksOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const { pauseTokens, canClaimFreeToken } = usePauseTokens();
   const formattedCount = worldCount.toLocaleString();
+
+  // Resilient display name: profile → user metadata → email local part → "U"
+  const resolvedName = profile?.display_name
+    || user?.user_metadata?.full_name
+    || (user?.email ? user.email.split('@')[0] : null);
 
   const getInitials = (name: string | null) => {
     if (!name) return 'U';
@@ -100,8 +105,8 @@ const Header = ({ worldCount }: HeaderProps) => {
             >
               <Avatar className="h-9 w-9 border-2 border-mint transition-colors group-hover:border-primary">
                 <AvatarImage src={profile?.avatar_url || undefined} />
-                <AvatarFallback className="bg-mint text-primary-foreground font-display">
-                  {getInitials(profile?.display_name)}
+              <AvatarFallback className="bg-mint text-primary-foreground font-display">
+                  {getInitials(resolvedName)}
                 </AvatarFallback>
               </Avatar>
               {/* Settings icon overlay on hover */}
