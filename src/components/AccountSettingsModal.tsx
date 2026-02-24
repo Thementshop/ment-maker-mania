@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
+import { useGameStore } from '@/store/gameStore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -131,18 +132,17 @@ const AccountSettingsModal = ({ isOpen, onClose }: AccountSettingsModalProps) =>
   const handleSignOut = async () => {
     setIsSigningOut(true);
     try {
-      // Race signOut against a timeout to prevent infinite loading
       await Promise.race([
         signOut(),
         new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000))
       ]);
     } catch {
-      // Force clear session on timeout
       console.warn('Sign out timed out, clearing local session');
       localStorage.removeItem('sb-cjnukzmjenfvuopooumb-auth-token');
+      useGameStore.getState().resetState();
     }
     onClose();
-    window.location.href = '/auth';
+    setTimeout(() => { window.location.href = '/auth'; }, 100);
   };
 
   return (
