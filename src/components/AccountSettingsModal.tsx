@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGameStore } from '@/store/gameStore';
@@ -25,6 +25,14 @@ const AccountSettingsModal = ({ isOpen, onClose }: AccountSettingsModalProps) =>
   // Email state
   const [email, setEmail] = useState(user?.email || '');
   const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
+
+  // Resync local state when profile/user arrives asynchronously
+  useEffect(() => {
+    if (profile?.display_name) setDisplayName(profile.display_name);
+  }, [profile?.display_name]);
+  useEffect(() => {
+    if (user?.email) setEmail(user.email);
+  }, [user?.email]);
 
   // Password state
   const [newPassword, setNewPassword] = useState('');

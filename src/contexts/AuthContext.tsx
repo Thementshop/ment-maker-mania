@@ -144,8 +144,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       clearTimeout(authTimeout);
       
       if (existingSession?.user) {
+        // Immediate fallback profile from metadata
+        const meta = existingSession.user.user_metadata;
+        if (isSubscribed) {
+          setProfile(prev => prev ?? {
+            id: existingSession.user.id,
+            display_name: meta?.full_name || existingSession.user.email?.split('@')[0] || null,
+            avatar_url: meta?.avatar_url || null,
+          });
+        }
         const userProfile = await fetchProfile(existingSession.user.id);
-        if (isSubscribed) setProfile(userProfile);
+        if (isSubscribed && userProfile) setProfile(userProfile);
         claimChains(existingSession.user.id);
         loadUserGameState(existingSession.user.id);
       }
