@@ -1,107 +1,66 @@
 
+# Fix: Stale User Data After Sign Out and Re-Login
 
-# Fix: Chain Not Appearing After New User Signup
+## Problem
+After signing out and signing back in as a different user, the homepage still shows the previous user's data (avatar "U", wrong game stats). 
 
 ## Root Cause
+Two issues in the sign-out flow:
 
-When a chain is passed forward, the `current_holder` field is set to a **text identifier** (name, email, or phone number) — not a UUID. When the recipient signs up and gets a new UUID, there is no mechanism to match that UUID back to the `current_holder` string. The dashboard query filters by `current_holder = user.id`, so the chain never appears.
+1. **`gameStateLoadedRef` is never reset on timeout path** -- When sign-out times out, the catch block clears localStorage but never calls `resetState()` or resets the ref. When the new user signs in, `loadUserGameState()` sees `gameStateLoadedRef.current === true` and skips loading the new user's data entirely.
 
-## Solution: Chain Claiming After Authentication
+2. **Hard redirect happens too soon** -- `window.location.href = '/auth'` fires immediately after sign-out (or timeout), before `onAuthStateChange` can run the cleanup logic (reset profile, reset game state, reset the ref). The page unloads mid-cleanup.
 
-Add a "claim chains" step that runs automatically after a user signs in or signs up. It checks if any active chains have `current_holder` matching the user's email, and updates them to the user's UUID.
+## Fix
 
-### 1. Database Function: `claim_chains_for_user`
+### 1. AccountSettingsModal.tsx -- Proper cleanup before redirect
+- In the `catch` block (timeout path), explicitly call `useGameStore.getState().resetState()` to clear stale game data
+- Move the hard redirect into a small `setTimeout` to allow state cleanup to propagate
 
-Create a database function that:
-- Takes a user UUID as input
-- Looks up the user's email from `auth.users`
-- Finds all active `ment_chains` where `current_holder` matches the email (case-insensitive)
-- Updates those chains' `current_holder` to the user's UUID
-- Returns the number of chains claimed
+### 2. AuthContext.tsx -- Reset gameStateLoadedRef on user change
+- In the `onAuthStateChange` handler, when a new user signs in, compare the user ID against the previously loaded one. If different, reset `gameStateLoadedRef` so game state is reloaded for the new user.
+- This is a safety net so even if sign-out cleanup was incomplete, a fresh login always loads fresh data.
 
-```sql
-CREATE OR REPLACE FUNCTION public.claim_chains_for_user(claiming_user_id uuid)
-RETURNS integer
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path TO 'public'
-AS $$
-DECLARE
-  user_email text;
-  claimed_count integer;
-BEGIN
-  -- Get user's email
-  SELECT email INTO user_email FROM auth.users WHERE id = claiming_user_id;
-  
-  IF user_email IS NULL THEN
-    RETURN 0;
-  END IF;
-  
-  -- Update chains where current_holder matches user's email
-  UPDATE ment_chains
-  SET current_holder = claiming_user_id::text
-  WHERE lower(current_holder) = lower(user_email)
-    AND status = 'active';
-  
-  GET DIAGNOSTICS claimed_count = ROW_COUNT;
-  RETURN claimed_count;
-END;
-$$;
-```
+## Technical Details
 
-This is a `SECURITY DEFINER` function because it needs to read from `auth.users` (which normal users can't access).
-
-### 2. AuthContext: Call claim function after sign-in/sign-up
-
-In `src/contexts/AuthContext.tsx`, add a call to `claim_chains_for_user` inside the `loadUserGameState` function (or alongside it) so it runs once per session after authentication:
-
+**AccountSettingsModal.tsx** changes:
 ```typescript
-const claimChains = async (userId: string) => {
+const handleSignOut = async () => {
+  setIsSigningOut(true);
   try {
-    const { data, error } = await supabase.rpc('claim_chains_for_user', {
-      claiming_user_id: userId
-    });
-    if (data && data > 0) {
-      console.log(`Claimed ${data} chain(s) for user`);
-    }
-  } catch (err) {
-    console.error('Failed to claim chains:', err);
+    await Promise.race([
+      signOut(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000))
+    ]);
+  } catch {
+    console.warn('Sign out timed out, clearing local session');
+    localStorage.removeItem('sb-cjnukzmjenfvuopooumb-auth-token');
+    useGameStore.getState().resetState();
   }
+  onClose();
+  // Small delay to let state cleanup propagate
+  setTimeout(() => { window.location.href = '/auth'; }, 100);
 };
 ```
 
-Call this inside `onAuthStateChange` after setting the user, right alongside `loadUserGameState`.
+**AuthContext.tsx** changes:
+- Add a `loadedUserIdRef` to track which user's game state is loaded
+- In `loadUserGameState`, check if userId changed (not just if already loaded)
+- Reset both refs in the sign-out branch of `onAuthStateChange`
 
-### 3. ChainPage: Auto-redirect after claiming
+```typescript
+const loadedUserIdRef = useRef<string | null>(null);
 
-In `src/pages/ChainPage.tsx`, when a logged-in user views a chain where `current_holder` matches their email but not their UUID, trigger the claim and re-fetch the chain data. This ensures the page immediately shows the "Pass It Forward" CTA instead of the public view.
+const loadUserGameState = async (userId: string) => {
+  if (gameStateLoadedRef.current && loadedUserIdRef.current === userId) return;
+  gameStateLoadedRef.current = true;
+  loadedUserIdRef.current = userId;
+  // ... load game state
+};
 
-The query already re-fetches on auth changes since `user` is a dependency. After the claim runs in AuthContext, the chain page query will re-run and find the user is now the current holder.
+// In onAuthStateChange, sign-out branch:
+gameStateLoadedRef.current = false;
+loadedUserIdRef.current = null;
+```
 
-### Flow After Fix
-
-1. User A passes chain to "bob@example.com"
-2. Bob opens chain link -- sees public view with "Sign In to Participate"
-3. Bob signs up with bob@example.com
-4. Auth completes -- `claim_chains_for_user` runs automatically
-5. Chain's `current_holder` updates from "bob@example.com" to Bob's UUID
-6. Bob is redirected back to `/chain/[id]` (via `returnTo`)
-7. Chain page detects Bob is `current_holder` -- shows "Pass It Forward" CTA
-8. Dashboard shows the chain in "Your Turn" tab
-
-### Files Changed
-
-| File | Change |
-|------|--------|
-| New migration | `claim_chains_for_user` database function |
-| `src/contexts/AuthContext.tsx` | Call `claim_chains_for_user` on auth |
-| `src/pages/ChainPage.tsx` | Add `user` to query key so it re-fetches after login |
-
-### Edge Cases Handled
-
-- **Case-insensitive matching**: Email comparison uses `lower()` to handle "Bob@Email.com" vs "bob@email.com"
-- **Multiple chains**: If the same email is the current holder of multiple chains, all get claimed
-- **No email match**: Function returns 0 gracefully, no errors
-- **Already claimed**: If `current_holder` is already a UUID, it won't match an email pattern, so no double-claiming
-- **Non-email identifiers**: Names and phone numbers won't match the email lookup, which is expected. A future enhancement could also match phone numbers if stored in user metadata
-
+This ensures switching users always triggers a fresh data load.
