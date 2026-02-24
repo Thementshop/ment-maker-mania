@@ -9,7 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 // Direct REST API fetch is used instead of supabase client to avoid deadlocks for anonymous users
 import { tierConfig, getChainTier } from '@/utils/chainTiers';
 import { toast } from 'sonner';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import PassChainModal from '@/components/chains/PassChainModal';
 import MintCircleGraphic from '@/components/chains/MintCircleGraphic';
 import { getShareBaseUrl } from '@/utils/getBaseUrl';
@@ -91,9 +91,22 @@ const ChainPage = () => {
 
         // Fetch received compliment only if logged-in current holder
         let receivedCompliment: string | undefined;
+        const userEmail = user?.email?.toLowerCase();
+        const holderMatchesUserId = !!user && chainData.current_holder === user.id;
+        const holderMatchesUserEmail = !!userEmail && chainData.current_holder.toLowerCase() === userEmail;
+
+        console.log('[ChainPage][Debug] Holder matching check:', {
+          chain_id: chainData.chain_id,
+          current_holder: chainData.current_holder,
+          user_id: user?.id,
+          user_email: user?.email,
+          holder_matches_user_id: holderMatchesUserId,
+          holder_matches_user_email: holderMatchesUserEmail,
+        });
+
         if (user && chainData.current_holder === user.id && session) {
           const linksRes = await fetch(
-            `${baseUrl}/rest/v1/chain_links?select=sent_compliment&chain_id=eq.${chainId}&order=passed_at.desc&limit=1`,
+            `${baseUrl}/rest/v1/chain_links?select=link_id,passed_to,sent_compliment,passed_at&chain_id=eq.${chainId}&order=passed_at.desc&limit=5`,
             {
               headers: {
                 'apikey': apiKey,
@@ -104,7 +117,26 @@ const ChainPage = () => {
             }
           );
           const links = linksRes.ok ? await linksRes.json() : [];
+
+          console.log('[ChainPage][Debug] chain_links query results:', links);
+          console.log('[ChainPage][Debug] latest link selected for modal:', links[0]
+            ? {
+                chain_link_id: links[0].link_id,
+                passed_to: links[0].passed_to,
+                sent_compliment: links[0].sent_compliment,
+                passed_at: links[0].passed_at,
+              }
+            : null
+          );
+
           receivedCompliment = links[0]?.sent_compliment;
+          console.log('[ChainPage][Debug] received compliment resolved from DB:', receivedCompliment);
+        } else {
+          console.warn('[ChainPage][Debug] Skipping chain_links lookup (will use fallback):', {
+            reason: 'current_holder !== user.id or no session',
+            current_holder: chainData.current_holder,
+            user_id: user?.id,
+          });
         }
 
         return {
@@ -128,6 +160,17 @@ const ChainPage = () => {
     },
     enabled: !!chainId,
   });
+
+  useEffect(() => {
+    if (!chain) return;
+
+    console.log('[ChainPage][Debug] Final compliment payload for UI:', {
+      chain_id: chain.chain_id,
+      received_compliment: chain.received_compliment,
+      fallback_will_be_used_in_modal: !chain.received_compliment,
+      fallback_text: "You're amazing!",
+    });
+  }, [chain]);
 
   const countdown = useCountdown(chain?.expires_at || '');
   
