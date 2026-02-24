@@ -100,6 +100,13 @@ export const useMentChains = (): UseMentChainsReturn => {
 
       console.log('[useMentChains] Fetching chains via REST API...');
 
+      // Claim any unclaimed chains for this user first (converts email → UUID in DB)
+      try {
+        await supabase.rpc('claim_chains_for_user', { claiming_user_id: user.id });
+      } catch (claimErr) {
+        console.warn('[useMentChains] claim_chains_for_user failed (non-fatal):', claimErr);
+      }
+
       // Fetch all chains the user is involved with using direct REST API
       // Include chains where current_holder is user's UUID OR email (for unclaimed chains)
       const userEmail = user.email || '';
