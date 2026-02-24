@@ -98,22 +98,56 @@ const ChainDashboard = () => {
     }
   }, [chainData, defaultTab, hasAutoSelected]);
 
+  // Debug: log incoming chainData and filtering
+  useEffect(() => {
+    if (chainData.length > 0) {
+      console.log('[MentChainsDebug][Dashboard] Incoming chainData:', chainData.map(c => ({
+        name: c.chain_name,
+        id: c.chain_id.slice(0, 8),
+        holder: c.current_holder,
+        status: c.status,
+        isYourTurn: c.current_holder === currentUserId,
+        holderIsEmail: !(/^[0-9a-f]{8}-/.test(c.current_holder)),
+      })));
+    }
+  }, [chainData, currentUserId]);
+
   // Filter chains based on active tab
   const filteredChains = useMemo(() => {
+    let result: ChainData[];
     switch (activeTab) {
       case 'active':
-        return chainData.filter(c => c.status === 'active' && !c.is_queued);
+        result = chainData.filter(c => c.status === 'active' && !c.is_queued);
+        break;
       case 'yourTurn':
-        return chainData.filter(c => c.current_holder === currentUserId && c.status === 'active' && !c.is_queued);
+        result = chainData.filter(c => c.current_holder === currentUserId && c.status === 'active' && !c.is_queued);
+        break;
       case 'queued':
-        return chainData.filter(c => c.is_queued);
+        result = chainData.filter(c => c.is_queued);
+        break;
       case 'ended':
-        return chainData.filter(c => c.status === 'broken');
+        result = chainData.filter(c => c.status === 'broken');
+        break;
       case 'leaderboard':
-        return [...chainData].sort((a, b) => b.share_count - a.share_count).slice(0, 10);
+        result = [...chainData].sort((a, b) => b.share_count - a.share_count).slice(0, 10);
+        break;
       default:
-        return chainData;
+        result = chainData;
     }
+    
+    console.log(`[MentChainsDebug][Dashboard] Tab="${activeTab}" filtered: ${result.length}/${chainData.length} chains`, 
+      result.map(c => c.chain_name));
+    
+    if (activeTab === 'yourTurn') {
+      console.log('[MentChainsDebug][Dashboard] YourTurn filter detail:', chainData.filter(c => c.status === 'active' && !c.is_queued).map(c => ({
+        name: c.chain_name,
+        holder: c.current_holder,
+        matchesUserId: c.current_holder === currentUserId,
+        currentUserId,
+      })));
+    }
+    
+    return result;
   }, [activeTab, currentUserId, chainData]);
 
   // Sort the filtered chains
