@@ -101,9 +101,15 @@ export const useMentChains = (): UseMentChainsReturn => {
       console.log('[useMentChains] Fetching chains via REST API...');
 
       // Fetch all chains the user is involved with using direct REST API
+      // Include chains where current_holder is user's UUID OR email (for unclaimed chains)
+      const userEmail = user.email || '';
+      const orFilter = userEmail
+        ? `or=(started_by.eq.${user.id},current_holder.eq.${user.id},current_holder.eq.${userEmail})`
+        : `or=(started_by.eq.${user.id},current_holder.eq.${user.id})`;
+      
       const chainsResult = await supabaseRest<MentChain[]>(
         'ment_chains',
-        `select=*&or=(started_by.eq.${user.id},current_holder.eq.${user.id})&order=created_at.desc`,
+        `select=*&${orFilter}&order=created_at.desc`,
         session.access_token
       );
 
@@ -139,9 +145,9 @@ export const useMentChains = (): UseMentChainsReturn => {
         });
       }
 
-      // Fetch received compliments for chains where user is current holder
+      // Fetch received compliments for chains where user is current holder (by UUID or email)
       const chainIds = rawChains
-        .filter(c => c.current_holder === user.id)
+        .filter(c => c.current_holder === user.id || (userEmail && c.current_holder.toLowerCase() === userEmail.toLowerCase()))
         .map(c => c.chain_id);
       
       let complimentMap = new Map<string, string>();
@@ -176,9 +182,11 @@ export const useMentChains = (): UseMentChainsReturn => {
 
       setChains(typedChains);
 
-      // Filter chains where it's the user's turn
+      // Filter chains where it's the user's turn (by UUID or email)
       const yourTurn = typedChains.filter(
-        chain => chain.current_holder === user.id && chain.status === 'active'
+        chain => (chain.current_holder === user.id || 
+          (userEmail && chain.current_holder.toLowerCase() === userEmail.toLowerCase())) && 
+          chain.status === 'active'
       );
       setYourTurnChains(yourTurn);
       console.log('[useMentChains] Done -', typedChains.length, 'chains loaded,', yourTurn.length, 'your turn');
