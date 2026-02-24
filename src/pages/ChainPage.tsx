@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { useState } from 'react';
 import PassChainModal from '@/components/chains/PassChainModal';
 import MintCircleGraphic from '@/components/chains/MintCircleGraphic';
+import { getShareBaseUrl } from '@/utils/getBaseUrl';
 
 interface ChainData {
   chain_id: string;
@@ -149,7 +150,7 @@ const ChainPage = () => {
   const config = tierConfig[tier as keyof typeof tierConfig] || tierConfig.small;
 
   const handleShare = () => {
-    const chainUrl = `${window.location.origin}/chain/${chainId}`;
+    const chainUrl = `${getShareBaseUrl()}/chain/${chainId}`;
     if (navigator.share) {
       navigator.share({
         title: `Join "${chain?.chain_name || 'Kindness Chain'}" 💚`,

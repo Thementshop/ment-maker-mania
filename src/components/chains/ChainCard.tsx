@@ -20,6 +20,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import mentChainCardBg from '@/assets/ment-chain-card.png';
 import confetti from 'canvas-confetti';
+import { getShareBaseUrl } from '@/utils/getBaseUrl';
 
 interface ChainCardProps {
   chain: MentChain;
@@ -54,7 +55,7 @@ const ChainCard = ({
   const timerColor = getTimerColor(countdown.hours, countdown.minutes);
 
   const handleShare = () => {
-    const chainUrl = `${window.location.origin}/chain/${chain.chain_id}`;
+    const chainUrl = `${getShareBaseUrl()}/chain/${chain.chain_id}`;
     navigator.clipboard.writeText(chainUrl).catch(() => {});
     toast({
       title: "Link copied! 🔗",
