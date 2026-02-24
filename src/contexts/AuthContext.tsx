@@ -42,6 +42,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const gameStateLoadedRef = useRef(false);
+  const loadedUserIdRef = useRef<string | null>(null);
 
   // Fetch user profile
   const fetchProfile = async (userId: string) => {
@@ -93,8 +94,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     // Load game state only once per session
     const loadUserGameState = async (userId: string) => {
-      if (gameStateLoadedRef.current) return;
+      if (gameStateLoadedRef.current && loadedUserIdRef.current === userId) return;
       gameStateLoadedRef.current = true;
+      loadedUserIdRef.current = userId;
       
       try {
         await useGameStore.getState().loadGameState(userId);
@@ -125,6 +127,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         } else {
           setProfile(null);
           gameStateLoadedRef.current = false;
+          loadedUserIdRef.current = null;
           useGameStore.getState().resetState();
           useGameStore.getState().unsubscribeFromWorldCounter();
         }
