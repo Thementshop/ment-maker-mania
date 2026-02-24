@@ -69,6 +69,19 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
     }, 5000);
 
+    // Claim chains where current_holder matches user's email
+    const claimChains = async (userId: string) => {
+      try {
+        const { data, error } = await supabase.rpc('claim_chains_for_user', {
+          claiming_user_id: userId
+        });
+        if (error) console.error('Failed to claim chains:', error);
+        else if (data && data > 0) console.log(`Claimed ${data} chain(s) for user`);
+      } catch (err) {
+        console.error('Failed to claim chains:', err);
+      }
+    };
+
     // Load game state only once per session
     const loadUserGameState = async (userId: string) => {
       if (gameStateLoadedRef.current) return;
@@ -97,7 +110,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         if (newSession?.user) {
           const userProfile = await fetchProfile(newSession.user.id);
           if (isSubscribed) setProfile(userProfile);
-          // Load game state in background (don't block auth)
+          // Claim chains and load game state in background
+          claimChains(newSession.user.id);
           loadUserGameState(newSession.user.id);
         } else {
           setProfile(null);
@@ -120,6 +134,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (existingSession?.user) {
         const userProfile = await fetchProfile(existingSession.user.id);
         if (isSubscribed) setProfile(userProfile);
+        claimChains(existingSession.user.id);
         loadUserGameState(existingSession.user.id);
       }
     });

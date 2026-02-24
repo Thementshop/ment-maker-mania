@@ -296,6 +296,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_chains_for_user: {
+        Args: { claiming_user_id: string }
+        Returns: number
+      }
       increment_world_counter: { Args: never; Returns: number }
     }
     Enums: {

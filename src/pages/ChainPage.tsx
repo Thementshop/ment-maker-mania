@@ -37,7 +37,7 @@ const ChainPage = () => {
 
   // Fetch chain data
   const { data: chain, isLoading, error } = useQuery({
-    queryKey: ['chain-page', chainId],
+    queryKey: ['chain-page', chainId, user?.id],
     queryFn: async (): Promise<ChainData | null> => {
       if (!chainId) return null;
       console.log('[ChainPage] Starting chain fetch...', chainId, 'User:', user?.id || 'anonymous');
