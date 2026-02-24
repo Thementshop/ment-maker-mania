@@ -1,72 +1,45 @@
 
 
-# Fix Chain Sharing and Recipient Flow
+# Fix Share URLs to Use Published Domain
 
-## Problems Found
+## Problem
+All share links use `window.location.origin`, which in the development/preview environment returns the `id-preview--*.lovable.app` URL. This URL requires Lovable authentication and is not accessible to external users. Shared chain links need to use the public-facing domain.
 
-1. **ChainCard share button is broken**: It copies a text string ("Check out this Ment Chain! Chain #XXXX") instead of the actual chain URL. Recipients get no usable link.
+## Solution
+Create a utility function that returns the correct base URL for sharing. Since the project is not yet published (no published URL exists), we need to construct the correct `lovableproject.com` URL using the project ID.
 
-2. **No redirect-back after sign-in**: When an anonymous recipient visits `/chain/:chainId` and clicks "Sign In to Participate", they're taken to `/auth`. After signing in, they're redirected to `/` (home) instead of back to the chain page. They lose context entirely.
+All 4 files that use `window.location.origin` for chain sharing will be updated:
 
-## What Already Works
-
-- The **ChainPage** "Share Chain Link" button correctly copies `{origin}/chain/{chainId}` and uses the Web Share API.
-- The `/chain/:chainId` route is publicly accessible (no auth wall).
-- The "Pass It Forward" button and PassChainModal work correctly for the current holder.
-
-## Changes
-
-### 1. Fix ChainCard Share Button
-**File:** `src/components/chains/ChainCard.tsx`
-
-Change the `handleShare` function to copy the actual chain URL (`/chain/{chain_id}`) instead of a plain text string. Also attempt the Web Share API first (matching ChainPage behavior).
-
-### 2. Add Redirect-Back After Auth
-**File:** `src/pages/Auth.tsx`
-
-- Read a `returnTo` query parameter from the URL.
-- After successful sign-in, redirect to `returnTo` value instead of always going to `/`.
-
-**File:** `src/pages/ChainPage.tsx`
-
-- Update the "Sign In to Participate" button to navigate to `/auth?returnTo=/chain/{chainId}` so users return to the chain after authenticating.
+1. `src/components/chains/ChainCard.tsx` (line 57)
+2. `src/pages/ChainPage.tsx` (line 152)
+3. `src/components/chains/ChainDetailsModal.tsx` (line 122)
+4. `src/contexts/AuthContext.tsx` (line 140) - email redirect URL
 
 ## Technical Details
 
-### ChainCard.tsx change (line 56-66)
+### New utility: `src/utils/getBaseUrl.ts`
 ```typescript
-const handleShare = () => {
-  const chainUrl = `${window.location.origin}/chain/${chain.chain_id}`;
-  if (navigator.share) {
-    navigator.share({
-      title: `Join this Kindness Chain! 💚`,
-      text: `Check out this Ment Chain with ${chain.links_count} links!`,
-      url: chainUrl
-    }).catch(() => {});
-  } else {
-    navigator.clipboard.writeText(chainUrl);
-    toast({
-      title: "Link copied! 🔗",
-      description: "Share this link with anyone",
-    });
+export const getShareBaseUrl = (): string => {
+  const projectId = '932358f2-26f5-465a-b493-c072c610ccf5';
+  // In production or when a custom domain is set, use window.location.origin
+  // For Lovable preview environments, use the lovableproject.com domain
+  if (window.location.hostname.includes('id-preview') || 
+      window.location.hostname.includes('lovable.app')) {
+    return `https://${projectId}.lovableproject.com`;
   }
+  return window.location.origin;
 };
 ```
 
-### Auth.tsx change (line 25-27)
-```typescript
-// Read returnTo from URL params
-const searchParams = new URLSearchParams(window.location.search);
-const returnTo = searchParams.get('returnTo') || '/';
+This approach:
+- Detects if running in the Lovable preview environment
+- Returns the correct `lovableproject.com` URL for sharing
+- Falls back to `window.location.origin` when on a custom domain or the published domain (future-proof)
 
-if (!isLoading && user) {
-  return <Navigate to={returnTo} replace />;
-}
-```
+### Files updated
+Replace `window.location.origin` with `getShareBaseUrl()` in:
+- `src/components/chains/ChainCard.tsx` -- share handler
+- `src/pages/ChainPage.tsx` -- share handler
+- `src/components/chains/ChainDetailsModal.tsx` -- share achievement handler
+- `src/contexts/AuthContext.tsx` -- email redirect URL (so verification emails link to the correct domain)
 
-### ChainPage.tsx change (line 423)
-```typescript
-<Button onClick={() => navigate(`/auth?returnTo=/chain/${chainId}`)} className="w-full rounded-full">
-  Sign In to Participate
-</Button>
-```
