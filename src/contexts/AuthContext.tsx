@@ -119,8 +119,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         clearTimeout(authTimeout);
         
         if (newSession?.user) {
+          // Set immediate fallback profile from user metadata
+          const meta = newSession.user.user_metadata;
+          if (isSubscribed) {
+            setProfile(prev => prev ?? {
+              id: newSession.user.id,
+              display_name: meta?.full_name || newSession.user.email?.split('@')[0] || null,
+              avatar_url: meta?.avatar_url || null,
+            });
+          }
+          // Then fetch real DB profile (replaces fallback)
           const userProfile = await fetchProfile(newSession.user.id);
-          if (isSubscribed) setProfile(userProfile);
+          if (isSubscribed && userProfile) setProfile(userProfile);
           // Claim chains and load game state in background
           claimChains(newSession.user.id);
           loadUserGameState(newSession.user.id);
