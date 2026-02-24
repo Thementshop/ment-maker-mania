@@ -1,66 +1,77 @@
 
-# Fix: Stale User Data After Sign Out and Re-Login
+Objective:
+Stabilize post-login identity hydration so the app reliably shows the correct account (not “U”) and loads chains immediately after signing in.
 
-## Problem
-After signing out and signing back in as a different user, the homepage still shows the previous user's data (avatar "U", wrong game stats). 
+What I found from investigation:
+1) Login itself is successful.
+- Auth request for brentanddonna@yahoo.com returns 200 with user id 83e6e380-5042-4fcd-b504-8e040f3dff3b.
 
-## Root Cause
-Two issues in the sign-out flow:
+2) Backend data is correct for that user.
+- Profile row exists with display_name = “Donna Pursley”.
+- Multiple chains exist for this user (both started and active).
 
-1. **`gameStateLoadedRef` is never reset on timeout path** -- When sign-out times out, the catch block clears localStorage but never calls `resetState()` or resets the ref. When the new user signs in, `loadUserGameState()` sees `gameStateLoadedRef.current === true` and skips loading the new user's data entirely.
+3) UI still shows “U” and empty chains due frontend state flow, not missing backend records.
+- Header initials come only from profile.display_name; if profile is null/delayed, it falls back to “U”.
+- Account modal “Display Name” field is initialized once from profile and does not resync when profile arrives later.
+- Chain hook logs show “[useMentChains] Fetching…” but no completion log, indicating a blocking/hanging async step before render updates.
 
-2. **Hard redirect happens too soon** -- `window.location.href = '/auth'` fires immediately after sign-out (or timeout), before `onAuthStateChange` can run the cleanup logic (reset profile, reset game state, reset the ref). The page unloads mid-cleanup.
+Likely root cause:
+A blocking call in the chain/auth startup flow is stalling hydration (especially around claim/profile fetch timing), while the UI has no resilient fallback for display name. So user is authenticated, but identity/chains display can appear “blank/stuck”.
 
-## Fix
+Implementation plan:
 
-### 1. AccountSettingsModal.tsx -- Proper cleanup before redirect
-- In the `catch` block (timeout path), explicitly call `useGameStore.getState().resetState()` to clear stale game data
-- Move the hard redirect into a small `setTimeout` to allow state cleanup to propagate
+1) Make avatar/name rendering resilient immediately after auth
+- File: src/components/Header.tsx
+- Change auth usage to include user from context.
+- Compute display name with fallback priority:
+  1. profile.display_name
+  2. user.user_metadata.full_name
+  3. local part of email
+  4. “U”
+- Use this resolved value for initials so the header never stays “U” when account info is available.
 
-### 2. AuthContext.tsx -- Reset gameStateLoadedRef on user change
-- In the `onAuthStateChange` handler, when a new user signs in, compare the user ID against the previously loaded one. If different, reset `gameStateLoadedRef` so game state is reloaded for the new user.
-- This is a safety net so even if sign-out cleanup was incomplete, a fresh login always loads fresh data.
+2) Sync Account Settings display-name input when profile loads asynchronously
+- File: src/components/AccountSettingsModal.tsx
+- Add useEffect to update local displayName state when profile/user changes.
+- This fixes the confusing “Your display name” empty field for logged-in users whose profile arrives after initial render.
 
-## Technical Details
+3) Prevent chain loading from being blocked by claim step
+- File: src/hooks/useMentChains.ts
+- Keep chain claim behavior, but make it non-blocking for initial render:
+  - Run claim with a short timeout guard (or in background), then continue fetch.
+  - If claim is slow/fails, continue to fetch chains anyway.
+- Ensure fetch path always reaches success/error completion logs and state updates.
+- This guarantees chain cards can render even when claim RPC is delayed.
 
-**AccountSettingsModal.tsx** changes:
-```typescript
-const handleSignOut = async () => {
-  setIsSigningOut(true);
-  try {
-    await Promise.race([
-      signOut(),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000))
-    ]);
-  } catch {
-    console.warn('Sign out timed out, clearing local session');
-    localStorage.removeItem('sb-cjnukzmjenfvuopooumb-auth-token');
-    useGameStore.getState().resetState();
-  }
-  onClose();
-  // Small delay to let state cleanup propagate
-  setTimeout(() => { window.location.href = '/auth'; }, 100);
-};
-```
+4) Harden auth profile hydration to avoid “null profile” sticking
+- File: src/contexts/AuthContext.tsx
+- Add a safe profile hydration path:
+  - Set a temporary fallback profile from user metadata immediately after session is available.
+  - Then fetch DB profile and replace fallback when returned.
+- Add timeout guard around profile fetch so auth UI cannot get stuck waiting.
+- Maintain existing sign-out cleanup logic (already improved).
 
-**AuthContext.tsx** changes:
-- Add a `loadedUserIdRef` to track which user's game state is loaded
-- In `loadUserGameState`, check if userId changed (not just if already loaded)
-- Reset both refs in the sign-out branch of `onAuthStateChange`
+5) Add targeted debug logs (temporary, scoped)
+- Files: AuthContext + useMentChains
+- Log key checkpoints only:
+  - auth session received
+  - profile fallback set / profile DB resolved
+  - claim started / claim timed out / claim done
+  - chains fetch start / chains fetch done / fetch error
+- This will let us verify the exact phase if any user still sees stale identity.
 
-```typescript
-const loadedUserIdRef = useRef<string | null>(null);
+Validation plan (end-to-end):
+1) Sign out fully, sign back in as brentanddonna@yahoo.com.
+2) Verify immediately on home:
+- Avatar shows initials for Donna (not “U”).
+- Account Settings display name input is populated.
+- Chain dashboard displays existing chains (not empty due to startup stall).
+3) Switch accounts (logout/login with a different user), then switch back.
+- Confirm avatar/chains always match the active account.
+4) Re-test the compliment flow after identity is stable:
+- Create chain with a specific compliment, log in as recipient, verify Pass It Forward shows expected compliment.
 
-const loadUserGameState = async (userId: string) => {
-  if (gameStateLoadedRef.current && loadedUserIdRef.current === userId) return;
-  gameStateLoadedRef.current = true;
-  loadedUserIdRef.current = userId;
-  // ... load game state
-};
-
-// In onAuthStateChange, sign-out branch:
-gameStateLoadedRef.current = false;
-loadedUserIdRef.current = null;
-```
-
-This ensures switching users always triggers a fresh data load.
+Scope and risk:
+- No database schema changes needed.
+- No policy changes needed.
+- Changes are frontend/auth orchestration only, low-risk, focused on startup robustness and UI fallback behavior.
