@@ -130,8 +130,19 @@ const AccountSettingsModal = ({ isOpen, onClose }: AccountSettingsModalProps) =>
 
   const handleSignOut = async () => {
     setIsSigningOut(true);
-    await signOut();
+    try {
+      // Race signOut against a timeout to prevent infinite loading
+      await Promise.race([
+        signOut(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000))
+      ]);
+    } catch {
+      // Force clear session on timeout
+      console.warn('Sign out timed out, clearing local session');
+      localStorage.removeItem('sb-cjnukzmjenfvuopooumb-auth-token');
+    }
     onClose();
+    window.location.href = '/auth';
   };
 
   return (
