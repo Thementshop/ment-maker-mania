@@ -72,13 +72,22 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     // Claim chains where current_holder matches user's email
     const claimChains = async (userId: string) => {
       try {
+        console.log('[AuthContext][Debug] claim_chains_for_user start', { userId });
+
         const { data, error } = await supabase.rpc('claim_chains_for_user', {
           claiming_user_id: userId
         });
-        if (error) console.error('Failed to claim chains:', error);
-        else if (data && data > 0) console.log(`Claimed ${data} chain(s) for user`);
+
+        if (error) {
+          console.error('[AuthContext][Debug] claim_chains_for_user failed:', error);
+        } else {
+          console.log('[AuthContext][Debug] claim_chains_for_user result', {
+            userId,
+            claimedCount: data,
+          });
+        }
       } catch (err) {
-        console.error('Failed to claim chains:', err);
+        console.error('[AuthContext][Debug] claim_chains_for_user exception:', err);
       }
     };
 

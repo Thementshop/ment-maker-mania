@@ -146,9 +146,20 @@ export const useMentChains = (): UseMentChainsReturn => {
       }
 
       // Fetch received compliments for chains where user is current holder (by UUID or email)
-      const chainIds = rawChains
-        .filter(c => c.current_holder === user.id || (userEmail && c.current_holder.toLowerCase() === userEmail.toLowerCase()))
-        .map(c => c.chain_id);
+      const holderMatchedChains = rawChains.filter(
+        c => c.current_holder === user.id || (userEmail && c.current_holder.toLowerCase() === userEmail.toLowerCase())
+      );
+      const chainIds = holderMatchedChains.map(c => c.chain_id);
+
+      console.log('[useMentChains][Debug] Holder match before compliment lookup:', {
+        userId: user.id,
+        userEmail,
+        holderMatchedChains: holderMatchedChains.map((c) => ({
+          chain_id: c.chain_id,
+          current_holder: c.current_holder,
+          status: c.status,
+        })),
+      });
       
       let complimentMap = new Map<string, string>();
       if (chainIds.length > 0) {
@@ -157,8 +168,21 @@ export const useMentChains = (): UseMentChainsReturn => {
           `select=chain_id,sent_compliment,passed_at&chain_id=in.(${chainIds.join(',')})&order=passed_at.desc`,
           session.access_token
         );
-        
-        (linksResult.data || []).forEach(link => {
+
+        if (linksResult.error) {
+          console.error('[useMentChains][Debug] chain_links query error:', linksResult.error);
+        }
+
+        const linkRows = linksResult.data || [];
+        console.log('[useMentChains][Debug] chain_links query result:', linkRows);
+
+        const foundChainIds = new Set(linkRows.map((link) => link.chain_id));
+        const missingChainIds = chainIds.filter((id) => !foundChainIds.has(id));
+        if (missingChainIds.length > 0) {
+          console.warn('[useMentChains][Debug] Missing chain_links rows for chain IDs (RLS/claim timing check):', missingChainIds);
+        }
+
+        linkRows.forEach(link => {
           if (!complimentMap.has(link.chain_id)) {
             complimentMap.set(link.chain_id, link.sent_compliment);
           }
@@ -189,6 +213,11 @@ export const useMentChains = (): UseMentChainsReturn => {
           chain.status === 'active'
       );
       setYourTurnChains(yourTurn);
+      console.log('[useMentChains][Debug] Resolved your-turn compliments:', yourTurn.map((chain) => ({
+        chain_id: chain.chain_id,
+        current_holder: chain.current_holder,
+        received_compliment: chain.received_compliment,
+      })));
       console.log('[useMentChains] Done -', typedChains.length, 'chains loaded,', yourTurn.length, 'your turn');
     } catch (err) {
       console.error('[useMentChains] Error:', err);

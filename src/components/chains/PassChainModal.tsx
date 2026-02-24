@@ -66,6 +66,59 @@ const PassChainModal = ({
     }
   }, [isOpen]);
 
+  // Debug logging: track compliment source for this modal instance
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const debugTimestamp = new Date().toISOString();
+    console.groupCollapsed(`[PassChainModal][Debug] Opened for chain ${chain.chain_id}`);
+    console.log('openedAt', debugTimestamp);
+    console.log('chain_id', chain.chain_id);
+    console.log('receivedCompliment prop', receivedCompliment);
+    console.log('current user', { id: user?.id, email: user?.email });
+    console.log('chain snapshot', chain);
+    console.groupEnd();
+
+    const logChainLinkDebug = async () => {
+      const { data, error } = await supabase
+        .from('chain_links')
+        .select('link_id, chain_id, passed_to, sent_compliment, received_compliment, passed_at')
+        .eq('chain_id', chain.chain_id)
+        .order('passed_at', { ascending: false })
+        .limit(5);
+
+      if (error) {
+        console.error('[PassChainModal][Debug] chain_links query error:', error);
+        return;
+      }
+
+      const latest = data?.[0];
+      const hasMatchForUser = (data || []).some((link) => {
+        const matchesId = !!user?.id && link.passed_to === user.id;
+        const matchesEmail = !!user?.email && link.passed_to.toLowerCase() === user.email.toLowerCase();
+        return matchesId || matchesEmail;
+      });
+
+      console.groupCollapsed(`[PassChainModal][Debug] chain_links query result for ${chain.chain_id}`);
+      console.log('rows', data || []);
+      console.log('latest link used by DB sort', latest ? {
+        chain_link_id: latest.link_id,
+        passed_to: latest.passed_to,
+        sent_compliment: latest.sent_compliment,
+        received_compliment: latest.received_compliment,
+        passed_at: latest.passed_at,
+      } : null);
+      console.log('comparison', {
+        prop_receivedCompliment: receivedCompliment,
+        latest_db_sent_compliment: latest?.sent_compliment ?? null,
+        has_match_for_user: hasMatchForUser,
+      });
+      console.groupEnd();
+    };
+
+    void logChainLinkDebug();
+  }, [isOpen, chain.chain_id, receivedCompliment, user?.id, user?.email]);
+
   const getComplimentsForCategory = () => {
     const category = complimentCategories.find(c => c.id === selectedCategory);
     return category?.compliments || [];
