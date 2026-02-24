@@ -92,30 +92,67 @@ export const useMentChains = (): UseMentChainsReturn => {
       return;
     }
 
+    const fetchDebugId = Math.random().toString(36).slice(2, 8);
+
     try {
       if (!silent) {
         setIsLoading(true);
       }
       setError(null);
 
-      console.log('[useMentChains] Fetching chains via REST API...');
+      // Decode JWT email for comparison
+      let jwtEmail = '';
+      try {
+        const payload = JSON.parse(atob(session.access_token.split('.')[1]));
+        jwtEmail = payload.email || '';
+      } catch {}
+
+      console.log(`[MentChainsDebug][${fetchDebugId}] === FETCH CYCLE START ===`);
+      console.log(`[MentChainsDebug][${fetchDebugId}] Identity:`, {
+        userId: user.id,
+        userEmail: user.email,
+        sessionEmail: session.user?.email,
+        jwtEmail,
+      });
 
       // Claim any unclaimed chains (await with timeout so RLS works)
-      await Promise.race([
-        supabase.rpc('claim_chains_for_user', { claiming_user_id: user.id }),
+      const claimStart = Date.now();
+      console.log(`[MentChainsDebug][${fetchDebugId}] Claim RPC starting...`);
+      
+      const claimPromise = supabase.rpc('claim_chains_for_user', { claiming_user_id: user.id });
+      let claimTimedOut = false;
+      
+      const claimResult = await Promise.race([
+        claimPromise.then(res => {
+          if (claimTimedOut) {
+            console.warn(`[MentChainsDebug][${fetchDebugId}] Claim LATE RESOLUTION after timeout:`, res.data, 'elapsed:', Date.now() - claimStart, 'ms');
+          }
+          return res;
+        }),
         new Promise((resolve) => setTimeout(() => {
-          console.warn('[useMentChains] claim timed out after 3s');
+          claimTimedOut = true;
+          console.warn(`[MentChainsDebug][${fetchDebugId}] Claim TIMED OUT after 3s`);
           resolve(null);
         }, 3000))
-      ]).catch(err => console.warn('[useMentChains] claim failed (non-fatal):', err));
+      ]).catch(err => {
+        console.warn(`[MentChainsDebug][${fetchDebugId}] Claim ERROR:`, err, 'elapsed:', Date.now() - claimStart, 'ms');
+        return null;
+      });
+
+      if (!claimTimedOut && claimResult) {
+        console.log(`[MentChainsDebug][${fetchDebugId}] Claim completed:`, (claimResult as any)?.data, 'elapsed:', Date.now() - claimStart, 'ms');
+      }
 
       // Fetch all chains the user is involved with using direct REST API
-      // Include chains where current_holder is user's UUID OR email (for unclaimed chains)
       const userEmail = user.email || '';
       const orFilter = userEmail
         ? `or=(started_by.eq.${user.id},current_holder.eq.${user.id},current_holder.eq.${userEmail})`
         : `or=(started_by.eq.${user.id},current_holder.eq.${user.id})`;
       
+      const fullUrl = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/ment_chains?select=*&${orFilter}&order=created_at.desc`;
+      console.log(`[MentChainsDebug][${fetchDebugId}] REST query:`, fullUrl);
+      console.log(`[MentChainsDebug][${fetchDebugId}] OR filter:`, orFilter);
+
       const chainsResult = await supabaseRest<MentChain[]>(
         'ment_chains',
         `select=*&${orFilter}&order=created_at.desc`,
@@ -127,7 +164,15 @@ export const useMentChains = (): UseMentChainsReturn => {
       }
 
       const rawChains = chainsResult.data || [];
-      console.log('[useMentChains] Fetched', rawChains.length, 'chains');
+      console.log(`[MentChainsDebug][${fetchDebugId}] Raw API returned ${rawChains.length} chains`);
+      
+      // Per-row diagnostics
+      rawChains.forEach(chain => {
+        const matchesStartedBy = chain.started_by === user.id;
+        const matchesHolderUuid = chain.current_holder === user.id;
+        const matchesHolderEmail = userEmail ? chain.current_holder.toLowerCase() === userEmail.toLowerCase() : false;
+        console.log(`[MentChainsDebug][${fetchDebugId}] Row: name=${chain.chain_name}, id=${chain.chain_id.slice(0,8)}, holder=${chain.current_holder}, status=${chain.status}, matchStarted=${matchesStartedBy}, matchHolderUUID=${matchesHolderUuid}, matchHolderEmail=${matchesHolderEmail}`);
+      });
 
       // Collect unique user IDs for profile lookup
       const userIds = new Set<string>();
@@ -222,12 +267,10 @@ export const useMentChains = (): UseMentChainsReturn => {
           chain.status === 'active'
       );
       setYourTurnChains(yourTurn);
-      console.log('[useMentChains][Debug] Resolved your-turn compliments:', yourTurn.map((chain) => ({
-        chain_id: chain.chain_id,
-        current_holder: chain.current_holder,
-        received_compliment: chain.received_compliment,
-      })));
-      console.log('[useMentChains] Done -', typedChains.length, 'chains loaded,', yourTurn.length, 'your turn');
+      console.log(`[MentChainsDebug][${fetchDebugId}] === PIPELINE SUMMARY ===`);
+      console.log(`[MentChainsDebug][${fetchDebugId}] Raw rows: ${rawChains.length}, Mapped: ${typedChains.length}, Your turn: ${yourTurn.length}`);
+      console.log(`[MentChainsDebug][${fetchDebugId}] Your-turn chains:`, yourTurn.map(c => ({ name: c.chain_name, holder: c.current_holder })));
+      console.log(`[MentChainsDebug][${fetchDebugId}] === FETCH CYCLE END ===`);
     } catch (err) {
       console.error('[useMentChains] Error:', err);
       setError(err instanceof Error ? err : new Error('Failed to fetch chains'));
