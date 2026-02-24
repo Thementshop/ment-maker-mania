@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { tierConfig, getChainTier } from '@/utils/chainTiers';
+import { getShareBaseUrl } from '@/utils/getBaseUrl';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
 interface ChainLink {
@@ -119,7 +120,7 @@ const ChainDetailsModal = ({ chain, isOpen, onClose, getChainLinks }: ChainDetai
   }
 
   async function handleShareAchievement() {
-    const chainUrl = `${window.location.origin}/chain/${chain.chain_id}`;
+    const chainUrl = `${getShareBaseUrl()}/chain/${chain.chain_id}`;
     console.log('Share URL:', chainUrl);
 
     // Always copy to clipboard first
