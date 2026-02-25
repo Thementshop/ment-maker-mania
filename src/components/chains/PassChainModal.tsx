@@ -18,6 +18,47 @@ import { complimentCategories } from '@/data/compliments';
 import { getChainTier } from '@/utils/chainTiers';
 import confetti from 'canvas-confetti';
 
+// Direct REST API helper - bypasses Supabase JS client deadlock
+const restApi = async (
+  method: 'GET' | 'POST' | 'PATCH',
+  table: string,
+  params: string,
+  token: string,
+  body?: any
+): Promise<{ data: any; error: any }> => {
+  try {
+    const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/${table}?${params}`;
+    const headers: Record<string, string> = {
+      'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      'Prefer': method === 'POST' ? 'return=minimal' : 'return=representation',
+    };
+    const opts: RequestInit = { method, headers };
+    if (body) opts.body = JSON.stringify(body);
+    
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+    opts.signal = controller.signal;
+    
+    const res = await fetch(url, opts);
+    clearTimeout(timeout);
+    
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error(`[PassChain REST] ${method} ${table} failed:`, res.status, errText);
+      return { data: null, error: { message: errText, status: res.status } };
+    }
+    
+    const text = await res.text();
+    const data = text ? JSON.parse(text) : null;
+    return { data, error: null };
+  } catch (err: any) {
+    console.error(`[PassChain REST] ${method} ${table} exception:`, err);
+    return { data: null, error: err };
+  }
+};
+
 // Validation
 const recipientSchema = z.string()
   .min(1, 'Please enter a recipient')
@@ -146,30 +187,29 @@ const PassChainModal = ({
     setSelectedCompliment(compliment);
   };
 
-  // Promote next queued chain
-  const promoteNextQueuedChain = async (userId: string) => {
+  // Promote next queued chain (REST API)
+  const promoteNextQueuedChain = async (userId: string, token: string) => {
     try {
-      const { data: yourTurnChains } = await supabase
-        .from('ment_chains')
-        .select('chain_id')
-        .eq('current_holder', userId)
-        .eq('status', 'active')
-        .eq('is_queued', false);
+      const { data: yourTurnChains } = await restApi(
+        'GET', 'ment_chains',
+        `select=chain_id&current_holder=eq.${userId}&status=eq.active&is_queued=eq.false`,
+        token
+      );
 
       if (yourTurnChains && yourTurnChains.length < 3) {
-        const { data: queuedChains } = await supabase
-          .from('ment_chains')
-          .select('*')
-          .eq('current_holder', userId)
-          .eq('is_queued', true)
-          .order('created_at', { ascending: true })
-          .limit(1);
+        const { data: queuedChains } = await restApi(
+          'GET', 'ment_chains',
+          `select=*&current_holder=eq.${userId}&is_queued=eq.true&order=created_at.asc&limit=1`,
+          token
+        );
 
         if (queuedChains && queuedChains.length > 0) {
-          await supabase
-            .from('ment_chains')
-            .update({ is_queued: false })
-            .eq('chain_id', queuedChains[0].chain_id);
+          await restApi(
+            'PATCH', 'ment_chains',
+            `chain_id=eq.${queuedChains[0].chain_id}`,
+            token,
+            { is_queued: false }
+          );
 
           toast({
             title: "Queue Update 🔗",
@@ -200,38 +240,16 @@ const PassChainModal = ({
         angle: 60,
         spread: 55,
         origin: { x: 0 },
-        colors: ['#2ECC71', '#F1C40F', '#E74C3C', '#9B59B6']
+        colors: ['#FFD700', '#FFA500', '#FF6347']
       });
       confetti({
         particleCount: 50,
         angle: 120,
         spread: 55,
         origin: { x: 1 },
-        colors: ['#2ECC71', '#F1C40F', '#E74C3C', '#9B59B6']
+        colors: ['#FFD700', '#FFA500', '#FF6347']
       });
     }, 250);
-
-    toast({
-      title: "🎉 LEGENDARY STATUS!",
-      description: `"${chain.chain_name}" reached 100+ shares! You started a movement!`,
-    });
-
-    // Update legendary count for starter
-    if (user && chain.started_by === user.id) {
-      supabase
-        .from('user_game_state')
-        .select('legendary_chains_created')
-        .eq('user_id', user.id)
-        .maybeSingle()
-        .then(({ data }) => {
-          supabase
-            .from('user_game_state')
-            .update({
-              legendary_chains_created: (data?.legendary_chains_created || 0) + 1
-            })
-            .eq('user_id', user.id);
-        });
-    }
   };
 
   const handlePassChain = async () => {
@@ -255,14 +273,27 @@ const PassChainModal = ({
     setError('');
 
     try {
+      // Get session token for REST calls
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      if (!token) throw new Error('No auth session');
+
+      console.log('[PassChain] Starting pass via REST API for chain:', chain.chain_id);
+
       // 1. Get chain participants (check for duplicates)
-      const { data: chainLinks } = await supabase
-        .from('chain_links')
-        .select('passed_to, passed_by')
-        .eq('chain_id', chain.chain_id);
+      const { data: chainLinks, error: linksErr } = await restApi(
+        'GET', 'chain_links',
+        `select=passed_to,passed_by&chain_id=eq.${chain.chain_id}`,
+        token
+      );
+
+      if (linksErr) {
+        console.error('[PassChain] Failed to fetch chain links:', linksErr);
+        // Non-fatal, continue without duplicate check
+      }
 
       const participants = new Set<string>();
-      chainLinks?.forEach(link => {
+      (chainLinks || []).forEach((link: any) => {
         participants.add(link.passed_to);
         participants.add(link.passed_by);
       });
@@ -279,12 +310,11 @@ const PassChainModal = ({
       }
 
       // 3. Check recipient capacity (max 3 "Your Turn" chains)
-      const { data: recipientChains } = await supabase
-        .from('ment_chains')
-        .select('chain_id')
-        .eq('current_holder', recipient.trim())
-        .eq('status', 'active')
-        .eq('is_queued', false);
+      const { data: recipientChains } = await restApi(
+        'GET', 'ment_chains',
+        `select=chain_id&current_holder=eq.${encodeURIComponent(recipient.trim())}&status=eq.active&is_queued=eq.false`,
+        token
+      );
 
       if (recipientChains && recipientChains.length >= 3) {
         toast({
@@ -301,47 +331,58 @@ const PassChainModal = ({
       const newShareCount = chain.share_count + 1;
       const newTier = getChainTier(newShareCount);
 
-      const { error: updateError } = await supabase
-        .from('ment_chains')
-        .update({
+      console.log('[PassChain] Updating chain:', { newShareCount, newTier });
+
+      const { error: updateError } = await restApi(
+        'PATCH', 'ment_chains',
+        `chain_id=eq.${chain.chain_id}`,
+        token,
+        {
           current_holder: recipient.trim(),
           expires_at: newExpiresAt.toISOString(),
           share_count: newShareCount,
           tier: newTier,
           links_count: newShareCount
-        })
-        .eq('chain_id', chain.chain_id);
+        }
+      );
 
-      if (updateError) throw updateError;
+      if (updateError) throw new Error(`Chain update failed: ${updateError.message}`);
 
       // 5. Create link record
-      const { error: linkError } = await supabase
-        .from('chain_links')
-        .insert({
+      console.log('[PassChain] Inserting chain link');
+      const { error: linkError } = await restApi(
+        'POST', 'chain_links',
+        '',
+        token,
+        {
           chain_id: chain.chain_id,
           passed_by: user.id,
           passed_to: recipient.trim(),
           received_compliment: receivedCompliment,
           sent_compliment: selectedCompliment,
           was_forwarded: selectedCompliment === receivedCompliment
-        });
+        }
+      );
 
-      if (linkError) throw linkError;
+      if (linkError) throw new Error(`Link insert failed: ${linkError.message}`);
 
       // 6. Update user's "your turn" count
-      const { data: userState } = await supabase
-        .from('user_game_state')
-        .select('your_turn_chains_count')
-        .eq('user_id', user.id)
-        .maybeSingle();
+      const { data: userStates } = await restApi(
+        'GET', 'user_game_state',
+        `select=your_turn_chains_count&user_id=eq.${user.id}`,
+        token
+      );
 
+      const userState = userStates?.[0];
       if (userState) {
-        await supabase
-          .from('user_game_state')
-          .update({
+        await restApi(
+          'PATCH', 'user_game_state',
+          `user_id=eq.${user.id}`,
+          token,
+          {
             your_turn_chains_count: Math.max(0, (userState.your_turn_chains_count || 0) - 1)
-          })
-          .eq('user_id', user.id);
+          }
+        );
       }
 
       // 7. Check for Legendary milestone (100 shares)
@@ -358,9 +399,10 @@ const PassChainModal = ({
       }
 
       // 8. Auto-promote queued chain
-      await promoteNextQueuedChain(user.id);
+      await promoteNextQueuedChain(user.id, token);
 
       // 9. Success!
+      console.log('[PassChain] ✅ Chain passed successfully!');
       toast({
         title: "Chain passed! 🔗",
         description: "+1 mint added to your jar 🍬"
@@ -370,10 +412,10 @@ const PassChainModal = ({
       handleClose();
 
     } catch (err) {
-      console.error('Error passing chain:', err);
+      console.error('[PassChain] Error passing chain:', err);
       toast({
         title: "Error",
-        description: "Failed to pass chain. Please try again.",
+        description: err instanceof Error ? err.message : "Failed to pass chain. Please try again.",
         variant: "destructive"
       });
     } finally {
