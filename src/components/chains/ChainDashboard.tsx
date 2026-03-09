@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -37,23 +37,20 @@ function transformChainToCardData(chain: MentChain): ChainData {
   };
 }
 
-function sortChains(chains: ChainData[], currentUserId: string): ChainData[] {
+function sortChains(chains: ChainData[], isHolderFn: (holder: string) => boolean): ChainData[] {
   return [...chains].sort((a, b) => {
-    const aIsYourTurn = a.current_holder === currentUserId;
-    const bIsYourTurn = b.current_holder === currentUserId;
+    const aIsYourTurn = isHolderFn(a.current_holder);
+    const bIsYourTurn = isHolderFn(b.current_holder);
     
-    // Your Turn chains FIRST
     if (aIsYourTurn && !bIsYourTurn) return -1;
     if (!aIsYourTurn && bIsYourTurn) return 1;
     
-    // Within "Your Turn", sort by urgency (least time remaining first)
     if (aIsYourTurn && bIsYourTurn) {
       const aTime = new Date(a.expires_at).getTime() - Date.now();
       const bTime = new Date(b.expires_at).getTime() - Date.now();
       return aTime - bTime;
     }
     
-    // Other chains sorted by share count (highest first)
     return b.share_count - a.share_count;
   });
 }
@@ -65,7 +62,12 @@ const ChainDashboard = () => {
   const [hasAutoSelected, setHasAutoSelected] = useState(false);
   const [selectedChainForDetails, setSelectedChainForDetails] = useState<ChainData | null>(null);
   const currentUserId = user?.id || '';
+  const currentUserEmail = user?.email || '';
 
+  const isCurrentHolder = useCallback((holder: string) => {
+    return holder === currentUserId || 
+      (currentUserEmail !== '' && holder.toLowerCase() === currentUserEmail.toLowerCase());
+  }, [currentUserId, currentUserEmail]);
   // Fetch real chains from database
   const { chains, isLoading, error, refetch, usePauseToken, getChainLinks } = useMentChains();
 
@@ -79,7 +81,7 @@ const ChainDashboard = () => {
 
   // Smart default tab selection
   const defaultTab = useMemo(() => {
-    const hasYourTurn = chainData.some(c => c.current_holder === currentUserId && c.status === 'active' && !c.is_queued);
+    const hasYourTurn = chainData.some(c => isCurrentHolder(c.current_holder) && c.status === 'active' && !c.is_queued);
     const hasActive = chainData.some(c => c.status === 'active' && !c.is_queued);
     const hasQueued = chainData.some(c => c.is_queued);
     const hasEnded = chainData.some(c => c.status === 'broken');
@@ -120,7 +122,7 @@ const ChainDashboard = () => {
         result = chainData.filter(c => c.status === 'active' && !c.is_queued);
         break;
       case 'yourTurn':
-        result = chainData.filter(c => c.current_holder === currentUserId && c.status === 'active' && !c.is_queued);
+        result = chainData.filter(c => isCurrentHolder(c.current_holder) && c.status === 'active' && !c.is_queued);
         break;
       case 'queued':
         result = chainData.filter(c => c.is_queued);
@@ -152,8 +154,8 @@ const ChainDashboard = () => {
 
   // Sort the filtered chains
   const sortedChains = useMemo(() => {
-    return sortChains(filteredChains, currentUserId);
-  }, [filteredChains, currentUserId]);
+    return sortChains(filteredChains, isCurrentHolder);
+  }, [filteredChains, isCurrentHolder]);
 
   const handleShare = (chainId: string) => {
     console.log('Share chain:', chainId);
@@ -268,7 +270,7 @@ const ChainDashboard = () => {
               <ChainCardNew
                 key={chain.chain_id}
                 chain={chain}
-                isYourTurn={chain.current_holder === currentUserId}
+                isYourTurn={isCurrentHolder(chain.current_holder)}
                 currentUserId={currentUserId}
                 onShare={handleShare}
                 onViewDetails={handleViewDetails}

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Link, Clock, User, Share2, ArrowRight, Forward, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { tierConfig, getChainTier } from '@/utils/chainTiers';
@@ -46,6 +47,7 @@ function formatTimeAgo(date: string): string {
 }
 
 const ChainDetailsModal = ({ chain, isOpen, onClose, getChainLinks }: ChainDetailsModalProps) => {
+  const { session } = useAuth();
   const [links, setLinks] = useState<ChainLink[]>([]);
   const [loading, setLoading] = useState(true);
   const channelRef = useRef<RealtimeChannel | null>(null);
@@ -94,8 +96,7 @@ const ChainDetailsModal = ({ chain, isOpen, onClose, getChainLinks }: ChainDetai
       if (getChainLinks) {
         fetchedLinks = await getChainLinks(chain.chain_id);
       } else {
-        const { data: sessionData } = await supabase.auth.getSession();
-        const accessToken = sessionData?.session?.access_token;
+        const accessToken = session?.access_token;
         if (!accessToken) throw new Error('Not authenticated');
         
         const response = await fetch(
@@ -126,8 +127,7 @@ const ChainDetailsModal = ({ chain, isOpen, onClose, getChainLinks }: ChainDetai
       }
       
       if (userIds.size > 0) {
-        const { data: sessionData } = await supabase.auth.getSession();
-        const accessToken = sessionData?.session?.access_token;
+        const accessToken = session?.access_token;
         if (accessToken) {
           const idsArray = Array.from(userIds);
           const resp = await fetch(
