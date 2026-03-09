@@ -27,24 +27,24 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Create admin client with service role key for auth verification
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    
-    const adminClient = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Verify user token via admin client
+    // Verify user token via claims (fast local verification)
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await adminClient.auth.getUser(token);
-    if (userError || !user) {
-      console.error('Auth error:', userError);
+    const claimsClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+    const { data: claimsData, error: claimsError } = await claimsClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      console.error('Auth error:', claimsError);
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-    console.log('Authenticated user:', user.id);
+    const userId = claimsData.claims.sub as string;
+    console.log('Authenticated user:', userId);
 
     // Create user-scoped client for RLS-respecting DB operations
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
       .from('ment_chains')
       .insert({
         chain_name: chainName,
-        started_by: user.id,
+        started_by: userId,
         current_holder: recipientValue,
         expires_at: expiresAt.toISOString(),
         status: 'active',
@@ -98,7 +98,7 @@ Deno.serve(async (req) => {
       .from('chain_links')
       .insert({
         chain_id: newChain.chain_id,
-        passed_by: user.id,
+        passed_by: userId,
         passed_to: recipientValue,
         received_compliment: '',
         sent_compliment: compliment,
@@ -138,7 +138,7 @@ Deno.serve(async (req) => {
     supabase
       .from('user_game_state')
       .select('chains_started_today, last_chain_start_date')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .maybeSingle()
       .then(({ data: gameState }) => {
         const lastStart = new Date(gameState?.last_chain_start_date || 0);
@@ -152,11 +152,11 @@ Deno.serve(async (req) => {
             chains_started_today: isNewDay ? 1 : (gameState?.chains_started_today || 0) + 1,
             last_chain_start_date: now.toISOString()
           })
-          .eq('user_id', user.id);
+          .eq('user_id', userId);
       })
       .then(({ error }) => {
         if (error) console.warn('Stats update failed:', error);
-        else console.log('Stats updated for user:', user.id);
+        else console.log('Stats updated for user:', userId);
       });
 
     return new Response(
