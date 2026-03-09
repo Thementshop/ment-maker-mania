@@ -324,24 +324,6 @@ const PassChainModal = ({
 
       console.log('[PassChain] Starting pass via REST API for chain:', chain.chain_id);
 
-      // 1. Get chain participants (check for duplicates)
-      const { data: chainLinks, error: linksErr } = await restApi(
-        'GET', 'chain_links',
-        `select=passed_to,passed_by&chain_id=eq.${chain.chain_id}`,
-        token
-      );
-
-      if (linksErr) {
-        console.error('[PassChain] Failed to fetch chain links:', linksErr);
-        // Non-fatal, continue without duplicate check
-      }
-
-      const participants = new Set<string>();
-      (chainLinks || []).forEach((link: any) => {
-        if (link.passed_to) participants.add(link.passed_to.toLowerCase());
-        if (link.passed_by) participants.add(link.passed_by.toLowerCase());
-      });
-
       const recipientLower = recipient.trim().toLowerCase();
 
       // 2a. Check if recipient is the current user (self-send)
@@ -355,9 +337,42 @@ const PassChainModal = ({
         return;
       }
 
-      // 2b. Check if recipient already participated in this chain
-      if (participants.has(recipientLower)) {
-        setError("This person is already part of this chain! Choose someone new to spread the kindness further 💚");
+      // 2b. Check if recipient already participated in this chain (server-side, resolves UUIDs to emails)
+      console.log('[PassChain] Checking participant via RPC:', { chain_id: chain.chain_id, recipient: recipientLower });
+      const rpcUrl = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/rpc/is_chain_participant`;
+      try {
+        const participantResp = await fetch(rpcUrl, {
+          method: 'POST',
+          headers: {
+            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ _chain_id: chain.chain_id, _identifier: recipientLower }),
+          signal: AbortSignal.timeout(10000),
+        });
+        
+        if (participantResp.ok) {
+          const isParticipant = await participantResp.json();
+          console.log('[PassChain] Participant check result:', { recipient: recipientLower, isParticipant });
+          
+          if (isParticipant === true) {
+            setError("This person is already part of this chain! Choose someone new to spread the kindness further 💚");
+            setLoading(false);
+            isSubmitting.current = false;
+            return;
+          }
+        } else {
+          console.error('[PassChain] Participant check failed:', participantResp.status);
+          // Still block if we can't verify - fail safe
+          setError("Could not verify recipient. Please try again.");
+          setLoading(false);
+          isSubmitting.current = false;
+          return;
+        }
+      } catch (rpcErr) {
+        console.error('[PassChain] Participant RPC error:', rpcErr);
+        setError("Could not verify recipient. Please try again.");
         setLoading(false);
         isSubmitting.current = false;
         return;
