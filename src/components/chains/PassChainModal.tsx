@@ -280,6 +280,11 @@ const PassChainModal = ({
       return;
     }
 
+    if (isSubmitting.current) {
+      console.warn('[PassChain] Double-submit blocked');
+      return;
+    }
+    isSubmitting.current = true;
     setLoading(true);
     setError('');
 
