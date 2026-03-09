@@ -159,30 +159,6 @@ const ChainCardNew = ({
           </div>
         )}
 
-        {/* Menu Button (top right) */}
-        <div className="absolute top-3 right-3 z-10">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-8 w-8 rounded-full bg-white/80 hover:bg-white shadow-sm"
-              >
-                <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handleViewDetails}>
-                View Details
-              </DropdownMenuItem>
-              {!isYourTurn && (
-                <DropdownMenuItem onClick={() => onShare?.(chain.chain_id)}>
-                  Share Chain Link
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
 
         {/* Mint Circle Graphic */}
         <div className="flex justify-center pt-12 pb-4 px-6">
