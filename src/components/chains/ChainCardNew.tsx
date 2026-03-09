@@ -253,12 +253,20 @@ const ChainCardNew = ({
               >
                 Share →
               </Button>
+
+              <Button
+                variant="outline"
+                className="w-full rounded-full"
+                onClick={handleViewDetails}
+              >
+                View Chain History
+              </Button>
               
               {/* Pause Token Button */}
               {pauseTokens > 0 ? (
                 <Button
-                  variant="outline"
-                  className="w-full rounded-full text-sm"
+                  variant="ghost"
+                  className="w-full rounded-full text-sm text-muted-foreground"
                   onClick={handleUsePauseToken}
                   disabled={isPausing}
                 >
