@@ -296,6 +296,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      award_mint_to_email: { Args: { _email: string }; Returns: boolean }
       claim_chains_for_user: {
         Args: { claiming_user_id: string }
         Returns: number
