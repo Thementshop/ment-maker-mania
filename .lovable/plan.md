@@ -1,75 +1,32 @@
 
-Goal: add end-to-end observability so we can prove exactly where “hey2” is being dropped (RPC claim call, REST query construction, backend row visibility, or UI filtering).
 
-What I found from current code/state before implementation:
-- `useMentChains` already calls `claim_chains_for_user` on every fetch (not just login), but it times out client-side after 3s.
-- The backend visibility policy for chains already includes email matching (`lower(current_holder) = lower(auth.jwt()->>'email')`).
-- The app currently has multiple pipeline stages where rows can be hidden after fetch (especially UUID-only checks in chain dashboard tab filters).
-- Current logs are not granular enough to correlate one fetch cycle to one claim attempt and one raw response.
+## Current State
 
-Implementation plan
+- **Create chain**: Creator gets +5 mints ✅, first recipient gets +1 mint ✅ (lines 168-191 in `create-chain/index.ts`)
+- **Pass chain**: Sender gets +1 mint ✅, but **recipient gets nothing** ❌
 
-1) Instrument backend claim function with structured logs (migration)
-- File: new migration in `supabase/migrations/`
-- Update `public.claim_chains_for_user(claiming_user_id uuid)` to emit detailed server logs:
-  - function entry timestamp + `claiming_user_id`
-  - resolved user email
-  - candidate chain rows found for claiming (ids/names/status/current_holder)
-  - rows updated in `ment_chains` (ids)
-  - rows updated in `chain_links` (count)
-  - total duration ms
-  - explicit error log in exception block
-- Keep return type and behavior compatible (`integer`) so existing frontend code does not break.
-- Purpose: confirm whether claim actually runs, what it sees, and what it changes each call.
+## Plan
 
-2) Add fetch-cycle correlation logging in `useMentChains`
-- File: `src/hooks/useMentChains.ts`
-- For every fetch run, generate `fetchDebugId` and log:
-  - user identity inputs: `user.id`, `user.email`, `session.user?.email`, JWT email (decoded from access token for comparison)
-  - exact OR filter string and full REST URL being requested
-  - claim RPC lifecycle:
-    - start
-    - result vs timeout vs error
-    - elapsed time
-    - late resolution (if timed out locally but completes later)
-  - raw REST payload before any local mapping/filtering
-  - per-row diagnostics for each returned chain:
-    - `matchesStartedBy`
-    - `matchesHolderUuid`
-    - `matchesHolderEmail`
-    - `status`
-  - final counts at each stage:
-    - raw rows
-    - rows mapped to typed chains
-    - your-turn rows
-- Purpose: prove whether “hey2” is absent from API response or dropped later.
+### 1. Award +1 mint to recipient when a chain is passed (`PassChainModal.tsx`)
 
-3) Add UI pipeline logs where additional filtering occurs
-- File: `src/components/chains/ChainDashboard.tsx`
-- Add debug logs for:
-  - incoming `chainData` IDs/names/current_holder/status
-  - active-tab filtered IDs
-  - your-turn detection results (and why each row passed/failed)
-- Purpose: catch cases where rows are fetched but hidden by UUID-only client checks.
+After the sender's +1 mint award succeeds (around the existing `jar_count` PATCH), add a second REST API call to award +1 mint to the recipient — but only if the recipient is a registered user (same pattern as `create-chain`).
 
-4) Verify backend policy state and visibility with direct SQL diagnostics
-- During implementation validation, run read-only backend checks:
-  - policy definitions for `ment_chains` (confirm email clause is active)
-  - rows where `current_holder` is bdhp email or bdhp UUID (id/name/status/created_at)
-  - sanity query showing which rows should match the intended OR condition
-- Purpose: eliminate policy drift and confirm data shape.
+Since `PassChainModal` runs client-side and can't use the service role key to look up users by email, we have two options:
 
-5) Validation flow after instrumentation
-- Fresh sign-in as bdhp account.
-- Capture one fetch cycle using `fetchDebugId` and confirm:
-  - claim call attempted (and backend log entry exists)
-  - query includes both UUID + email conditions
-  - raw API includes/excludes “hey2”
-  - if raw includes “hey2” but UI doesn’t: fix client tab filters to dual-match UUID/email.
-  - if raw excludes “hey2” and query email missing: fix email source fallback (`user.email` → `session.user.email`/JWT email).
-- Keep debug logs prefixed (`[MentChainsDebug]`) so they are easy to grep and remove later.
+**Option A (simpler):** Just try to look up the recipient's `user_game_state` by checking the `profiles` table for a matching email — but profiles don't store emails.
 
-Technical notes / guardrails
-- I will not touch auto-generated integration files.
-- No auth behavior changes; this is observability-first.
-- Logging volume will be scoped and clearly prefixed so it can be rolled back cleanly after diagnosis.
+**Option B (recommended):** Move the recipient mint award into the `create-chain` pattern: use a lightweight edge function or do it via the admin client. Since we already have the pattern in `create-chain`, the cleanest approach is to add the recipient award logic directly in `PassChainModal` using a REST API call to a new RPC function that handles it server-side.
+
+**Simplest approach:** Add a new database function `award_mint_to_email(email text)` that:
+1. Looks up the user by email in `auth.users` (SECURITY DEFINER)
+2. Increments their `jar_count` by 1 if found
+3. Returns whether it succeeded
+
+Then call this via REST RPC from `PassChainModal` after the pass succeeds.
+
+### Implementation Steps
+
+1. **Create DB function** `award_mint_to_email(_email text)` — SECURITY DEFINER, looks up user in `auth.users`, increments `user_game_state.jar_count` by 1
+2. **Update `PassChainModal.tsx`** — After successful chain pass + sender mint award, call `rpc/award_mint_to_email` via REST with the recipient's email/value (fire-and-forget, non-blocking)
+3. **Update `create-chain/index.ts`** — Optionally refactor to use the same DB function for consistency (low priority)
+
