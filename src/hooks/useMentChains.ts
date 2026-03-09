@@ -189,8 +189,9 @@ export const useMentChains = (): UseMentChainsReturn => {
         throw new Error(chainsResult.error.message || 'Failed to fetch chains');
       }
 
-      const rawChains = chainsResult.data || [];
-      console.log(`[MentChainsDebug][${fetchDebugId}] Raw API returned ${rawChains.length} chains`);
+      // Merge main + participated chains
+      const rawChains = [...(chainsResult.data || []), ...participatedChains];
+      console.log(`[MentChainsDebug][${fetchDebugId}] Total chains: ${rawChains.length} (main: ${(chainsResult.data || []).length}, participated: ${participatedChains.length})`);
       
       // Per-row diagnostics
       rawChains.forEach(chain => {
