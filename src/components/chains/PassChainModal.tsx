@@ -412,7 +412,7 @@ const PassChainModal = ({
 
       if (linkError) throw new Error(`Link insert failed: ${linkError.message}`);
 
-      // 6. Award +1 mint to passer (sender)
+      // 6. Award +1 mint to passer (sender) and update your_turn count
       const { data: userStates } = await restApi(
         'GET', 'user_game_state',
         `select=jar_count,your_turn_chains_count&user_id=eq.${user.id}`,
@@ -420,56 +420,22 @@ const PassChainModal = ({
       );
 
       const userState = userStates?.[0];
+      const newJarCount = (userState?.jar_count ?? 25) + 1;
       if (userState) {
         await restApi(
           'PATCH', 'user_game_state',
           `user_id=eq.${user.id}`,
           token,
           {
-            jar_count: (userState.jar_count ?? 25) + 1,
+            jar_count: newJarCount,
             your_turn_chains_count: Math.max(0, (userState.your_turn_chains_count || 0) - 1)
           }
         );
       }
 
-      // 7. Award +1 mint to recipient if they have an account (fire-and-forget via edge function would be ideal, but for now use REST)
-      // We can't easily look up auth users from client, so recipient mint is handled server-side in future
-      // For now, the create-chain edge function handles recipient mints
-
-      // 8. Check for Legendary milestone (100 shares)
-      if (newShareCount === 100 && chain.started_by === user.id) {
-        triggerLegendaryCelebration();
-      } else {
-        // Regular confetti
-        confetti({
-          particleCount: 80,
-          spread: 60,
-          origin: { y: 0.6 },
-          colors: ['#2ECC71', '#27AE60', '#F1C40F']
-        });
-      }
-
-      // 9. Auto-promote queued chain
-      await promoteNextQueuedChain(user.id, token);
-
-      // 10. Refresh jar count in UI
-      try {
-        const { data: freshState } = await restApi(
-          'GET', 'user_game_state',
-          `select=jar_count,total_sent,current_level&user_id=eq.${user.id}`,
-          token
-        );
-        if (freshState?.[0]) {
-          const { useGameStore } = await import('@/store/gameStore');
-          useGameStore.setState({
-            jarCount: freshState[0].jar_count,
-            totalSent: freshState[0].total_sent,
-            currentLevel: freshState[0].current_level,
-          });
-        }
-      } catch (e) {
-        console.warn('Failed to refresh jar count:', e);
-      }
+      // Update jar in UI immediately
+      const { useGameStore } = await import('@/store/gameStore');
+      useGameStore.setState({ jarCount: newJarCount });
 
       // 11. Success!
       console.log('[PassChain] ✅ Chain passed successfully!');
