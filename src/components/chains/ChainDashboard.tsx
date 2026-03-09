@@ -154,8 +154,8 @@ const ChainDashboard = () => {
 
   // Sort the filtered chains
   const sortedChains = useMemo(() => {
-    return sortChains(filteredChains, currentUserId);
-  }, [filteredChains, currentUserId]);
+    return sortChains(filteredChains, isCurrentHolder);
+  }, [filteredChains, isCurrentHolder]);
 
   const handleShare = (chainId: string) => {
     console.log('Share chain:', chainId);
