@@ -37,23 +37,20 @@ function transformChainToCardData(chain: MentChain): ChainData {
   };
 }
 
-function sortChains(chains: ChainData[], currentUserId: string): ChainData[] {
+function sortChains(chains: ChainData[], isHolderFn: (holder: string) => boolean): ChainData[] {
   return [...chains].sort((a, b) => {
-    const aIsYourTurn = a.current_holder === currentUserId;
-    const bIsYourTurn = b.current_holder === currentUserId;
+    const aIsYourTurn = isHolderFn(a.current_holder);
+    const bIsYourTurn = isHolderFn(b.current_holder);
     
-    // Your Turn chains FIRST
     if (aIsYourTurn && !bIsYourTurn) return -1;
     if (!aIsYourTurn && bIsYourTurn) return 1;
     
-    // Within "Your Turn", sort by urgency (least time remaining first)
     if (aIsYourTurn && bIsYourTurn) {
       const aTime = new Date(a.expires_at).getTime() - Date.now();
       const bTime = new Date(b.expires_at).getTime() - Date.now();
       return aTime - bTime;
     }
     
-    // Other chains sorted by share count (highest first)
     return b.share_count - a.share_count;
   });
 }
