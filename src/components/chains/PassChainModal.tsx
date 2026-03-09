@@ -322,6 +322,7 @@ const PassChainModal = ({
           variant: "destructive"
         });
         setLoading(false);
+        isSubmitting.current = false;
         return;
       }
 
