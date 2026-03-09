@@ -64,10 +64,10 @@ const ChainDashboard = () => {
   const currentUserId = user?.id || '';
   const currentUserEmail = user?.email || '';
 
-  const isCurrentHolder = (holder: string) => {
+  const isCurrentHolder = useCallback((holder: string) => {
     return holder === currentUserId || 
-      (currentUserEmail && holder.toLowerCase() === currentUserEmail.toLowerCase());
-  };
+      (currentUserEmail !== '' && holder.toLowerCase() === currentUserEmail.toLowerCase());
+  }, [currentUserId, currentUserEmail]);
   // Fetch real chains from database
   const { chains, isLoading, error, refetch, usePauseToken, getChainLinks } = useMentChains();
 
