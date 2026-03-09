@@ -132,61 +132,66 @@ Deno.serve(async (req) => {
         });
     }
 
-    // Award +5 mints to creator (create includes first send)
+    // Award +5 mints to creator (create includes first send) - MUST complete before response
     const now = new Date();
-    adminClient
-      .from('user_game_state')
-      .select('jar_count, chains_started_today, last_chain_start_date')
-      .eq('user_id', userId)
-      .maybeSingle()
-      .then(({ data: gameState }) => {
-        const lastStart = new Date(gameState?.last_chain_start_date || 0);
-        const isNewDay = now.getUTCDate() !== lastStart.getUTCDate() ||
-                         now.getUTCMonth() !== lastStart.getUTCMonth() ||
-                         now.getUTCFullYear() !== lastStart.getUTCFullYear();
-        
-        const currentJar = gameState?.jar_count ?? 25;
-        return adminClient
-          .from('user_game_state')
-          .update({
-            jar_count: currentJar + 5,
-            chains_started_today: isNewDay ? 1 : (gameState?.chains_started_today || 0) + 1,
-            last_chain_start_date: now.toISOString()
-          })
-          .eq('user_id', userId);
-      })
-      .then(({ error }) => {
-        if (error) console.warn('Creator mint award failed:', error);
-        else console.log('Creator awarded +5 mints:', userId);
-      });
+    let newJarCount = 25;
+    try {
+      const { data: gameState } = await adminClient
+        .from('user_game_state')
+        .select('jar_count, chains_started_today, last_chain_start_date')
+        .eq('user_id', userId)
+        .maybeSingle();
+      
+      const lastStart = new Date(gameState?.last_chain_start_date || 0);
+      const isNewDay = now.getUTCDate() !== lastStart.getUTCDate() ||
+                       now.getUTCMonth() !== lastStart.getUTCMonth() ||
+                       now.getUTCFullYear() !== lastStart.getUTCFullYear();
+      
+      const currentJar = gameState?.jar_count ?? 25;
+      newJarCount = currentJar + 5;
+      
+      const { error: updateErr } = await adminClient
+        .from('user_game_state')
+        .update({
+          jar_count: newJarCount,
+          chains_started_today: isNewDay ? 1 : (gameState?.chains_started_today || 0) + 1,
+          last_chain_start_date: now.toISOString()
+        })
+        .eq('user_id', userId);
+      
+      if (updateErr) console.warn('Creator mint award failed:', updateErr);
+      else console.log('Creator awarded +5 mints, new jar:', newJarCount);
+    } catch (e) {
+      console.error('Mint award error:', e);
+    }
 
     // Award +1 mint to recipient if they have an account (fire-and-forget)
-    // Look up recipient by email to find their user_id
-    adminClient
-      .from('user_game_state')
-      .select('user_id, jar_count')
-      .then(async ({ data: allStates }) => {
-        // Check if recipient is a registered user (by email match)
-        const { data: userData } = await adminClient.auth.admin.listUsers();
-        const recipientUser = userData?.users?.find(
-          (u) => u.email && u.email.toLowerCase() === recipientValue.toLowerCase()
-        );
-        if (recipientUser) {
-          const recipientState = (allStates || []).find((s: any) => s.user_id === recipientUser.id);
+    adminClient.auth.admin.listUsers().then(({ data: userData }) => {
+      const recipientUser = userData?.users?.find(
+        (u) => u.email && u.email.toLowerCase() === recipientValue.toLowerCase()
+      );
+      if (!recipientUser) {
+        console.log('Recipient not registered, skipping mint award');
+        return;
+      }
+      adminClient
+        .from('user_game_state')
+        .select('jar_count')
+        .eq('user_id', recipientUser.id)
+        .maybeSingle()
+        .then(({ data: recipientState }) => {
           if (recipientState) {
-            await adminClient
+            adminClient
               .from('user_game_state')
               .update({ jar_count: (recipientState.jar_count ?? 25) + 1 })
-              .eq('user_id', recipientUser.id);
-            console.log('Recipient awarded +1 mint:', recipientUser.id);
+              .eq('user_id', recipientUser.id)
+              .then(() => console.log('Recipient awarded +1 mint:', recipientUser.id));
           }
-        } else {
-          console.log('Recipient not registered, skipping mint award');
-        }
-      });
+        });
+    });
 
     return new Response(
-      JSON.stringify({ chain: newChain, success: true }),
+      JSON.stringify({ chain: newChain, success: true, newJarCount }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
