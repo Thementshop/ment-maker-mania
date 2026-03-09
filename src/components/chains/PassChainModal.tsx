@@ -412,10 +412,10 @@ const PassChainModal = ({
 
       if (linkError) throw new Error(`Link insert failed: ${linkError.message}`);
 
-      // 6. Update user's "your turn" count
+      // 6. Award +1 mint to passer (sender)
       const { data: userStates } = await restApi(
         'GET', 'user_game_state',
-        `select=your_turn_chains_count&user_id=eq.${user.id}`,
+        `select=jar_count,your_turn_chains_count&user_id=eq.${user.id}`,
         token
       );
 
@@ -426,12 +426,17 @@ const PassChainModal = ({
           `user_id=eq.${user.id}`,
           token,
           {
+            jar_count: (userState.jar_count ?? 25) + 1,
             your_turn_chains_count: Math.max(0, (userState.your_turn_chains_count || 0) - 1)
           }
         );
       }
 
-      // 7. Check for Legendary milestone (100 shares)
+      // 7. Award +1 mint to recipient if they have an account (fire-and-forget via edge function would be ideal, but for now use REST)
+      // We can't easily look up auth users from client, so recipient mint is handled server-side in future
+      // For now, the create-chain edge function handles recipient mints
+
+      // 8. Check for Legendary milestone (100 shares)
       if (newShareCount === 100 && chain.started_by === user.id) {
         triggerLegendaryCelebration();
       } else {
@@ -444,14 +449,33 @@ const PassChainModal = ({
         });
       }
 
-      // 8. Auto-promote queued chain
+      // 9. Auto-promote queued chain
       await promoteNextQueuedChain(user.id, token);
 
-      // 9. Success!
+      // 10. Refresh jar count in UI
+      try {
+        const { data: freshState } = await restApi(
+          'GET', 'user_game_state',
+          `select=jar_count,total_sent,current_level&user_id=eq.${user.id}`,
+          token
+        );
+        if (freshState?.[0]) {
+          const { useGameStore } = await import('@/store/gameStore');
+          useGameStore.setState({
+            jarCount: freshState[0].jar_count,
+            totalSent: freshState[0].total_sent,
+            currentLevel: freshState[0].current_level,
+          });
+        }
+      } catch (e) {
+        console.warn('Failed to refresh jar count:', e);
+      }
+
+      // 11. Success!
       console.log('[PassChain] ✅ Chain passed successfully!');
       toast({
-        title: "Chain passed! 🔗",
-        description: "+1 mint added to your jar 🍬"
+        title: "Chain passed! 🔗 +1 mint! 📤",
+        description: "1 mint added to your jar for passing it forward 🍬"
       });
 
       onSuccess();
