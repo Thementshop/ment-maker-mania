@@ -143,21 +143,47 @@ export const useMentChains = (): UseMentChainsReturn => {
         console.log(`[MentChainsDebug][${fetchDebugId}] Claim completed:`, (claimResult as any)?.data, 'elapsed:', Date.now() - claimStart, 'ms');
       }
 
-      // Fetch all chains the user is involved with using direct REST API
+      // Step 1: Fetch chains user started or currently holds
       const userEmail = user.email || '';
       const orFilter = userEmail
         ? `or=(started_by.eq.${user.id},current_holder.eq.${user.id},current_holder.eq.${userEmail})`
         : `or=(started_by.eq.${user.id},current_holder.eq.${user.id})`;
-      
-      const fullUrl = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/ment_chains?select=*&${orFilter}&order=created_at.desc`;
-      console.log(`[MentChainsDebug][${fetchDebugId}] REST query:`, fullUrl);
-      console.log(`[MentChainsDebug][${fetchDebugId}] OR filter:`, orFilter);
 
+      // Step 2: Also fetch chain_ids where user participated (via chain_links)
+      const participatedResult = await supabaseRest<{ chain_id: string }[]>(
+        'chain_links',
+        `select=chain_id&or=(passed_by.eq.${user.id},passed_to.eq.${user.id},passed_to.eq.${userEmail})`,
+        session.access_token
+      );
+      const participatedChainIds = new Set(
+        (participatedResult.data || []).map(l => l.chain_id)
+      );
+      
+      console.log(`[MentChainsDebug][${fetchDebugId}] Participated in ${participatedChainIds.size} chains via chain_links`);
+
+      // Step 3: Fetch main chains
       const chainsResult = await supabaseRest<MentChain[]>(
         'ment_chains',
         `select=*&${orFilter}&order=created_at.desc`,
         session.access_token
       );
+
+      // Step 4: Fetch participated chains not already included
+      let participatedChains: MentChain[] = [];
+      if (participatedChainIds.size > 0) {
+        const mainChainIds = new Set((chainsResult.data || []).map(c => c.chain_id));
+        const missingIds = [...participatedChainIds].filter(id => !mainChainIds.has(id));
+        
+        if (missingIds.length > 0) {
+          const partResult = await supabaseRest<MentChain[]>(
+            'ment_chains',
+            `select=*&chain_id=in.(${missingIds.join(',')})&order=created_at.desc`,
+            session.access_token
+          );
+          participatedChains = partResult.data || [];
+          console.log(`[MentChainsDebug][${fetchDebugId}] Fetched ${participatedChains.length} additional participated chains`);
+        }
+      }
 
       if (chainsResult.error) {
         throw new Error(chainsResult.error.message || 'Failed to fetch chains');
