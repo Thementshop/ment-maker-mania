@@ -34,17 +34,23 @@ Deno.serve(async (req) => {
     
     const adminClient = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Verify user token via admin client
+    // Verify user token via claims (faster, avoids getUser network call)
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await adminClient.auth.getUser(token);
-    if (userError || !user) {
-      console.error('Auth error:', userError);
+    
+    // Create a user-scoped client to verify claims
+    const claimsClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+    const { data: claimsData, error: claimsError } = await claimsClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      console.error('Auth error:', claimsError);
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-    console.log('Authenticated user:', user.id);
+    const userId = claimsData.claims.sub as string;
+    console.log('Authenticated user:', userId);
 
     // Create user-scoped client for RLS-respecting DB operations
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {

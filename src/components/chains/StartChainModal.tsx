@@ -178,7 +178,7 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
+            'Authorization': `Bearer ${accessToken}`,
           },
           body: JSON.stringify({
             chainName: finalName,
