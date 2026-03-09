@@ -149,11 +149,13 @@ const ChainCardNew = ({
         whileHover={{ scale: 1.02, y: -2 }}
         transition={{ duration: 0.2 }}
       >
-        {/* Countdown Timer Badge - ONLY if isYourTurn and not queued */}
+        {/* YOUR TURN header banner */}
         {isYourTurn && !chain.is_queued && chain.status === 'active' && (
-          <div className={`absolute top-3 left-3 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold z-10 ${timerColorClass}`}>
-            <span>⏳</span>
-            <span>{countdown.formattedTime} left</span>
+          <div className="w-full px-4 pt-3 flex items-center justify-between gap-2 z-10">
+            <span className="text-lg font-extrabold text-destructive tracking-tight">🎯 YOUR TURN!</span>
+            <span className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-semibold ${timerColorClass}`}>
+              ⏳ {countdown.formattedTime}
+            </span>
           </div>
         )}
 
