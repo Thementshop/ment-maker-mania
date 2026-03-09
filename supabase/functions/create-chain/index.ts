@@ -78,7 +78,7 @@ Deno.serve(async (req) => {
       .from('ment_chains')
       .insert({
         chain_name: chainName,
-        started_by: user.id,
+        started_by: userId,
         current_holder: recipientValue,
         expires_at: expiresAt.toISOString(),
         status: 'active',
