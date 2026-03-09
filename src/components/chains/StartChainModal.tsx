@@ -157,6 +157,7 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
     console.log('Chain name:', finalName);
     console.log('Recipient:', recipientValue.trim());
 
+    try {
       // Get current session token from AuthContext (avoid supabase.auth calls that cause lock contention)
       let accessToken = session?.access_token;
       
