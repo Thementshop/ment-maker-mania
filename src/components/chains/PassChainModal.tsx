@@ -437,7 +437,22 @@ const PassChainModal = ({
       const { useGameStore } = await import('@/store/gameStore');
       useGameStore.setState({ jarCount: newJarCount });
 
-      // 11. Success!
+      // 7. Check for Legendary milestone (100 shares)
+      if (newShareCount === 100 && chain.started_by === user.id) {
+        triggerLegendaryCelebration();
+      } else {
+        confetti({
+          particleCount: 80,
+          spread: 60,
+          origin: { y: 0.6 },
+          colors: ['#2ECC71', '#27AE60', '#F1C40F']
+        });
+      }
+
+      // 8. Auto-promote queued chain
+      await promoteNextQueuedChain(user.id, token);
+
+      // 9. Success!
       console.log('[PassChain] ✅ Chain passed successfully!');
       toast({
         title: "Chain passed! 🔗 +1 mint! 📤",
