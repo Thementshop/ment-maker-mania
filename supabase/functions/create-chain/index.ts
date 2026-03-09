@@ -162,7 +162,7 @@ Deno.serve(async (req) => {
       })
       .then(({ error }) => {
         if (error) console.warn('Stats update failed:', error);
-        else console.log('Stats updated for user:', user.id);
+        else console.log('Stats updated for user:', userId);
       });
 
     return new Response(
