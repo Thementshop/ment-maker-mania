@@ -122,40 +122,50 @@ const PassChainModal = ({
     console.groupEnd();
 
     const logChainLinkDebug = async () => {
-      const { data, error } = await supabase
-        .from('chain_links')
-        .select('link_id, chain_id, passed_to, sent_compliment, received_compliment, passed_at')
-        .eq('chain_id', chain.chain_id)
-        .order('passed_at', { ascending: false })
-        .limit(5);
+      try {
+        const sessionToken = user?.id ? (await supabase.auth.getSession()).data?.session?.access_token : null;
+        if (!sessionToken) {
+          console.warn('[PassChainModal][Debug] No session token for debug query');
+          return;
+        }
 
-      if (error) {
-        console.error('[PassChainModal][Debug] chain_links query error:', error);
-        return;
+        const { data, error: fetchErr } = await restApi(
+          'GET',
+          'chain_links',
+          `select=link_id,chain_id,passed_to,sent_compliment,received_compliment,passed_at&chain_id=eq.${chain.chain_id}&order=passed_at.desc&limit=5`,
+          sessionToken
+        );
+
+        if (fetchErr) {
+          console.error('[PassChainModal][Debug] chain_links query error:', fetchErr);
+          return;
+        }
+
+        const latest = data?.[0];
+        const hasMatchForUser = (data || []).some((link: any) => {
+          const matchesId = !!user?.id && link.passed_to === user.id;
+          const matchesEmail = !!user?.email && link.passed_to.toLowerCase() === user.email.toLowerCase();
+          return matchesId || matchesEmail;
+        });
+
+        console.groupCollapsed(`[PassChainModal][Debug] chain_links query result for ${chain.chain_id}`);
+        console.log('rows', data || []);
+        console.log('latest link used by DB sort', latest ? {
+          chain_link_id: latest.link_id,
+          passed_to: latest.passed_to,
+          sent_compliment: latest.sent_compliment,
+          received_compliment: latest.received_compliment,
+          passed_at: latest.passed_at,
+        } : null);
+        console.log('comparison', {
+          prop_receivedCompliment: receivedCompliment,
+          latest_db_sent_compliment: latest?.sent_compliment ?? null,
+          has_match_for_user: hasMatchForUser,
+        });
+        console.groupEnd();
+      } catch (e) {
+        console.error('[PassChainModal][Debug] debug query exception:', e);
       }
-
-      const latest = data?.[0];
-      const hasMatchForUser = (data || []).some((link) => {
-        const matchesId = !!user?.id && link.passed_to === user.id;
-        const matchesEmail = !!user?.email && link.passed_to.toLowerCase() === user.email.toLowerCase();
-        return matchesId || matchesEmail;
-      });
-
-      console.groupCollapsed(`[PassChainModal][Debug] chain_links query result for ${chain.chain_id}`);
-      console.log('rows', data || []);
-      console.log('latest link used by DB sort', latest ? {
-        chain_link_id: latest.link_id,
-        passed_to: latest.passed_to,
-        sent_compliment: latest.sent_compliment,
-        received_compliment: latest.received_compliment,
-        passed_at: latest.passed_at,
-      } : null);
-      console.log('comparison', {
-        prop_receivedCompliment: receivedCompliment,
-        latest_db_sent_compliment: latest?.sent_compliment ?? null,
-        has_match_for_user: hasMatchForUser,
-      });
-      console.groupEnd();
     };
 
     void logChainLinkDebug();
