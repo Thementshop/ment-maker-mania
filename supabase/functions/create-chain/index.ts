@@ -104,7 +104,7 @@ Deno.serve(async (req) => {
       .from('chain_links')
       .insert({
         chain_id: newChain.chain_id,
-        passed_by: user.id,
+        passed_by: userId,
         passed_to: recipientValue,
         received_compliment: '',
         sent_compliment: compliment,
