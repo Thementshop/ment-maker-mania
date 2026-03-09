@@ -47,6 +47,7 @@ function formatTimeAgo(date: string): string {
 }
 
 const ChainDetailsModal = ({ chain, isOpen, onClose, getChainLinks }: ChainDetailsModalProps) => {
+  const { session } = useAuth();
   const [links, setLinks] = useState<ChainLink[]>([]);
   const [loading, setLoading] = useState(true);
   const channelRef = useRef<RealtimeChannel | null>(null);
