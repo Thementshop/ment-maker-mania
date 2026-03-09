@@ -105,6 +105,8 @@ const PassChainModal = ({
       setSelectedCategory('');
       setSelectedCompliment('');
       setError('');
+      setLoading(false);
+      isSubmitting.current = false;
     }
   }, [isOpen]);
 
