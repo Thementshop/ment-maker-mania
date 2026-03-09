@@ -123,7 +123,7 @@ const PassChainModal = ({
 
     const logChainLinkDebug = async () => {
       try {
-        const sessionToken = user?.id ? (await supabase.auth.getSession()).data?.session?.access_token : null;
+        const sessionToken = session?.access_token ?? null;
         if (!sessionToken) {
           console.warn('[PassChainModal][Debug] No session token for debug query');
           return;
