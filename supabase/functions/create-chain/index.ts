@@ -27,17 +27,11 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Create admin client with service role key for auth verification
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    
-    const adminClient = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Verify user token via claims (faster, avoids getUser network call)
+    // Verify user token via claims (fast local verification)
     const token = authHeader.replace('Bearer ', '');
-    
-    // Create a user-scoped client to verify claims
     const claimsClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } }
     });
