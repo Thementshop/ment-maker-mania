@@ -436,6 +436,7 @@ const PassChainModal = ({
       });
     } finally {
       setLoading(false);
+      isSubmitting.current = false;
     }
   };
 
