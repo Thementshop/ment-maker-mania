@@ -524,7 +524,7 @@ const PassChainModal = ({
       <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-center">
-            Pass the Ment 🔗
+            Pass It Forward 🔗
           </DialogTitle>
         </DialogHeader>
 

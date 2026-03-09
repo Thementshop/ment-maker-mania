@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { MoreHorizontal, ChevronRight, Pause, ShoppingCart } from 'lucide-react';
+import { ChevronRight, Pause, ShoppingCart, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCountdown } from '@/hooks/useCountdown';
 import { useAuth } from '@/contexts/AuthContext';
@@ -8,14 +8,12 @@ import { supabase } from '@/integrations/supabase/client';
 import MintCircleGraphic from './MintCircleGraphic';
 import PassChainModal from './PassChainModal';
 import ChainDetailsModal from './ChainDetailsModal';
+import SocialShareModal from './SocialShareModal';
+import UltimateCelebrationModal from './UltimateCelebrationModal';
+import ChainTierBadge from './ChainTierBadge';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { getVisualTier, visualTierConfig, isMilestone } from '@/utils/chainTiers';
 
 export interface ChainData {
   chain_id: string;
@@ -45,11 +43,10 @@ interface ChainCardNewProps {
 
 const getTimerColor = (hours: number, minutes: number): string => {
   const totalMinutes = hours * 60 + minutes;
-  
-  if (totalMinutes >= 360) return 'bg-green-500 text-white'; // >= 6 hours
-  if (totalMinutes >= 60) return 'bg-yellow-500 text-white'; // 1-6 hours
-  if (totalMinutes >= 10) return 'bg-orange-500 text-white'; // 10min - 1 hour
-  return 'bg-red-500 text-white animate-pulse'; // < 10 minutes
+  if (totalMinutes >= 360) return 'bg-green-500 text-white';
+  if (totalMinutes >= 60) return 'bg-yellow-500 text-white';
+  if (totalMinutes >= 10) return 'bg-orange-500 text-white';
+  return 'bg-red-500 text-white animate-pulse';
 };
 
 const ChainCardNew = ({ 
@@ -67,30 +64,44 @@ const ChainCardNew = ({
   const timerColorClass = getTimerColor(countdown.hours, countdown.minutes);
   const [showPassModal, setShowPassModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showSocialModal, setShowSocialModal] = useState(false);
+  const [showUltimateModal, setShowUltimateModal] = useState(false);
   const [isPausing, setIsPausing] = useState(false);
   const [pauseTokens, setPauseTokens] = useState(0);
   const navigate = useNavigate();
 
+  const visualTier = getVisualTier(chain.share_count);
+  const tierInfo = visualTierConfig[visualTier];
+
   // Fetch pause tokens
   useEffect(() => {
     if (!user) return;
-    
     const fetchPauseTokens = async () => {
       const { data } = await supabase
         .from('user_game_state')
         .select('pause_tokens')
         .eq('user_id', user.id)
         .single();
-      
-      if (data) {
-        setPauseTokens(data.pause_tokens);
-      }
+      if (data) setPauseTokens(data.pause_tokens);
     };
-    
     fetchPauseTokens();
   }, [user]);
 
-  const handleShare = () => {
+  // Show ultimate celebration on first view for 1000+ chains you started
+  useEffect(() => {
+    if (
+      chain.share_count >= 1000 &&
+      chain.started_by === currentUserId
+    ) {
+      const seenKey = `ultimate_seen_${chain.chain_id}`;
+      if (!sessionStorage.getItem(seenKey)) {
+        sessionStorage.setItem(seenKey, 'true');
+        setShowUltimateModal(true);
+      }
+    }
+  }, [chain.chain_id, chain.share_count, chain.started_by, currentUserId]);
+
+  const handlePassForward = () => {
     if (isYourTurn && chain.status === 'active' && !chain.is_queued) {
       setShowPassModal(true);
     } else {
@@ -98,11 +109,13 @@ const ChainCardNew = ({
     }
   };
 
-  const handleViewDetails = () => {
-    setShowDetailsModal(true);
-  };
-
   const handlePassSuccess = () => {
+    // Check for milestone after passing
+    const newCount = chain.share_count + 1;
+    if (isMilestone(newCount) && chain.started_by === currentUserId) {
+      toast.success(`🎉 Your chain reached ${newCount} shares! Share this milestone?`);
+      setTimeout(() => setShowSocialModal(true), 1500);
+    }
     onChainPassed?.();
   };
 
@@ -111,12 +124,10 @@ const ChainCardNew = ({
       toast.error('No pause tokens available!');
       return;
     }
-
     if (!onUsePauseToken) {
       toast.error('Pause token feature not available');
       return;
     }
-
     setIsPausing(true);
     try {
       const success = await onUsePauseToken(chain.chain_id);
@@ -126,23 +137,24 @@ const ChainCardNew = ({
       } else {
         toast.error('Failed to use pause token');
       }
-    } catch (error) {
+    } catch {
       toast.error('Failed to pause chain');
     } finally {
       setIsPausing(false);
     }
   };
 
-  // Default compliment if none received
   const receivedCompliment = chain.received_compliment || "You're amazing and the world is better with you in it! 💚";
 
   return (
     <>
       <motion.div
-        className={`relative w-full rounded-2xl overflow-hidden shadow-lg border transition-all ${
-          chain.tier === 'legendary' 
-            ? 'bg-gradient-to-b from-emerald-50 to-white border-emerald-300 shadow-emerald-200/50' 
-            : 'bg-white border-border'
+        className={`relative w-full rounded-2xl overflow-hidden shadow-lg border transition-all ${tierInfo.cardClass} ${
+          visualTier === 'ultimate'
+            ? 'bg-gradient-to-b from-yellow-50 via-orange-50 to-white border-yellow-400'
+            : chain.tier === 'legendary' 
+              ? 'bg-gradient-to-b from-emerald-50 to-white border-emerald-300 shadow-emerald-200/50' 
+              : 'bg-white border-border'
         }`}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -159,9 +171,15 @@ const ChainCardNew = ({
           </div>
         )}
 
+        {/* Tier Badge */}
+        {tierInfo.badge && (
+          <div className="flex justify-center pt-2">
+            <ChainTierBadge visualTier={visualTier} shareCount={chain.share_count} />
+          </div>
+        )}
 
         {/* Mint Circle Graphic */}
-        <div className="flex justify-center pt-12 pb-4 px-6">
+        <div className="flex justify-center pt-6 pb-4 px-6">
           <div className="w-40 h-40">
             <MintCircleGraphic 
               shareCount={chain.share_count} 
@@ -183,6 +201,15 @@ const ChainCardNew = ({
             Started by <span className="font-medium text-foreground">@{chain.started_by_display_name}</span>
           </p>
         </div>
+
+        {/* Ultimate count */}
+        {visualTier === 'ultimate' && (
+          <div className="text-center mt-1">
+            <span className="text-sm font-bold text-yellow-700">
+              {chain.share_count.toLocaleString()} people touched! 🌍
+            </span>
+          </div>
+        )}
 
         {/* Current Status */}
         <div className="text-center mt-2 px-4 pb-2">
@@ -224,16 +251,20 @@ const ChainCardNew = ({
           {isYourTurn && !chain.is_queued && chain.status === 'active' ? (
             <>
               <Button 
-                className="w-full rounded-full bg-primary hover:bg-primary/90"
-                onClick={handleShare}
+                className={`w-full rounded-full ${
+                  visualTier === 'ultimate'
+                    ? 'bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 text-white hover:opacity-90'
+                    : 'bg-primary hover:bg-primary/90'
+                }`}
+                onClick={handlePassForward}
               >
-                Share →
+                Pass It Forward →
               </Button>
 
               <Button
                 variant="outline"
                 className="w-full rounded-full"
-                onClick={handleViewDetails}
+                onClick={() => setShowDetailsModal(true)}
               >
                 View Chain History
               </Button>
@@ -265,12 +296,30 @@ const ChainCardNew = ({
               ⏸️ Queued
             </div>
           ) : (
-            <Button 
-              variant="outline"
-              className="w-full rounded-full"
-              onClick={handleViewDetails}
+            <>
+              <Button 
+                variant="outline"
+                className="w-full rounded-full"
+                onClick={() => setShowDetailsModal(true)}
+              >
+                View Details <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </>
+          )}
+
+          {/* Social Share Button — only for 25+ shares */}
+          {tierInfo.showSocialShare && chain.status === 'active' && (
+            <Button
+              variant="ghost"
+              className={`w-full rounded-full text-sm ${
+                visualTier === 'ultimate'
+                  ? 'text-yellow-700 hover:bg-yellow-50 font-bold'
+                  : 'text-muted-foreground'
+              }`}
+              onClick={() => setShowSocialModal(true)}
             >
-              View Details <ChevronRight className="h-4 w-4 ml-1" />
+              <Share2 className="h-4 w-4 mr-2" />
+              {visualTier === 'ultimate' ? 'SHARE YOUR LEGACY! 📱' : 'Share Your Contribution 📱'}
             </Button>
           )}
         </div>
@@ -305,6 +354,28 @@ const ChainCardNew = ({
         isOpen={showDetailsModal}
         onClose={() => setShowDetailsModal(false)}
         getChainLinks={getChainLinks}
+      />
+
+      {/* Social Share Modal */}
+      <SocialShareModal
+        isOpen={showSocialModal}
+        onClose={() => setShowSocialModal(false)}
+        chainId={chain.chain_id}
+        chainName={chain.chain_name}
+        shareCount={chain.share_count}
+        visualTier={visualTier}
+      />
+
+      {/* Ultimate Celebration Modal */}
+      <UltimateCelebrationModal
+        isOpen={showUltimateModal}
+        onClose={() => setShowUltimateModal(false)}
+        chainName={chain.chain_name}
+        shareCount={chain.share_count}
+        onShareSocial={() => {
+          setShowUltimateModal(false);
+          setShowSocialModal(true);
+        }}
       />
     </>
   );
