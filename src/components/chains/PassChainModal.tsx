@@ -338,17 +338,26 @@ const PassChainModal = ({
 
       const participants = new Set<string>();
       (chainLinks || []).forEach((link: any) => {
-        participants.add(link.passed_to);
-        participants.add(link.passed_by);
+        if (link.passed_to) participants.add(link.passed_to.toLowerCase());
+        if (link.passed_by) participants.add(link.passed_by.toLowerCase());
       });
 
-      // 2. Check if recipient already in chain
-      if (participants.has(recipient.trim())) {
-        toast({
-          title: "⚠️ Already in this chain!",
-          description: `${recipient} is already part of this chain. Choose someone new to spread the kindness further.`,
-          variant: "destructive"
-        });
+      const recipientLower = recipient.trim().toLowerCase();
+
+      // 2a. Check if recipient is the current user (self-send)
+      if (
+        recipientLower === user.id.toLowerCase() ||
+        (user.email && recipientLower === user.email.toLowerCase())
+      ) {
+        setError("You can't send to yourself!");
+        setLoading(false);
+        isSubmitting.current = false;
+        return;
+      }
+
+      // 2b. Check if recipient already participated in this chain
+      if (participants.has(recipientLower)) {
+        setError("This person is already part of this chain! Choose someone new to spread the kindness further 💚");
         setLoading(false);
         isSubmitting.current = false;
         return;
