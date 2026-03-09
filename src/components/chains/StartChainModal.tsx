@@ -158,12 +158,14 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
     console.log('Recipient:', recipientValue.trim());
 
     try {
-      // Use session from AuthContext (edge function validates via service role key)
-      if (!session?.access_token) {
-        console.error('No active session');
-        throw new Error('Please log in to start a chain.');
+      // Refresh session to ensure token is not expired
+      const { data: refreshedSession, error: refreshError } = await supabase.auth.refreshSession();
+      const accessToken = refreshedSession?.session?.access_token;
+      if (refreshError || !accessToken) {
+        console.error('Session refresh failed:', refreshError);
+        throw new Error('Please log in again to start a chain.');
       }
-      console.log('Session available, proceeding with chain creation...');
+      console.log('Session refreshed, proceeding with chain creation...');
 
       // Call edge function with 30s timeout
       const controller = new AbortController();
