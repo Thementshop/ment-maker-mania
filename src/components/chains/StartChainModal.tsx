@@ -252,23 +252,11 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
         description: `Your chain "${finalName}" has been created! 5 mints added to your jar.`,
       });
 
-      // Refresh jar count from database
-      try {
-        const { data: freshState } = await supabase
-          .from('user_game_state')
-          .select('jar_count, total_sent, current_level')
-          .eq('user_id', user.id)
-          .maybeSingle();
-        if (freshState) {
-          const { useGameStore } = await import('@/store/gameStore');
-          useGameStore.setState({
-            jarCount: freshState.jar_count,
-            totalSent: freshState.total_sent,
-            currentLevel: freshState.current_level,
-          });
-        }
-      } catch (e) {
-        console.warn('Failed to refresh jar count:', e);
+      // Update jar count from edge function response (synchronous, no race condition)
+      if (result.newJarCount) {
+        const { useGameStore } = await import('@/store/gameStore');
+        useGameStore.setState({ jarCount: result.newJarCount });
+        console.log('Jar updated to:', result.newJarCount);
       }
       
       // Fire confetti!
