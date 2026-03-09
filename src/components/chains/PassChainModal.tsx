@@ -289,9 +289,35 @@ const PassChainModal = ({
     setError('');
 
     try {
-      // Get session token for REST calls
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData?.session?.access_token;
+      // Get session token - use context session, refresh via REST if expired
+      let token = session?.access_token;
+      
+      if (token) {
+        // Check if token is expired or expiring within 30s
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          const expiresAt = payload.exp * 1000;
+          if (Date.now() > expiresAt - 30000) {
+            // Token expired/expiring, refresh via REST to avoid deadlock
+            const refreshResp = await fetch(
+              `${import.meta.env.VITE_SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+                },
+                body: JSON.stringify({ refresh_token: session?.refresh_token }),
+              }
+            );
+            if (refreshResp.ok) {
+              const refreshed = await refreshResp.json();
+              token = refreshed.access_token;
+            }
+          }
+        } catch { /* decode failed, use token as-is */ }
+      }
+      
       if (!token) throw new Error('No auth session');
 
       console.log('[PassChain] Starting pass via REST API for chain:', chain.chain_id);
