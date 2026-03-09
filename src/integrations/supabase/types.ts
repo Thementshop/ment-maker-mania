@@ -300,6 +300,10 @@ export type Database = {
         Args: { claiming_user_id: string }
         Returns: number
       }
+      get_participated_chain_ids: {
+        Args: { _user_email?: string; _user_id: string }
+        Returns: string[]
+      }
       increment_world_counter: { Args: never; Returns: number }
       user_participated_in_chain: {
         Args: { _chain_id: string; _user_id: string }
