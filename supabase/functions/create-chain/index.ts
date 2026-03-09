@@ -158,7 +158,7 @@ Deno.serve(async (req) => {
             chains_started_today: isNewDay ? 1 : (gameState?.chains_started_today || 0) + 1,
             last_chain_start_date: now.toISOString()
           })
-          .eq('user_id', user.id);
+          .eq('user_id', userId);
       })
       .then(({ error }) => {
         if (error) console.warn('Stats update failed:', error);
