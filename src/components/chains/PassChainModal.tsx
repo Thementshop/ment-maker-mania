@@ -86,7 +86,7 @@ const PassChainModal = ({
   onClose,
   onSuccess
 }: PassChainModalProps) => {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const { toast } = useToast();
   
   const [step, setStep] = useState<'choice' | 'forward' | 'choose'>('choice');
