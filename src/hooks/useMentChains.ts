@@ -149,17 +149,21 @@ export const useMentChains = (): UseMentChainsReturn => {
         ? `or=(started_by.eq.${user.id},current_holder.eq.${user.id},current_holder.eq.${userEmail})`
         : `or=(started_by.eq.${user.id},current_holder.eq.${user.id})`;
 
-      // Step 2: Also fetch chain_ids where user participated (via chain_links)
-      const participatedResult = await supabaseRest<{ chain_id: string }[]>(
-        'chain_links',
-        `select=chain_id&or=(passed_by.eq.${user.id},passed_to.eq.${user.id},passed_to.eq.${userEmail})`,
-        session.access_token
-      );
-      const participatedChainIds = new Set(
-        (participatedResult.data || []).map(l => l.chain_id)
-      );
+      // Step 2: Get participated chain_ids via RPC (bypasses RLS recursion)
+      let participatedChainIds = new Set<string>();
+      try {
+        const { data: partIds } = await supabase.rpc('get_participated_chain_ids', {
+          _user_id: user.id,
+          _user_email: userEmail,
+        });
+        if (partIds) {
+          (partIds as string[]).forEach(id => participatedChainIds.add(id));
+        }
+      } catch (e) {
+        console.warn(`[MentChainsDebug][${fetchDebugId}] Participated RPC failed:`, e);
+      }
       
-      console.log(`[MentChainsDebug][${fetchDebugId}] Participated in ${participatedChainIds.size} chains via chain_links`);
+      console.log(`[MentChainsDebug][${fetchDebugId}] Participated in ${participatedChainIds.size} chains via RPC`);
 
       // Step 3: Fetch main chains
       const chainsResult = await supabaseRest<MentChain[]>(
