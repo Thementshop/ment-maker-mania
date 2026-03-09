@@ -65,7 +65,12 @@ const ChainDashboard = () => {
   const [hasAutoSelected, setHasAutoSelected] = useState(false);
   const [selectedChainForDetails, setSelectedChainForDetails] = useState<ChainData | null>(null);
   const currentUserId = user?.id || '';
+  const currentUserEmail = user?.email || '';
 
+  const isCurrentHolder = (holder: string) => {
+    return holder === currentUserId || 
+      (currentUserEmail && holder.toLowerCase() === currentUserEmail.toLowerCase());
+  };
   // Fetch real chains from database
   const { chains, isLoading, error, refetch, usePauseToken, getChainLinks } = useMentChains();
 
