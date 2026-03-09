@@ -144,7 +144,7 @@ Deno.serve(async (req) => {
     supabase
       .from('user_game_state')
       .select('chains_started_today, last_chain_start_date')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .maybeSingle()
       .then(({ data: gameState }) => {
         const lastStart = new Date(gameState?.last_chain_start_date || 0);
