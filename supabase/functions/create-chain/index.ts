@@ -68,6 +68,25 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Check for duplicate recipients (case-insensitive)
+    const lowerRecipients = recipientList.map(r => r.toLowerCase());
+    const uniqueRecipients = new Set(lowerRecipients);
+    if (uniqueRecipients.size !== lowerRecipients.length) {
+      return new Response(
+        JSON.stringify({ error: 'Duplicate recipients are not allowed. Each person should be unique!' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Check creator isn't sending to themselves
+    const userEmail = user.email?.toLowerCase();
+    if (userEmail && lowerRecipients.includes(userEmail)) {
+      return new Response(
+        JSON.stringify({ error: "You can't send a chain to yourself!" }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     console.log('Creating chain with', recipientList.length, 'recipients');
 
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
