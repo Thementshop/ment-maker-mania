@@ -95,6 +95,7 @@ const PassChainModal = ({
   const [selectedCompliment, setSelectedCompliment] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const isSubmitting = useRef(false);
 
   // Reset when modal opens
   useEffect(() => {
