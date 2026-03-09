@@ -149,15 +149,24 @@ export const useMentChains = (): UseMentChainsReturn => {
         ? `or=(started_by.eq.${user.id},current_holder.eq.${user.id},current_holder.eq.${userEmail})`
         : `or=(started_by.eq.${user.id},current_holder.eq.${user.id})`;
 
-      // Step 2: Get participated chain_ids via RPC (bypasses RLS recursion)
+      // Step 2: Get participated chain_ids via REST RPC (avoids JS client deadlock)
       let participatedChainIds = new Set<string>();
       try {
-        const { data: partIds } = await supabase.rpc('get_participated_chain_ids', {
-          _user_id: user.id,
-          _user_email: userEmail,
-        });
-        if (partIds) {
-          (partIds as string[]).forEach(id => participatedChainIds.add(id));
+        const rpcResp = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/rpc/get_participated_chain_ids`,
+          {
+            method: 'POST',
+            headers: {
+              'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+              'Authorization': `Bearer ${session.access_token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ _user_id: user.id, _user_email: userEmail }),
+          }
+        );
+        if (rpcResp.ok) {
+          const partIds: string[] = await rpcResp.json();
+          partIds.forEach(id => participatedChainIds.add(id));
         }
       } catch (e) {
         console.warn(`[MentChainsDebug][${fetchDebugId}] Participated RPC failed:`, e);
