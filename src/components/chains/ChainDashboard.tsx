@@ -125,7 +125,7 @@ const ChainDashboard = () => {
         result = chainData.filter(c => c.status === 'active' && !c.is_queued);
         break;
       case 'yourTurn':
-        result = chainData.filter(c => c.current_holder === currentUserId && c.status === 'active' && !c.is_queued);
+        result = chainData.filter(c => isCurrentHolder(c.current_holder) && c.status === 'active' && !c.is_queued);
         break;
       case 'queued':
         result = chainData.filter(c => c.is_queued);
