@@ -273,7 +273,7 @@ const ChainDashboard = () => {
               <ChainCardNew
                 key={chain.chain_id}
                 chain={chain}
-                isYourTurn={chain.current_holder === currentUserId}
+                isYourTurn={isCurrentHolder(chain.current_holder)}
                 currentUserId={currentUserId}
                 onShare={handleShare}
                 onViewDetails={handleViewDetails}

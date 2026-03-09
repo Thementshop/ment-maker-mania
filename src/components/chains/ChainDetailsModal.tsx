@@ -127,8 +127,7 @@ const ChainDetailsModal = ({ chain, isOpen, onClose, getChainLinks }: ChainDetai
       }
       
       if (userIds.size > 0) {
-        const { data: sessionData } = await supabase.auth.getSession();
-        const accessToken = sessionData?.session?.access_token;
+        const accessToken = session?.access_token;
         if (accessToken) {
           const idsArray = Array.from(userIds);
           const resp = await fetch(
