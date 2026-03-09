@@ -84,15 +84,16 @@ const ChainDetailsModal = ({ chain, isOpen, onClose, getChainLinks }: ChainDetai
     };
   }, [isOpen, chain.chain_id]);
   
+  // Profile name resolution cache
+  const [profileMap, setProfileMap] = useState<Map<string, string>>(new Map());
+
   async function fetchChainLinks() {
     setLoading(true);
     try {
+      let fetchedLinks: ChainLink[] = [];
       if (getChainLinks) {
-        // Use the passed-in REST-based fetcher (avoids Supabase JS client deadlock)
-        const data = await getChainLinks(chain.chain_id);
-        setLinks(data || []);
+        fetchedLinks = await getChainLinks(chain.chain_id);
       } else {
-        // Fallback: direct REST API call
         const { data: sessionData } = await supabase.auth.getSession();
         const accessToken = sessionData?.session?.access_token;
         if (!accessToken) throw new Error('Not authenticated');
@@ -108,8 +109,44 @@ const ChainDetailsModal = ({ chain, isOpen, onClose, getChainLinks }: ChainDetai
           }
         );
         if (!response.ok) throw new Error('Failed to fetch');
-        const data = await response.json();
-        setLinks(data || []);
+        fetchedLinks = await response.json();
+      }
+      setLinks(fetchedLinks || []);
+      
+      // Resolve display names for all UUIDs in links
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const userIds = new Set<string>();
+      (fetchedLinks || []).forEach(link => {
+        if (uuidRegex.test(link.passed_by)) userIds.add(link.passed_by);
+        if (uuidRegex.test(link.passed_to)) userIds.add(link.passed_to);
+      });
+      // Also include chain starter
+      if (chain.started_by && uuidRegex.test(chain.started_by)) {
+        userIds.add(chain.started_by);
+      }
+      
+      if (userIds.size > 0) {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData?.session?.access_token;
+        if (accessToken) {
+          const idsArray = Array.from(userIds);
+          const resp = await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?select=id,display_name&id=in.(${idsArray.join(',')})`,
+            {
+              headers: {
+                'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+              }
+            }
+          );
+          if (resp.ok) {
+            const profiles: { id: string; display_name: string | null }[] = await resp.json();
+            const newMap = new Map<string, string>();
+            profiles.forEach(p => newMap.set(p.id, p.display_name || 'Anonymous'));
+            setProfileMap(newMap);
+          }
+        }
       }
     } catch (error) {
       console.error('Error fetching chain links:', error);
@@ -246,9 +283,9 @@ const ChainDetailsModal = ({ chain, isOpen, onClose, getChainLinks }: ChainDetai
                     {/* Content */}
                     <div className="flex-1 bg-muted/50 rounded-lg p-3">
                       <p className="text-sm font-medium text-foreground">
-                        <span className="text-primary">@{link.passed_by.slice(0, 8)}</span>
+                        <span className="text-primary">@{profileMap.get(link.passed_by) || link.passed_by.slice(0, 8)}</span>
                         <ArrowRight className="h-3 w-3 inline mx-1" />
-                        <span className="text-primary">@{link.passed_to.slice(0, 8)}</span>
+                        <span className="text-primary">@{profileMap.get(link.passed_to) || link.passed_to}</span>
                       </p>
                       <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                         {link.was_forwarded ? (
