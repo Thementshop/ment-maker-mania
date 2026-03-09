@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link2, ArrowLeft, Send, Check, User, Mail, Phone, Sparkles, Flame, Loader2 } from 'lucide-react';
+import { Link2, ArrowLeft, Send, Check, User, Mail, Phone, Sparkles, Flame, Loader2, Plus, X } from 'lucide-react';
 import { z } from 'zod';
 import {
   Dialog,
@@ -27,17 +27,10 @@ interface StartChainModalProps {
 
 type RecipientType = 'contact' | 'email' | 'phone';
 
-// Validation schemas
-const emailSchema = z.string().email('Please enter a valid email address').max(255);
-const phoneSchema = z.string().min(10, 'Please enter a valid phone number').max(20);
-const contactSchema = z.string().min(1, 'Please enter a name').max(100);
-const chainNameSchema = z.string().max(50, 'Chain name must be 50 characters or less').optional();
-
 const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) => {
   const { toast } = useToast();
   const { user, profile, session } = useAuth();
   
-  // Step management
   const [step, setStep] = useState<'name' | 'recipient' | 'category' | 'compliment' | 'sending' | 'success'>('name');
   
   // Chain name state
@@ -45,10 +38,10 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
   const [nameSuggestions, setNameSuggestions] = useState<string[]>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   
-  // Recipient state
+  // Multi-recipient state
   const [recipientType, setRecipientType] = useState<RecipientType>('contact');
-  const [recipientValue, setRecipientValue] = useState('');
-  const [recipientError, setRecipientError] = useState('');
+  const [recipients, setRecipients] = useState<string[]>(['']);
+  const [recipientErrors, setRecipientErrors] = useState<string[]>(['']);
   
   // Compliment state
   const [selectedCategory, setSelectedCategory] = useState<ComplimentCategory | null>(null);
@@ -56,10 +49,8 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
 
   const displayName = profile?.display_name || user?.email?.split('@')[0] || 'User';
 
-  // Load suggestions when modal opens
   useEffect(() => {
     if (isOpen) {
-      console.log('[Modal] StartChainModal opened');
       loadSuggestions();
     }
   }, [isOpen]);
@@ -80,8 +71,8 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
     setStep('name');
     setChainName('');
     setRecipientType('contact');
-    setRecipientValue('');
-    setRecipientError('');
+    setRecipients(['']);
+    setRecipientErrors(['']);
     setSelectedCategory(null);
     setSelectedCompliment('');
   }, []);
@@ -91,49 +82,81 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
     onClose();
   };
 
-  // Lenient validation for testing
-  const validateRecipient = (): boolean => {
+  const validateRecipient = (value: string): string => {
+    if (!value.trim()) return 'Please enter a value';
     if (recipientType === 'email') {
-      if (!recipientValue.includes('@')) {
-        setRecipientError('Enter an email (e.g., test@example.com)');
-        return false;
-      }
+      if (!value.includes('@')) return 'Enter a valid email';
     } else if (recipientType === 'phone') {
-      if (recipientValue.length < 3) {
-        setRecipientError('Enter a phone number');
-        return false;
-      }
+      if (value.length < 3) return 'Enter a valid phone number';
     } else {
-      if (recipientValue.length < 1) {
-        setRecipientError('Enter a name');
-        return false;
-      }
+      if (value.length < 1) return 'Enter a name';
     }
-    setRecipientError('');
-    return true;
+    return '';
+  };
+
+  const validateAllRecipients = (): boolean => {
+    const errors = recipients.map(r => validateRecipient(r));
+    
+    // Check for duplicates
+    const trimmed = recipients.map(r => r.trim().toLowerCase());
+    trimmed.forEach((val, i) => {
+      if (val && trimmed.indexOf(val) !== i) {
+        errors[i] = 'Duplicate recipient';
+      }
+    });
+
+    // Check if sending to self
+    const userEmail = user?.email?.toLowerCase();
+    if (userEmail) {
+      trimmed.forEach((val, i) => {
+        if (val === userEmail) {
+          errors[i] = "You can't send to yourself";
+        }
+      });
+    }
+    
+    setRecipientErrors(errors);
+    return errors.every(e => !e);
+  };
+
+  const addRecipient = () => {
+    if (recipients.length < 3) {
+      setRecipients([...recipients, '']);
+      setRecipientErrors([...recipientErrors, '']);
+    }
+  };
+
+  const removeRecipient = (index: number) => {
+    if (recipients.length > 1) {
+      setRecipients(recipients.filter((_, i) => i !== index));
+      setRecipientErrors(recipientErrors.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateRecipient = (index: number, value: string) => {
+    const updated = [...recipients];
+    updated[index] = value;
+    setRecipients(updated);
+    const errs = [...recipientErrors];
+    errs[index] = '';
+    setRecipientErrors(errs);
   };
 
   const handleNameNext = () => {
-    console.log('[Step: Name] Chain name entered:', chainName || '(default)');
     setStep('recipient');
   };
 
   const handleRecipientNext = () => {
-    if (!validateRecipient()) return;
-    console.log('[Step: Recipient] Type:', recipientType, 'Value:', recipientValue);
+    if (!validateAllRecipients()) return;
     setStep('category');
   };
 
   const handleCategorySelect = (category: ComplimentCategory) => {
-    console.log('[Step: Category] Selected:', category.name);
     setSelectedCategory(category);
     setStep('compliment');
   };
 
   const handleComplimentSelect = (compliment: string) => {
-    console.log('[Step: Compliment] Selected:', compliment);
-    console.log('=== CHAIN CREATION STARTED ===');
-    console.log('Timestamp:', new Date().toISOString());
     setSelectedCompliment(compliment);
     handleSend(compliment);
   };
@@ -149,31 +172,22 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
     }
 
     setStep('sending');
-    console.log('=== CHAIN CREATION VIA EDGE FUNCTION ===');
-    console.log('Timestamp:', new Date().toISOString());
 
-    // Finalize chain name
     const finalName = chainName.trim() || `@${displayName}'s Chain`;
-    console.log('Chain name:', finalName);
-    console.log('Recipient:', recipientValue.trim());
+    const validRecipients = recipients.map(r => r.trim()).filter(Boolean);
 
     try {
-      // Get current session token from AuthContext (avoid supabase.auth calls that cause lock contention)
       let accessToken = session?.access_token;
       
-      // If token looks expired, try a direct REST refresh to avoid JS client deadlock
       if (!accessToken) {
-        console.error('No session token available');
         throw new Error('Please log in again to start a chain.');
       }
       
-      // Check if token is expired by decoding payload
+      // Check if token is expired
       try {
         const payload = JSON.parse(atob(accessToken.split('.')[1]));
         const expiresAt = payload.exp * 1000;
         if (Date.now() > expiresAt - 30000) {
-          // Token expired or expiring within 30s - refresh via REST
-          console.log('Token expired/expiring, refreshing via REST...');
           const refreshToken = session?.refresh_token;
           if (refreshToken) {
             const refreshResp = await fetch(
@@ -190,9 +204,7 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
             if (refreshResp.ok) {
               const refreshData = await refreshResp.json();
               accessToken = refreshData.access_token;
-              console.log('Token refreshed via REST successfully');
             } else {
-              console.error('REST token refresh failed:', refreshResp.status);
               throw new Error('Session expired. Please log in again.');
             }
           } else {
@@ -201,16 +213,11 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
         }
       } catch (e) {
         if (e instanceof Error && e.message.includes('Session expired')) throw e;
-        console.warn('Token check failed, proceeding with existing token');
       }
-      
-      console.log('Proceeding with chain creation...');
 
-      // Call edge function with 30s timeout
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-      console.log('Calling create-chain edge function...');
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-chain`,
         {
@@ -221,7 +228,7 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
           },
           body: JSON.stringify({
             chainName: finalName,
-            recipientValue: recipientValue.trim(),
+            recipients: validRecipients,
             compliment: compliment
           }),
           signal: controller.signal
@@ -229,10 +236,8 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
       );
 
       clearTimeout(timeoutId);
-      console.log('Response status:', response.status);
 
       const result = await response.json();
-      console.log('Response body:', result);
 
       if (!response.ok) {
         throw new Error(result.error || 'Failed to create chain');
@@ -242,24 +247,19 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
         throw new Error('No chain returned from server');
       }
 
-      console.log('Chain created successfully:', result.chain.chain_id);
-
-      // Success!
       setStep('success');
       
+      const recipientCount = validRecipients.length;
       toast({
         title: "Chain Started! 🔥 +5 mints! 🎨",
-        description: `Your chain "${finalName}" has been created! 5 mints added to your jar.`,
+        description: `Your chain "${finalName}" has been sent to ${recipientCount} ${recipientCount === 1 ? 'person' : 'people'}! 5 mints added to your jar.`,
       });
 
-      // Update jar count from edge function response (synchronous, no race condition)
       if (result.newJarCount) {
         const { useGameStore } = await import('@/store/gameStore');
         useGameStore.setState({ jarCount: result.newJarCount });
-        console.log('Jar updated to:', result.newJarCount);
       }
       
-      // Fire confetti!
       confetti({
         particleCount: 100,
         spread: 70,
@@ -267,16 +267,12 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
         colors: ['#FF6B35', '#F7931E', '#FFD23F', '#2ECC71']
       });
 
-      // Auto close after success
       setTimeout(() => {
         onSuccess?.();
         handleClose();
       }, 2500);
 
     } catch (error: any) {
-      console.error('=== CHAIN CREATION FAILED ===');
-      console.error('Error:', error);
-      
       let message = 'Something went wrong. Please try again.';
       if (error.name === 'AbortError') {
         message = 'Request timed out. Please try again.';
@@ -295,17 +291,10 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
 
   const handleBack = () => {
     switch (step) {
-      case 'recipient':
-        setStep('name');
-        break;
-      case 'category':
-        setStep('recipient');
-        break;
-      case 'compliment':
-        setStep('category');
-        break;
-      default:
-        break;
+      case 'recipient': setStep('name'); break;
+      case 'category': setStep('recipient'); break;
+      case 'compliment': setStep('category'); break;
+      default: break;
     }
   };
 
@@ -383,7 +372,7 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
         </div>
         <h3 className="text-lg font-semibold">Who's first?</h3>
         <p className="text-sm text-muted-foreground mt-1">
-          Who will you send the first ment to?
+          Send to up to 3 people to boost chain survival! 🚀
         </p>
       </div>
 
@@ -401,8 +390,8 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
             className="flex-1"
             onClick={() => {
               setRecipientType(type);
-              setRecipientValue('');
-              setRecipientError('');
+              setRecipients(['']);
+              setRecipientErrors(['']);
             }}
           >
             <Icon className="h-4 w-4 mr-1" />
@@ -411,30 +400,56 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
         ))}
       </div>
 
-      {/* Recipient Input */}
-      <div className="space-y-2">
-        <Label htmlFor="recipient">
-          {recipientType === 'contact' && 'Contact Name'}
-          {recipientType === 'email' && 'Email Address'}
-          {recipientType === 'phone' && 'Phone Number'}
+      {/* Multi-recipient inputs */}
+      <div className="space-y-3">
+        <Label>
+          {recipientType === 'contact' && 'Contact Names'}
+          {recipientType === 'email' && 'Email Addresses'}
+          {recipientType === 'phone' && 'Phone Numbers'}
+          <span className="text-muted-foreground font-normal ml-1">({recipients.length}/3)</span>
         </Label>
-        <Input
-          id="recipient"
-          type={recipientType === 'email' ? 'email' : recipientType === 'phone' ? 'tel' : 'text'}
-          placeholder={
-            recipientType === 'contact' ? 'Enter name...' :
-            recipientType === 'email' ? 'friend@example.com' :
-            '(555) 123-4567'
-          }
-          value={recipientValue}
-          onChange={(e) => {
-            setRecipientValue(e.target.value);
-            setRecipientError('');
-          }}
-          className={recipientError ? 'border-destructive' : ''}
-        />
-        {recipientError && (
-          <p className="text-xs text-destructive">{recipientError}</p>
+        
+        {recipients.map((recipient, index) => (
+          <div key={index} className="flex gap-2 items-start">
+            <div className="flex-1 space-y-1">
+              <Input
+                type={recipientType === 'email' ? 'email' : recipientType === 'phone' ? 'tel' : 'text'}
+                placeholder={
+                  recipientType === 'contact' ? `Person ${index + 1}'s name...` :
+                  recipientType === 'email' ? `person${index + 1}@example.com` :
+                  '(555) 123-4567'
+                }
+                value={recipient}
+                onChange={(e) => updateRecipient(index, e.target.value)}
+                className={recipientErrors[index] ? 'border-destructive' : ''}
+              />
+              {recipientErrors[index] && (
+                <p className="text-xs text-destructive">{recipientErrors[index]}</p>
+              )}
+            </div>
+            {recipients.length > 1 && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-10 w-10 shrink-0 text-muted-foreground hover:text-destructive"
+                onClick={() => removeRecipient(index)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        ))}
+        
+        {recipients.length < 3 && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={addRecipient}
+            className="w-full border-dashed"
+          >
+            <Plus className="h-4 w-4 mr-1" />
+            Add another recipient
+          </Button>
         )}
       </div>
 
@@ -443,7 +458,12 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back
         </Button>
-        <Button onClick={handleRecipientNext} className="flex-1" size="lg" disabled={!recipientValue.trim()}>
+        <Button 
+          onClick={handleRecipientNext} 
+          className="flex-1" 
+          size="lg" 
+          disabled={!recipients.some(r => r.trim())}
+        >
           Choose Ment
         </Button>
       </div>
@@ -545,40 +565,42 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
     </motion.div>
   );
 
-  const renderSuccessStep = () => (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className="flex flex-col items-center justify-center py-12 text-center"
-    >
+  const renderSuccessStep = () => {
+    const recipientCount = recipients.filter(r => r.trim()).length;
+    return (
       <motion.div
-        className="w-20 h-20 rounded-full bg-orange-500 flex items-center justify-center mb-4"
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        transition={{ type: 'spring', stiffness: 200, damping: 10 }}
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="flex flex-col items-center justify-center py-12 text-center"
       >
-        <Check className="h-10 w-10 text-white" />
+        <motion.div
+          className="w-20 h-20 rounded-full bg-orange-500 flex items-center justify-center mb-4"
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: 'spring', stiffness: 200, damping: 10 }}
+        >
+          <Check className="h-10 w-10 text-white" />
+        </motion.div>
+        
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <h3 className="text-xl font-bold text-foreground mb-2">Chain Started! 🔥</h3>
+          <p className="text-muted-foreground">
+            "{chainName || `@${displayName}'s Chain`}" sent to {recipientCount} {recipientCount === 1 ? 'person' : 'people'}!
+          </p>
+          <div className="flex items-center justify-center gap-2 mt-4 text-orange-500">
+            <Sparkles className="h-5 w-5" />
+            <span className="font-semibold">24h Timer Started</span>
+            <Sparkles className="h-5 w-5" />
+          </div>
+        </motion.div>
       </motion.div>
-      
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-      >
-        <h3 className="text-xl font-bold text-foreground mb-2">Chain Started! 🔥</h3>
-        <p className="text-muted-foreground">
-          "{chainName || `@${displayName}'s Chain`}" is on its way!
-        </p>
-        <div className="flex items-center justify-center gap-2 mt-4 text-orange-500">
-          <Sparkles className="h-5 w-5" />
-          <span className="font-semibold">24h Timer Started</span>
-          <Sparkles className="h-5 w-5" />
-        </div>
-      </motion.div>
-    </motion.div>
-  );
+    );
+  };
 
-  // Progress indicator
   const getStepNumber = () => {
     switch (step) {
       case 'name': return 1;
@@ -599,7 +621,6 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
           </DialogTitle>
         </DialogHeader>
 
-        {/* Progress indicator */}
         {step !== 'sending' && step !== 'success' && (
           <div className="flex justify-center gap-2 py-2">
             {[1, 2, 3, 4].map((s) => (
