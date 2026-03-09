@@ -248,9 +248,28 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
       setStep('success');
       
       toast({
-        title: "Chain Started! 🔥",
-        description: `Your chain "${finalName}" has been created!`,
+        title: "Chain Started! 🔥 +5 mints! 🎨",
+        description: `Your chain "${finalName}" has been created! 5 mints added to your jar.`,
       });
+
+      // Refresh jar count from database
+      try {
+        const { data: freshState } = await supabase
+          .from('user_game_state')
+          .select('jar_count, total_sent, current_level')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        if (freshState) {
+          const { useGameStore } = await import('@/store/gameStore');
+          useGameStore.setState({
+            jarCount: freshState.jar_count,
+            totalSent: freshState.total_sent,
+            currentLevel: freshState.current_level,
+          });
+        }
+      } catch (e) {
+        console.warn('Failed to refresh jar count:', e);
+      }
       
       // Fire confetti!
       confetti({

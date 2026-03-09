@@ -132,11 +132,11 @@ Deno.serve(async (req) => {
         });
     }
 
-    // Update user stats (fire-and-forget)
+    // Award +5 mints to creator (create includes first send)
     const now = new Date();
-    supabase
+    adminClient
       .from('user_game_state')
-      .select('chains_started_today, last_chain_start_date')
+      .select('jar_count, chains_started_today, last_chain_start_date')
       .eq('user_id', userId)
       .maybeSingle()
       .then(({ data: gameState }) => {
@@ -145,17 +145,44 @@ Deno.serve(async (req) => {
                          now.getUTCMonth() !== lastStart.getUTCMonth() ||
                          now.getUTCFullYear() !== lastStart.getUTCFullYear();
         
-        return supabase
+        const currentJar = gameState?.jar_count ?? 25;
+        return adminClient
           .from('user_game_state')
           .update({
+            jar_count: currentJar + 5,
             chains_started_today: isNewDay ? 1 : (gameState?.chains_started_today || 0) + 1,
             last_chain_start_date: now.toISOString()
           })
           .eq('user_id', userId);
       })
       .then(({ error }) => {
-        if (error) console.warn('Stats update failed:', error);
-        else console.log('Stats updated for user:', userId);
+        if (error) console.warn('Creator mint award failed:', error);
+        else console.log('Creator awarded +5 mints:', userId);
+      });
+
+    // Award +1 mint to recipient if they have an account (fire-and-forget)
+    // Look up recipient by email to find their user_id
+    adminClient
+      .from('user_game_state')
+      .select('user_id, jar_count')
+      .then(async ({ data: allStates }) => {
+        // Check if recipient is a registered user (by email match)
+        const { data: userData } = await adminClient.auth.admin.listUsers();
+        const recipientUser = userData?.users?.find(
+          (u) => u.email && u.email.toLowerCase() === recipientValue.toLowerCase()
+        );
+        if (recipientUser) {
+          const recipientState = (allStates || []).find((s: any) => s.user_id === recipientUser.id);
+          if (recipientState) {
+            await adminClient
+              .from('user_game_state')
+              .update({ jar_count: (recipientState.jar_count ?? 25) + 1 })
+              .eq('user_id', recipientUser.id);
+            console.log('Recipient awarded +1 mint:', recipientUser.id);
+          }
+        } else {
+          console.log('Recipient not registered, skipping mint award');
+        }
       });
 
     return new Response(
