@@ -96,8 +96,7 @@ const ChainDetailsModal = ({ chain, isOpen, onClose, getChainLinks }: ChainDetai
       if (getChainLinks) {
         fetchedLinks = await getChainLinks(chain.chain_id);
       } else {
-        const { data: sessionData } = await supabase.auth.getSession();
-        const accessToken = sessionData?.session?.access_token;
+        const accessToken = session?.access_token;
         if (!accessToken) throw new Error('Not authenticated');
         
         const response = await fetch(
