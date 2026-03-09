@@ -158,14 +158,53 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
     console.log('Recipient:', recipientValue.trim());
 
     try {
-      // Refresh session to ensure token is not expired
-      const { data: refreshedSession, error: refreshError } = await supabase.auth.refreshSession();
-      const accessToken = refreshedSession?.session?.access_token;
-      if (refreshError || !accessToken) {
-        console.error('Session refresh failed:', refreshError);
+      // Get current session token from AuthContext (avoid supabase.auth calls that cause lock contention)
+      let accessToken = session?.access_token;
+      
+      // If token looks expired, try a direct REST refresh to avoid JS client deadlock
+      if (!accessToken) {
+        console.error('No session token available');
         throw new Error('Please log in again to start a chain.');
       }
-      console.log('Session refreshed, proceeding with chain creation...');
+      
+      // Check if token is expired by decoding payload
+      try {
+        const payload = JSON.parse(atob(accessToken.split('.')[1]));
+        const expiresAt = payload.exp * 1000;
+        if (Date.now() > expiresAt - 30000) {
+          // Token expired or expiring within 30s - refresh via REST
+          console.log('Token expired/expiring, refreshing via REST...');
+          const refreshToken = session?.refresh_token;
+          if (refreshToken) {
+            const refreshResp = await fetch(
+              `${import.meta.env.VITE_SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+                },
+                body: JSON.stringify({ refresh_token: refreshToken }),
+              }
+            );
+            if (refreshResp.ok) {
+              const refreshData = await refreshResp.json();
+              accessToken = refreshData.access_token;
+              console.log('Token refreshed via REST successfully');
+            } else {
+              console.error('REST token refresh failed:', refreshResp.status);
+              throw new Error('Session expired. Please log in again.');
+            }
+          } else {
+            throw new Error('Session expired. Please log in again.');
+          }
+        }
+      } catch (e) {
+        if (e instanceof Error && e.message.includes('Session expired')) throw e;
+        console.warn('Token check failed, proceeding with existing token');
+      }
+      
+      console.log('Proceeding with chain creation...');
 
       // Call edge function with 30s timeout
       const controller = new AbortController();
