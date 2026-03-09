@@ -283,9 +283,9 @@ const ChainDetailsModal = ({ chain, isOpen, onClose, getChainLinks }: ChainDetai
                     {/* Content */}
                     <div className="flex-1 bg-muted/50 rounded-lg p-3">
                       <p className="text-sm font-medium text-foreground">
-                        <span className="text-primary">@{link.passed_by.slice(0, 8)}</span>
+                        <span className="text-primary">@{profileMap.get(link.passed_by) || link.passed_by.slice(0, 8)}</span>
                         <ArrowRight className="h-3 w-3 inline mx-1" />
-                        <span className="text-primary">@{link.passed_to.slice(0, 8)}</span>
+                        <span className="text-primary">@{profileMap.get(link.passed_to) || link.passed_to}</span>
                       </p>
                       <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                         {link.was_forwarded ? (
