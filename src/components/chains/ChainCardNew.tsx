@@ -149,11 +149,13 @@ const ChainCardNew = ({
         whileHover={{ scale: 1.02, y: -2 }}
         transition={{ duration: 0.2 }}
       >
-        {/* Countdown Timer Badge - ONLY if isYourTurn and not queued */}
+        {/* YOUR TURN header banner */}
         {isYourTurn && !chain.is_queued && chain.status === 'active' && (
-          <div className={`absolute top-3 left-3 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold z-10 ${timerColorClass}`}>
-            <span>⏳</span>
-            <span>{countdown.formattedTime} left</span>
+          <div className="w-full px-4 pt-3 flex items-center justify-between gap-2 z-10">
+            <span className="text-lg font-extrabold text-destructive tracking-tight">🎯 YOUR TURN!</span>
+            <span className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-semibold ${timerColorClass}`}>
+              ⏳ {countdown.formattedTime}
+            </span>
           </div>
         )}
 
@@ -207,21 +209,18 @@ const ChainCardNew = ({
         </div>
 
         {/* Current Status */}
-        <div className="text-center mt-2 px-4 pb-4">
+        <div className="text-center mt-2 px-4 pb-2">
           {chain.status === 'broken' ? (
-            <span className="text-sm text-red-500 font-medium">💔 Chain Broken</span>
-          ) : isYourTurn ? (
-            <span className="text-sm text-primary font-semibold">🎯 Your turn!</span>
-          ) : (
+            <span className="text-sm text-destructive font-medium">💔 Chain Broken</span>
+          ) : isYourTurn ? null : (
             <div className="space-y-2">
               <span className="text-sm text-muted-foreground block">
                 Waiting on <span className="text-primary font-medium">@{chain.current_holder_display_name || chain.current_holder.slice(0, 8)}</span>
               </span>
-              {/* Show timer for chains you started */}
               {chain.started_by === currentUserId && chain.status === 'active' && (
                 <div className="flex flex-col items-center gap-1.5">
                   <span className={`text-xs flex items-center gap-1 ${
-                    countdown.hours < 2 ? 'text-orange-500' : 
+                    countdown.hours < 2 ? 'text-destructive' : 
                     countdown.hours < 6 ? 'text-yellow-600' : 'text-muted-foreground'
                   }`}>
                     ⏳ {countdown.formattedTime} remaining
@@ -254,12 +253,20 @@ const ChainCardNew = ({
               >
                 Share →
               </Button>
+
+              <Button
+                variant="outline"
+                className="w-full rounded-full"
+                onClick={handleViewDetails}
+              >
+                View Chain History
+              </Button>
               
               {/* Pause Token Button */}
               {pauseTokens > 0 ? (
                 <Button
-                  variant="outline"
-                  className="w-full rounded-full text-sm"
+                  variant="ghost"
+                  className="w-full rounded-full text-sm text-muted-foreground"
                   onClick={handleUsePauseToken}
                   disabled={isPausing}
                 >
