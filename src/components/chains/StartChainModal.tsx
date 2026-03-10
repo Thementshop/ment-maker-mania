@@ -122,20 +122,6 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
     return errors.every(e => !e);
   };
 
-  const addRecipient = () => {
-    if (recipients.length < 3) {
-      setRecipients([...recipients, '']);
-      setRecipientErrors([...recipientErrors, '']);
-    }
-  };
-
-  const removeRecipient = (index: number) => {
-    if (recipients.length > 1) {
-      setRecipients(recipients.filter((_, i) => i !== index));
-      setRecipientErrors(recipientErrors.filter((_, i) => i !== index));
-    }
-  };
-
   const updateRecipient = (index: number, value: string) => {
     const updated = [...recipients];
     updated[index] = value;
