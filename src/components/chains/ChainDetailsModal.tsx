@@ -1,13 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Link, Clock, User, Share2, ArrowRight, Forward, Heart } from 'lucide-react';
+import { X, Link, Clock, User, ArrowRight, Forward, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { tierConfig, getChainTier } from '@/utils/chainTiers';
-import { getShareBaseUrl } from '@/utils/getBaseUrl';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
 interface ChainLink {
@@ -156,34 +155,8 @@ const ChainDetailsModal = ({ chain, isOpen, onClose, getChainLinks }: ChainDetai
     }
   }
 
-  async function handleShareAchievement() {
-    const chainUrl = `${getShareBaseUrl()}/chain/${chain.chain_id}`;
-    console.log('Share URL:', chainUrl);
 
-    // Always copy to clipboard first
-    try {
-      await navigator.clipboard.writeText(chainUrl);
-      toast.success('Link copied! 🔗');
-    } catch {
-      // Clipboard API may also fail in iframe — manual fallback
-      const textarea = document.createElement('textarea');
-      textarea.value = chainUrl;
-      document.body.appendChild(textarea);
-      textarea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textarea);
-      toast.success('Link copied! 🔗');
-    }
 
-    // Optionally try native share (non-blocking)
-    if (navigator.share) {
-      navigator.share({
-        title: `Join "${chain.chain_name || 'Kindness Chain'}" 💚`,
-        text: `I'm part of a kindness chain with ${chain.share_count} shares!`,
-        url: chainUrl,
-      }).catch(() => {});
-    }
-  }
 
   const tier = chain.tier || getChainTier(chain.share_count);
   const config = tierConfig[tier as keyof typeof tierConfig] || tierConfig.small;
@@ -319,16 +292,6 @@ const ChainDetailsModal = ({ chain, isOpen, onClose, getChainLinks }: ChainDetai
             )}
           </div>
           
-          {/* Footer */}
-          <div className="p-6 border-t border-border">
-            <Button
-              onClick={handleShareAchievement}
-              className="w-full rounded-full"
-            >
-              <Share2 className="h-4 w-4 mr-2" />
-              Share This Chain
-            </Button>
-          </div>
         </motion.div>
       </motion.div>
     </AnimatePresence>
