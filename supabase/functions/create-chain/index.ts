@@ -155,7 +155,7 @@ Deno.serve(async (req) => {
     }
 
     // Award +5 mints to creator (one-time, regardless of recipient count)
-    const now = new Date();
+    console.log('[MINT DEBUG] Starting mint award for creator:', userId);
     let newJarCount = 25;
     try {
       const { data: gameState } = await adminClient
