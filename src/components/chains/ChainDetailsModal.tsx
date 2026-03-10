@@ -155,34 +155,8 @@ const ChainDetailsModal = ({ chain, isOpen, onClose, getChainLinks }: ChainDetai
     }
   }
 
-  async function handleShareAchievement() {
-    const chainUrl = `${getShareBaseUrl()}/chain/${chain.chain_id}`;
-    console.log('Share URL:', chainUrl);
 
-    // Always copy to clipboard first
-    try {
-      await navigator.clipboard.writeText(chainUrl);
-      toast.success('Link copied! 🔗');
-    } catch {
-      // Clipboard API may also fail in iframe — manual fallback
-      const textarea = document.createElement('textarea');
-      textarea.value = chainUrl;
-      document.body.appendChild(textarea);
-      textarea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textarea);
-      toast.success('Link copied! 🔗');
-    }
 
-    // Optionally try native share (non-blocking)
-    if (navigator.share) {
-      navigator.share({
-        title: `Join "${chain.chain_name || 'Kindness Chain'}" 💚`,
-        text: `I'm part of a kindness chain with ${chain.share_count} shares!`,
-        url: chainUrl,
-      }).catch(() => {});
-    }
-  }
 
   const tier = chain.tier || getChainTier(chain.share_count);
   const config = tierConfig[tier as keyof typeof tierConfig] || tierConfig.small;
