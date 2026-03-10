@@ -98,9 +98,9 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
   };
 
   const validateAllRecipients = (): boolean => {
-    const errors = recipients.map(r => validateRecipient(r));
+    const errors = recipients.map((r, i) => validateRecipient(r, i));
     
-    // Check for duplicates
+    // Check for duplicates among non-empty values
     const trimmed = recipients.map(r => r.trim().toLowerCase());
     trimmed.forEach((val, i) => {
       if (val && trimmed.indexOf(val) !== i) {
