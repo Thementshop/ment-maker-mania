@@ -17,13 +17,13 @@ interface UltimateCelebrationModalProps {
   onShareSocial: () => void;
 }
 
-const UltimateCelebrationModal: React.FC<UltimateCelebrationModalProps> = ({
+const UltimateCelebrationModal = React.forwardRef<HTMLDivElement, UltimateCelebrationModalProps>(({
   isOpen,
   onClose,
   chainName,
   shareCount,
   onShareSocial,
-}) => {
+}, ref) => {
   useEffect(() => {
     if (!isOpen) return;
 
