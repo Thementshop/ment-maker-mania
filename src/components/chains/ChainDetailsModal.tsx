@@ -7,7 +7,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { tierConfig, getChainTier } from '@/utils/chainTiers';
-import { getShareBaseUrl } from '@/utils/getBaseUrl';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
 interface ChainLink {
