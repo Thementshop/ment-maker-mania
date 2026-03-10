@@ -40,8 +40,8 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
   
   // Multi-recipient state
   const [recipientType, setRecipientType] = useState<RecipientType>('contact');
-  const [recipients, setRecipients] = useState<string[]>(['']);
-  const [recipientErrors, setRecipientErrors] = useState<string[]>(['']);
+  const [recipients, setRecipients] = useState<string[]>(['', '', '']);
+  const [recipientErrors, setRecipientErrors] = useState<string[]>(['', '', '']);
   
   // Compliment state
   const [selectedCategory, setSelectedCategory] = useState<ComplimentCategory | null>(null);
