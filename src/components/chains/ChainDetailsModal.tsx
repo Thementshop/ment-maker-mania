@@ -319,16 +319,6 @@ const ChainDetailsModal = ({ chain, isOpen, onClose, getChainLinks }: ChainDetai
             )}
           </div>
           
-          {/* Footer */}
-          <div className="p-6 border-t border-border">
-            <Button
-              onClick={handleShareAchievement}
-              className="w-full rounded-full"
-            >
-              <Share2 className="h-4 w-4 mr-2" />
-              Share This Chain
-            </Button>
-          </div>
         </motion.div>
       </motion.div>
     </AnimatePresence>
