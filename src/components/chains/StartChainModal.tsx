@@ -82,8 +82,11 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
     onClose();
   };
 
-  const validateRecipient = (value: string): string => {
-    if (!value.trim()) return 'Please enter a value';
+  const validateRecipient = (value: string, index: number): string => {
+    // Only first recipient is required
+    if (!value.trim()) {
+      return index === 0 ? 'Please enter a value' : '';
+    }
     if (recipientType === 'email') {
       if (!value.includes('@')) return 'Enter a valid email';
     } else if (recipientType === 'phone') {
