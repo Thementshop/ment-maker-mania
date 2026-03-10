@@ -86,6 +86,8 @@ const UltimateCelebrationModal = React.forwardRef<HTMLDivElement, UltimateCelebr
       </DialogContent>
     </Dialog>
   );
-};
+});
+
+UltimateCelebrationModal.displayName = 'UltimateCelebrationModal';
 
 export default UltimateCelebrationModal;
