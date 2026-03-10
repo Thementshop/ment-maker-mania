@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link2, ArrowLeft, Send, Check, User, Mail, Phone, Sparkles, Flame, Loader2, Plus, X } from 'lucide-react';
+import { Link2, ArrowLeft, Send, Check, User, Mail, Phone, Sparkles, Flame, Loader2 } from 'lucide-react';
 import { z } from 'zod';
 import {
   Dialog,
