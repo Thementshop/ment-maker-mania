@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link2, ArrowLeft, Send, Check, User, Mail, Phone, Sparkles, Flame, Loader2, Plus, X } from 'lucide-react';
+import { Link2, ArrowLeft, Send, Check, User, Mail, Phone, Sparkles, Flame, Loader2 } from 'lucide-react';
 import { z } from 'zod';
 import {
   Dialog,
@@ -40,8 +40,8 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
   
   // Multi-recipient state
   const [recipientType, setRecipientType] = useState<RecipientType>('contact');
-  const [recipients, setRecipients] = useState<string[]>(['']);
-  const [recipientErrors, setRecipientErrors] = useState<string[]>(['']);
+  const [recipients, setRecipients] = useState<string[]>(['', '', '']);
+  const [recipientErrors, setRecipientErrors] = useState<string[]>(['', '', '']);
   
   // Compliment state
   const [selectedCategory, setSelectedCategory] = useState<ComplimentCategory | null>(null);
@@ -71,8 +71,8 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
     setStep('name');
     setChainName('');
     setRecipientType('contact');
-    setRecipients(['']);
-    setRecipientErrors(['']);
+    setRecipients(['', '', '']);
+    setRecipientErrors(['', '', '']);
     setSelectedCategory(null);
     setSelectedCompliment('');
   }, []);
@@ -82,8 +82,11 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
     onClose();
   };
 
-  const validateRecipient = (value: string): string => {
-    if (!value.trim()) return 'Please enter a value';
+  const validateRecipient = (value: string, index: number): string => {
+    // Only first recipient is required
+    if (!value.trim()) {
+      return index === 0 ? 'Please enter a value' : '';
+    }
     if (recipientType === 'email') {
       if (!value.includes('@')) return 'Enter a valid email';
     } else if (recipientType === 'phone') {
@@ -95,9 +98,9 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
   };
 
   const validateAllRecipients = (): boolean => {
-    const errors = recipients.map(r => validateRecipient(r));
+    const errors = recipients.map((r, i) => validateRecipient(r, i));
     
-    // Check for duplicates
+    // Check for duplicates among non-empty values
     const trimmed = recipients.map(r => r.trim().toLowerCase());
     trimmed.forEach((val, i) => {
       if (val && trimmed.indexOf(val) !== i) {
@@ -117,20 +120,6 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
     
     setRecipientErrors(errors);
     return errors.every(e => !e);
-  };
-
-  const addRecipient = () => {
-    if (recipients.length < 3) {
-      setRecipients([...recipients, '']);
-      setRecipientErrors([...recipientErrors, '']);
-    }
-  };
-
-  const removeRecipient = (index: number) => {
-    if (recipients.length > 1) {
-      setRecipients(recipients.filter((_, i) => i !== index));
-      setRecipientErrors(recipientErrors.filter((_, i) => i !== index));
-    }
   };
 
   const updateRecipient = (index: number, value: string) => {
@@ -395,8 +384,8 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
             className="flex-1"
             onClick={() => {
               setRecipientType(type);
-              setRecipients(['']);
-              setRecipientErrors(['']);
+              setRecipients(['', '', '']);
+              setRecipientErrors(['', '', '']);
             }}
           >
             <Icon className="h-4 w-4 mr-1" />
@@ -405,57 +394,46 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
         ))}
       </div>
 
-      {/* Multi-recipient inputs */}
+      {/* All 3 recipient inputs shown upfront */}
       <div className="space-y-3">
         <Label>
-          {recipientType === 'contact' && 'Contact Names'}
-          {recipientType === 'email' && 'Email Addresses'}
-          {recipientType === 'phone' && 'Phone Numbers'}
-          <span className="text-muted-foreground font-normal ml-1">({recipients.length}/3)</span>
+          Send to (up to 3 people):
         </Label>
         
         {recipients.map((recipient, index) => (
-          <div key={index} className="flex gap-2 items-start">
-            <div className="flex-1 space-y-1">
+          <div key={index} className="space-y-1">
+            <div className="flex gap-2 items-center">
+              <span className="text-sm font-medium text-muted-foreground w-5 shrink-0">{index + 1}.</span>
               <Input
                 type={recipientType === 'email' ? 'email' : recipientType === 'phone' ? 'tel' : 'text'}
                 placeholder={
-                  recipientType === 'contact' ? `Person ${index + 1}'s name...` :
-                  recipientType === 'email' ? `person${index + 1}@example.com` :
+                  recipientType === 'contact' ? `Person's name` :
+                  recipientType === 'email' ? `person@example.com` :
                   '(555) 123-4567'
                 }
                 value={recipient}
                 onChange={(e) => updateRecipient(index, e.target.value)}
                 className={recipientErrors[index] ? 'border-destructive' : ''}
               />
-              {recipientErrors[index] && (
-                <p className="text-xs text-destructive">{recipientErrors[index]}</p>
+              {index > 0 && (
+                <Sparkles className="h-4 w-4 text-primary shrink-0" />
               )}
             </div>
-            {recipients.length > 1 && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-10 w-10 shrink-0 text-muted-foreground hover:text-destructive"
-                onClick={() => removeRecipient(index)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
+            {recipientErrors[index] ? (
+              <p className="text-xs text-destructive ml-7">{recipientErrors[index]}</p>
+            ) : (
+              <p className="text-xs text-muted-foreground ml-7">
+                {index === 0 ? '(required)' : '(optional — boosts chain survival!)'}
+              </p>
             )}
           </div>
         ))}
-        
-        {recipients.length < 3 && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={addRecipient}
-            className="w-full border-dashed"
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            Add another recipient
-          </Button>
-        )}
+      </div>
+
+      <div className="flex items-center justify-center gap-2 text-sm text-primary font-medium">
+        <Sparkles className="h-4 w-4" />
+        Earn 5 mints for starting!
+        <Sparkles className="h-4 w-4" />
       </div>
 
       <div className="flex gap-2">
