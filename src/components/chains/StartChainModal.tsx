@@ -71,8 +71,8 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
     setStep('name');
     setChainName('');
     setRecipientType('contact');
-    setRecipients(['']);
-    setRecipientErrors(['']);
+    setRecipients(['', '', '']);
+    setRecipientErrors(['', '', '']);
     setSelectedCategory(null);
     setSelectedCompliment('');
   }, []);
