@@ -155,6 +155,7 @@ Deno.serve(async (req) => {
     }
 
     // Award +5 mints to creator (one-time, regardless of recipient count)
+    console.log('[MINT DEBUG] Starting mint award for creator:', userId);
     const now = new Date();
     let newJarCount = 25;
     try {
@@ -181,13 +182,14 @@ Deno.serve(async (req) => {
         })
         .eq('user_id', userId);
       
-      if (updateErr) console.warn('Creator mint award failed:', updateErr);
-      else console.log('Creator awarded +5 mints, new jar:', newJarCount);
+      if (updateErr) console.warn('[MINT DEBUG] Creator mint award FAILED:', updateErr);
+      else console.log('[MINT DEBUG] Creator awarded +5 mints, new jar:', newJarCount);
     } catch (e) {
-      console.error('Mint award error:', e);
+      console.error('[MINT DEBUG] Mint award exception:', e);
     }
 
     // Award +1 mint to each recipient who has an account (fire-and-forget)
+    console.log('[MINT DEBUG] Awarding +1 mint to recipients:', recipientList);
     for (const recipient of recipientList) {
       adminClient.rpc('award_mint_to_email', { _email: recipient })
         .then(({ data, error }) => {

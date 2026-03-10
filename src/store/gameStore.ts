@@ -139,6 +139,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
             recipientValue: m.recipient_value || undefined,
           }));
           
+          console.log('[MINT DEBUG] loadGameState setting jar_count:', gameState?.jar_count ?? 25, 'total_sent:', gameState?.total_sent ?? 0);
           set({
             jarCount: gameState?.jar_count ?? 25,
             totalSent: gameState?.total_sent ?? 0,
