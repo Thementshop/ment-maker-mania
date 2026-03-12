@@ -55,6 +55,42 @@ export type Database = {
           },
         ]
       }
+      email_logs: {
+        Row: {
+          chain_id: string | null
+          email_type: string
+          id: string
+          metadata: Json | null
+          recipient_email: string
+          recipient_id: string | null
+          resend_id: string | null
+          sent_at: string | null
+          status: string | null
+        }
+        Insert: {
+          chain_id?: string | null
+          email_type: string
+          id?: string
+          metadata?: Json | null
+          recipient_email: string
+          recipient_id?: string | null
+          resend_id?: string | null
+          sent_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          chain_id?: string | null
+          email_type?: string
+          id?: string
+          metadata?: Json | null
+          recipient_email?: string
+          recipient_id?: string | null
+          resend_id?: string | null
+          sent_at?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
       ment_chains: {
         Row: {
           broken_at: string | null
