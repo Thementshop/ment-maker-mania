@@ -1,92 +1,75 @@
 
+Goal: add end-to-end observability so we can prove exactly where “hey2” is being dropped (RPC claim call, REST query construction, backend row visibility, or UI filtering).
 
-## Phase 2: Email Templates + Category Tracking
+What I found from current code/state before implementation:
+- `useMentChains` already calls `claim_chains_for_user` on every fetch (not just login), but it times out client-side after 3s.
+- The backend visibility policy for chains already includes email matching (`lower(current_holder) = lower(auth.jwt()->>'email')`).
+- The app currently has multiple pipeline stages where rows can be hidden after fetch (especially UUID-only checks in chain dashboard tab filters).
+- Current logs are not granular enough to correlate one fetch cycle to one claim attempt and one raw response.
 
-### Summary
-Add `compliment_category` tracking to the database and chain creation flow, then build all 4 email templates (chain_received teaser, 1hr warning single/batched, milestone, completed) with category-based subject lines.
+Implementation plan
 
-Note: The Affirmation category already exists in `src/data/compliments.ts` from a previous change, so that part is done.
+1) Instrument backend claim function with structured logs (migration)
+- File: new migration in `supabase/migrations/`
+- Update `public.claim_chains_for_user(claiming_user_id uuid)` to emit detailed server logs:
+  - function entry timestamp + `claiming_user_id`
+  - resolved user email
+  - candidate chain rows found for claiming (ids/names/status/current_holder)
+  - rows updated in `ment_chains` (ids)
+  - rows updated in `chain_links` (count)
+  - total duration ms
+  - explicit error log in exception block
+- Keep return type and behavior compatible (`integer`) so existing frontend code does not break.
+- Purpose: confirm whether claim actually runs, what it sees, and what it changes each call.
 
----
+2) Add fetch-cycle correlation logging in `useMentChains`
+- File: `src/hooks/useMentChains.ts`
+- For every fetch run, generate `fetchDebugId` and log:
+  - user identity inputs: `user.id`, `user.email`, `session.user?.email`, JWT email (decoded from access token for comparison)
+  - exact OR filter string and full REST URL being requested
+  - claim RPC lifecycle:
+    - start
+    - result vs timeout vs error
+    - elapsed time
+    - late resolution (if timed out locally but completes later)
+  - raw REST payload before any local mapping/filtering
+  - per-row diagnostics for each returned chain:
+    - `matchesStartedBy`
+    - `matchesHolderUuid`
+    - `matchesHolderEmail`
+    - `status`
+  - final counts at each stage:
+    - raw rows
+    - rows mapped to typed chains
+    - your-turn rows
+- Purpose: prove whether “hey2” is absent from API response or dropped later.
 
-### 1. Database Migration — Add `compliment_category` columns
+3) Add UI pipeline logs where additional filtering occurs
+- File: `src/components/chains/ChainDashboard.tsx`
+- Add debug logs for:
+  - incoming `chainData` IDs/names/current_holder/status
+  - active-tab filtered IDs
+  - your-turn detection results (and why each row passed/failed)
+- Purpose: catch cases where rows are fetched but hidden by UUID-only client checks.
 
-Add nullable `compliment_category TEXT` column to both `ment_chains` and `chain_links` tables, plus indexes for analytics.
+4) Verify backend policy state and visibility with direct SQL diagnostics
+- During implementation validation, run read-only backend checks:
+  - policy definitions for `ment_chains` (confirm email clause is active)
+  - rows where `current_holder` is bdhp email or bdhp UUID (id/name/status/created_at)
+  - sanity query showing which rows should match the intended OR condition
+- Purpose: eliminate policy drift and confirm data shape.
 
----
+5) Validation flow after instrumentation
+- Fresh sign-in as bdhp account.
+- Capture one fetch cycle using `fetchDebugId` and confirm:
+  - claim call attempted (and backend log entry exists)
+  - query includes both UUID + email conditions
+  - raw API includes/excludes “hey2”
+  - if raw includes “hey2” but UI doesn’t: fix client tab filters to dual-match UUID/email.
+  - if raw excludes “hey2” and query email missing: fix email source fallback (`user.email` → `session.user.email`/JWT email).
+- Keep debug logs prefixed (`[MentChainsDebug]`) so they are easy to grep and remove later.
 
-### 2. Update `create-chain` Edge Function
-
-- Accept `complimentCategory` in the request body
-- Store it in `ment_chains.compliment_category` on insert
-- Store it in each `chain_links` entry on insert
-- After chain creation, fire-and-forget call to `send-email` for each email-type recipient (only those with `@` in their value), passing the category and compliment text
-
-**`StartChainModal.tsx`** — pass `complimentCategory: selectedCategory.id` in the fetch body alongside `chainName`, `recipients`, `compliment`.
-
----
-
-### 3. Rewrite `send-email` Edge Function
-
-Replace the single template with a full template system supporting all 4 email types:
-
-**Request interface** — expand `template_data` to include optional fields: `compliment_category`, `compliment_text`, `milestone`, `total_shares`, `tier_status`, `share_url`, `app_url`, `urgent_chain_name`, `urgent_time_left`, `urgent_chain_url`, `other_chains[]`, `compliments[]`, `count`.
-
-**Category-based subjects for `chain_received`:**
-```
-love → "❤️ Someone loves you!"
-encouragement → "💪 Someone believes in you!"
-sympathy → "💙 Someone is thinking of you"
-special → "🎉 Someone's celebrating you!"
-funny → "😄 Someone made you smile!"
-affirmation → "✨ Someone sees your light!"
-default → "💚 You received a kindness chain!"
-```
-
-**Template #1 — `chain_received` (TEASER, no compliment shown):**
-- Gift box icon with "Your compliment is waiting..." teaser
-- "Reveal Your Compliment →" CTA button
-- 24-hour reminder callout
-- "What is Ment Shop?" explainer section
-
-**Template #2a — `1hr_warning` (single chain):**
-- Warning header with timer icon
-- Chain name and "Pass It Forward →" CTA
-- Pause token tip
-
-**Template #2b — `1hr_warning` (batched, multiple chains):**
-- Rendered when `template_data.other_chains` array is present
-- Most urgent chain highlighted at top
-- Other chains listed below
-- "View All Your Chains →" CTA
-
-**Template #3 — `milestone`:**
-- Subject: `🎉 Your "{{chain_name}}" chain hit {{milestone}} shares!`
-- Celebration header with confetti emoji
-- Chain stats (total shares, tier status)
-- "View Chain History" + "Share This Achievement" CTAs
-- Hashtag footer
-
-**Template #4 — `completed`:**
-- Subject: `Your "{{chain_name}}" chain completed! 💚`
-- Lists all compliments from the chain with sender names
-- Total shares summary
-- "Start Another Chain →" CTA
-
-All templates use inline styles, 600px max-width, brand colors (#22c55e, #f0fdf4), and include the standard footer with contact tip.
-
----
-
-### 4. Update `test-email` Edge Function
-
-Update test data to include `compliment_category: 'encouragement'` and remove `compliment_text` (teaser approach). Add ability to test other email types via query param.
-
----
-
-### Files Changed
-- **Migration SQL** — add `compliment_category` to `ment_chains` and `chain_links`
-- **`supabase/functions/create-chain/index.ts`** — accept & store category, trigger email
-- **`supabase/functions/send-email/index.ts`** — full rewrite with 4 templates + category subjects
-- **`supabase/functions/test-email/index.ts`** — update test data
-- **`src/components/chains/StartChainModal.tsx`** — pass `complimentCategory` in request body
-
+Technical notes / guardrails
+- I will not touch auto-generated integration files.
+- No auth behavior changes; this is observability-first.
+- Logging volume will be scoped and clearly prefixed so it can be rolled back cleanly after diagnosis.

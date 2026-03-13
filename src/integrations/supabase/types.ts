@@ -17,6 +17,7 @@ export type Database = {
       chain_links: {
         Row: {
           chain_id: string
+          compliment_category: string | null
           link_id: string
           passed_at: string
           passed_by: string
@@ -27,6 +28,7 @@ export type Database = {
         }
         Insert: {
           chain_id: string
+          compliment_category?: string | null
           link_id?: string
           passed_at?: string
           passed_by: string
@@ -37,6 +39,7 @@ export type Database = {
         }
         Update: {
           chain_id?: string
+          compliment_category?: string | null
           link_id?: string
           passed_at?: string
           passed_by?: string
@@ -97,6 +100,7 @@ export type Database = {
           broken_by: string | null
           chain_id: string
           chain_name: string | null
+          compliment_category: string | null
           created_at: string
           current_holder: string
           expires_at: string
@@ -112,6 +116,7 @@ export type Database = {
           broken_by?: string | null
           chain_id?: string
           chain_name?: string | null
+          compliment_category?: string | null
           created_at?: string
           current_holder: string
           expires_at: string
@@ -127,6 +132,7 @@ export type Database = {
           broken_by?: string | null
           chain_id?: string
           chain_name?: string | null
+          compliment_category?: string | null
           created_at?: string
           current_holder?: string
           expires_at?: string

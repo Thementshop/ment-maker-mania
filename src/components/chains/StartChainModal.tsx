@@ -218,7 +218,8 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
           body: JSON.stringify({
             chainName: finalName,
             recipients: validRecipients,
-            compliment: compliment
+            compliment: compliment,
+            complimentCategory: selectedCategory?.id || null,
           }),
           signal: controller.signal
         }
