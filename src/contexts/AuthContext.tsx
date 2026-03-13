@@ -147,8 +147,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           loadUserGameState(newSession.user.id);
         } else {
           setProfile(null);
-          gameStateLoadedRef.current = false;
-          loadedUserIdRef.current = null;
+          lastLoadedAtRef.current = 0;
           useGameStore.getState().resetState();
           useGameStore.getState().unsubscribeFromWorldCounter();
         }
