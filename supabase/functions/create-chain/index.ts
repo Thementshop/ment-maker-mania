@@ -8,9 +8,9 @@ const corsHeaders = {
 interface CreateChainRequest {
   chainName: string;
   recipients: string[];
-  // Legacy single-recipient support
   recipientValue?: string;
   compliment: string;
+  complimentCategory?: string;
 }
 
 Deno.serve(async (req) => {
@@ -47,9 +47,8 @@ Deno.serve(async (req) => {
     });
 
     const body: CreateChainRequest = await req.json();
-    const { chainName, compliment } = body;
+    const { chainName, compliment, complimentCategory } = body;
     
-    // Support both new multi-recipient and legacy single-recipient
     const recipientList = body.recipients?.length 
       ? body.recipients.map(r => r.trim()).filter(Boolean)
       : body.recipientValue ? [body.recipientValue.trim()] : [];
@@ -68,7 +67,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check for duplicate recipients (case-insensitive)
     const lowerRecipients = recipientList.map(r => r.toLowerCase());
     const uniqueRecipients = new Set(lowerRecipients);
     if (uniqueRecipients.size !== lowerRecipients.length) {
@@ -78,7 +76,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check creator isn't sending to themselves
     const userEmail = user.email?.toLowerCase();
     if (userEmail && lowerRecipients.includes(userEmail)) {
       return new Response(
@@ -87,11 +84,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('Creating chain with', recipientList.length, 'recipients');
+    console.log('Creating chain with', recipientList.length, 'recipients, category:', complimentCategory);
 
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-    // Create ONE chain — first recipient is the initial current_holder
     const { data: newChain, error: chainError } = await supabase
       .from('ment_chains')
       .insert({
@@ -102,7 +98,8 @@ Deno.serve(async (req) => {
         status: 'active',
         share_count: recipientList.length,
         tier: 'small',
-        links_count: recipientList.length
+        links_count: recipientList.length,
+        compliment_category: complimentCategory || null,
       })
       .select()
       .single();
@@ -117,14 +114,14 @@ Deno.serve(async (req) => {
 
     console.log('Chain created:', newChain.chain_id);
 
-    // Create a chain_link for EACH recipient
     const linkInserts = recipientList.map(recipient => ({
       chain_id: newChain.chain_id,
       passed_by: userId,
       passed_to: recipient,
       received_compliment: '',
       sent_compliment: compliment,
-      was_forwarded: false
+      was_forwarded: false,
+      compliment_category: complimentCategory || null,
     }));
 
     const { error: linkError } = await supabase
@@ -154,7 +151,7 @@ Deno.serve(async (req) => {
         });
     }
 
-    // Award +5 mints to creator (one-time, regardless of recipient count)
+    // Award +5 mints to creator
     console.log('[MINT DEBUG] Starting mint award for creator:', userId);
     const now = new Date();
     let newJarCount = 25;
@@ -189,13 +186,46 @@ Deno.serve(async (req) => {
     }
 
     // Award +1 mint to each recipient who has an account (fire-and-forget)
-    console.log('[MINT DEBUG] Awarding +1 mint to recipients:', recipientList);
     for (const recipient of recipientList) {
       adminClient.rpc('award_mint_to_email', { _email: recipient })
         .then(({ data, error }) => {
           if (error) console.warn('Recipient mint award failed for', recipient, error);
           else console.log('Recipient mint award for', recipient, ':', data);
         });
+    }
+
+    // Send email notifications to email recipients (fire-and-forget)
+    const senderName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Someone';
+    const appBaseUrl = 'https://ment-maker-mania.lovable.app';
+    
+    for (const recipient of recipientList) {
+      if (recipient.includes('@')) {
+        const recipientName = recipient.split('@')[0];
+        fetch(`${supabaseUrl}/functions/v1/send-email`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseAnonKey}`,
+          },
+          body: JSON.stringify({
+            email_type: 'chain_received',
+            recipient_email: recipient,
+            recipient_id: null,
+            chain_id: newChain.chain_id,
+            template_data: {
+              recipient_name: recipientName,
+              chain_name: chainName || `@${senderName}'s Chain`,
+              sender_name: senderName,
+              compliment_category: complimentCategory || 'default',
+              chain_url: `${appBaseUrl}/chain/${newChain.chain_id}`,
+            },
+          }),
+        }).then(r => r.text()).then(t => {
+          console.log('Email sent to', recipient, ':', t);
+        }).catch(e => {
+          console.warn('Email send failed for', recipient, ':', e);
+        });
+      }
     }
 
     return new Response(
