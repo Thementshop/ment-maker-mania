@@ -356,6 +356,31 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Duplicate prevention: check if same email was sent in last 2 hours
+    if (chain_id) {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      const dupClient = createClient(supabaseUrl, supabaseServiceKey);
+      const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+      const { data: recentEmail } = await dupClient
+        .from('email_logs')
+        .select('id')
+        .eq('chain_id', chain_id)
+        .eq('recipient_email', recipient_email)
+        .eq('email_type', email_type)
+        .gte('sent_at', twoHoursAgo)
+        .limit(1)
+        .maybeSingle();
+
+      if (recentEmail) {
+        console.log('[EMAIL] Duplicate prevented:', email_type, recipient_email, chain_id);
+        return new Response(
+          JSON.stringify({ success: true, message: 'Duplicate prevented' }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
     const { subject, html } = buildEmail(email_type, template_data);
     console.log('[EMAIL] Subject:', subject);
 
