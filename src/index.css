@@ -159,6 +159,10 @@
     background: linear-gradient(135deg, hsl(var(--candy-yellow)) 0%, hsl(var(--candy-orange)) 100%);
   }
   
+  .candy-card-affirmation {
+    background: linear-gradient(135deg, hsl(var(--candy-pink)) 0%, hsl(var(--candy-purple)) 100%);
+  }
+  
   /* World Tracker Pill */
   .world-tracker {
     background: linear-gradient(135deg, hsl(var(--mint)) 0%, hsl(var(--mint-dark)) 100%);
