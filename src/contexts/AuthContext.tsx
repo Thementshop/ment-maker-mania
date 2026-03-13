@@ -126,10 +126,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         clearTimeout(authTimeout);
         
         if (newSession?.user) {
-          // Reset stale state if switching users
-          if (loadedUserIdRef.current && loadedUserIdRef.current !== newSession.user.id) {
-            gameStateLoadedRef.current = false;
-            loadedUserIdRef.current = null;
+          // Reset debounce if switching users
+          if (lastLoadedAtRef.current) {
+            lastLoadedAtRef.current = 0;
           }
           // Set immediate fallback profile from user metadata
           const meta = newSession.user.user_metadata;
