@@ -1,0 +1,1 @@
+UPDATE ment_chains SET share_count = 25 WHERE chain_id = 'cb4f16ad-6797-47cd-ba07-ed2a42bde77b';
