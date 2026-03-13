@@ -1,34 +1,75 @@
 
+Goal: add end-to-end observability so we can prove exactly where “hey2” is being dropped (RPC claim call, REST query construction, backend row visibility, or UI filtering).
 
-## Plan: Fix Jar Count Not Loading (Showing Default 25 Instead of 76)
+What I found from current code/state before implementation:
+- `useMentChains` already calls `claim_chains_for_user` on every fetch (not just login), but it times out client-side after 3s.
+- The backend visibility policy for chains already includes email matching (`lower(current_holder) = lower(auth.jwt()->>'email')`).
+- The app currently has multiple pipeline stages where rows can be hidden after fetch (especially UUID-only checks in chain dashboard tab filters).
+- Current logs are not granular enough to correlate one fetch cycle to one claim attempt and one raw response.
 
-### Problem
-Your database has `jar_count = 76`, but the UI shows 25 (the Zustand default). The `loadGameState` function has a guard (`gameStateLoadedRef`) that prevents re-fetching. If the initial load races or silently fails, the jar stays at the default value with no retry mechanism.
+Implementation plan
 
-### Root Cause
-In `AuthContext.tsx`, both `onAuthStateChange` and `getSession` call `loadUserGameState`. The ref guard at line 97 prevents the second call. However, there's a subtle issue: `loadGameState` in the Zustand store catches errors but may not properly set the state if the Supabase query returns data but the component has already rendered with the default.
+1) Instrument backend claim function with structured logs (migration)
+- File: new migration in `supabase/migrations/`
+- Update `public.claim_chains_for_user(claiming_user_id uuid)` to emit detailed server logs:
+  - function entry timestamp + `claiming_user_id`
+  - resolved user email
+  - candidate chain rows found for claiming (ids/names/status/current_holder)
+  - rows updated in `ment_chains` (ids)
+  - rows updated in `chain_links` (count)
+  - total duration ms
+  - explicit error log in exception block
+- Keep return type and behavior compatible (`integer`) so existing frontend code does not break.
+- Purpose: confirm whether claim actually runs, what it sees, and what it changes each call.
 
-Additionally, the `[MINT DEBUG]` log from `loadGameState` isn't appearing in console, suggesting it either ran before the console capture window or didn't run at all.
+2) Add fetch-cycle correlation logging in `useMentChains`
+- File: `src/hooks/useMentChains.ts`
+- For every fetch run, generate `fetchDebugId` and log:
+  - user identity inputs: `user.id`, `user.email`, `session.user?.email`, JWT email (decoded from access token for comparison)
+  - exact OR filter string and full REST URL being requested
+  - claim RPC lifecycle:
+    - start
+    - result vs timeout vs error
+    - elapsed time
+    - late resolution (if timed out locally but completes later)
+  - raw REST payload before any local mapping/filtering
+  - per-row diagnostics for each returned chain:
+    - `matchesStartedBy`
+    - `matchesHolderUuid`
+    - `matchesHolderEmail`
+    - `status`
+  - final counts at each stage:
+    - raw rows
+    - rows mapped to typed chains
+    - your-turn rows
+- Purpose: prove whether “hey2” is absent from API response or dropped later.
 
-### Fix
+3) Add UI pipeline logs where additional filtering occurs
+- File: `src/components/chains/ChainDashboard.tsx`
+- Add debug logs for:
+  - incoming `chainData` IDs/names/current_holder/status
+  - active-tab filtered IDs
+  - your-turn detection results (and why each row passed/failed)
+- Purpose: catch cases where rows are fetched but hidden by UUID-only client checks.
 
-**`src/contexts/AuthContext.tsx`** — Make `loadUserGameState` more resilient:
-- After `loadGameState` completes, verify the Zustand state actually updated by reading it back
-- If jar_count is still 25 and it was supposed to load, retry once
-- Add a console log to confirm the load completed with values
+4) Verify backend policy state and visibility with direct SQL diagnostics
+- During implementation validation, run read-only backend checks:
+  - policy definitions for `ment_chains` (confirm email clause is active)
+  - rows where `current_holder` is bdhp email or bdhp UUID (id/name/status/created_at)
+  - sanity query showing which rows should match the intended OR condition
+- Purpose: eliminate policy drift and confirm data shape.
 
-**`src/store/gameStore.ts`** — Add a defensive re-check:
-- After the `loadGameState` try/catch, log the final state values so we can confirm data was received
-- Ensure the `set()` call inside `loadGameState` runs even if one sub-query (pending_ments, world_counter) fails — currently they're all in one async block but each has independent error handling, which looks correct
+5) Validation flow after instrumentation
+- Fresh sign-in as bdhp account.
+- Capture one fetch cycle using `fetchDebugId` and confirm:
+  - claim call attempted (and backend log entry exists)
+  - query includes both UUID + email conditions
+  - raw API includes/excludes “hey2”
+  - if raw includes “hey2” but UI doesn’t: fix client tab filters to dual-match UUID/email.
+  - if raw excludes “hey2” and query email missing: fix email source fallback (`user.email` → `session.user.email`/JWT email).
+- Keep debug logs prefixed (`[MentChainsDebug]`) so they are easy to grep and remove later.
 
-### Minimal Fix (Preferred)
-The simplest fix: remove the `gameStateLoadedRef` guard and instead use a `lastLoadedAt` timestamp to debounce (e.g., don't reload within 2 seconds). This ensures a page refresh or re-render always gets fresh data:
-
-**`src/contexts/AuthContext.tsx`**:
-- Replace `gameStateLoadedRef.current && loadedUserIdRef.current === userId` check with a time-based debounce
-- This ensures if the first load silently failed, the second attempt from `getSession` still runs
-
-### Files Changed
-- `src/contexts/AuthContext.tsx` — fix load guard to allow retry on failure
-- `src/store/gameStore.ts` — add post-load verification logging
-
+Technical notes / guardrails
+- I will not touch auto-generated integration files.
+- No auth behavior changes; this is observability-first.
+- Logging volume will be scoped and clearly prefixed so it can be rolled back cleanly after diagnosis.

@@ -41,8 +41,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const gameStateLoadedRef = useRef(false);
-  const loadedUserIdRef = useRef<string | null>(null);
+  const lastLoadedAtRef = useRef<number>(0);
 
   // Fetch user profile
   const fetchProfile = async (userId: string) => {
@@ -94,15 +93,23 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     // Load game state only once per session
     const loadUserGameState = async (userId: string) => {
-      if (gameStateLoadedRef.current && loadedUserIdRef.current === userId) return;
-      gameStateLoadedRef.current = true;
-      loadedUserIdRef.current = userId;
+      const now = Date.now();
+      // Debounce: skip if loaded for same user within 2 seconds
+      if (lastLoadedAtRef.current && (now - lastLoadedAtRef.current) < 2000) {
+        // But verify data actually loaded — if jar is still default, force reload
+        const currentJar = useGameStore.getState().jarCount;
+        if (currentJar !== 25) return; // Data loaded fine, skip
+        console.log('[MINT DEBUG] Jar still at default 25, forcing reload');
+      }
+      lastLoadedAtRef.current = now;
       
       try {
         await useGameStore.getState().loadGameState(userId);
         useGameStore.getState().subscribeToWorldCounter();
+        console.log('[MINT DEBUG] After loadGameState, jarCount:', useGameStore.getState().jarCount);
       } catch (error) {
         console.error('Failed to load game state:', error);
+        lastLoadedAtRef.current = 0; // Allow retry on failure
       }
     };
 
@@ -119,10 +126,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         clearTimeout(authTimeout);
         
         if (newSession?.user) {
-          // Reset stale state if switching users
-          if (loadedUserIdRef.current && loadedUserIdRef.current !== newSession.user.id) {
-            gameStateLoadedRef.current = false;
-            loadedUserIdRef.current = null;
+          // Reset debounce if switching users
+          if (lastLoadedAtRef.current) {
+            lastLoadedAtRef.current = 0;
           }
           // Set immediate fallback profile from user metadata
           const meta = newSession.user.user_metadata;
@@ -141,8 +147,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           loadUserGameState(newSession.user.id);
         } else {
           setProfile(null);
-          gameStateLoadedRef.current = false;
-          loadedUserIdRef.current = null;
+          lastLoadedAtRef.current = 0;
           useGameStore.getState().resetState();
           useGameStore.getState().unsubscribeFromWorldCounter();
         }

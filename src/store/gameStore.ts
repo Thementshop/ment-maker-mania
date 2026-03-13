@@ -147,6 +147,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
             pendingMents,
             worldKindnessCount: worldCounter?.count ?? 0,
           });
+          console.log('[MINT DEBUG] loadGameState complete, store jarCount now:', get().jarCount);
         })(),
         timeoutPromise
       ]);
