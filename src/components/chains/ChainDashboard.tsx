@@ -282,14 +282,15 @@ const ChainDashboard = () => {
           </motion.div>
         ) : (
           /* Empty State */
-          <div className="text-center py-12 text-muted-foreground">
-            <p className="text-lg">No chains in this category yet</p>
-            {activeTab === 'yourTurn' && (
-              <p className="text-sm mt-2">Chains waiting for you to share will appear here</p>
-            )}
-            {activeTab === 'active' && (
-              <p className="text-sm mt-2">Start a new chain to spread kindness!</p>
-            )}
+          <div className="text-center py-12">
+            <p className="text-5xl mb-4">🔗</p>
+            <p className="text-lg font-semibold text-foreground mb-2">No chains yet!</p>
+            <p className="text-muted-foreground mb-4">Start your first kindness chain or send a compliment</p>
+            <div className="flex justify-center gap-3">
+              <Button onClick={handleStartChain} className="rounded-full">
+                🔗 Start Chain
+              </Button>
+            </div>
           </div>
         )
       )}
