@@ -406,17 +406,26 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
           <div key={index} className="space-y-1">
             <div className="flex gap-2 items-center">
               <span className="text-sm font-medium text-muted-foreground w-5 shrink-0">{index + 1}.</span>
-              <Input
-                type={recipientType === 'email' ? 'email' : recipientType === 'phone' ? 'tel' : 'text'}
-                placeholder={
-                  recipientType === 'contact' ? `Person's name` :
-                  recipientType === 'email' ? `person@example.com` :
-                  '(555) 123-4567'
-                }
-                value={recipient}
-                onChange={(e) => updateRecipient(index, e.target.value)}
-                className={recipientErrors[index] ? 'border-destructive' : ''}
-              />
+              {recipientType === 'email' ? (
+                <SavedContactsDropdown
+                  value={recipient}
+                  onChange={(val) => updateRecipient(index, val)}
+                  onSelect={(email) => updateRecipient(index, email)}
+                  placeholder="person@example.com"
+                  className={recipientErrors[index] ? 'border-destructive' : ''}
+                />
+              ) : (
+                <Input
+                  type={recipientType === 'phone' ? 'tel' : 'text'}
+                  placeholder={
+                    recipientType === 'contact' ? `Person's name` :
+                    '(555) 123-4567'
+                  }
+                  value={recipient}
+                  onChange={(e) => updateRecipient(index, e.target.value)}
+                  className={recipientErrors[index] ? 'border-destructive' : ''}
+                />
+              )}
               {index > 0 && (
                 <Sparkles className="h-4 w-4 text-primary shrink-0" />
               )}
