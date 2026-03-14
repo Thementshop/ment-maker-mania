@@ -36,10 +36,10 @@ interface TemplateData {
 }
 
 interface SendEmailRequest {
-  email_type: 'chain_received' | '1hr_warning' | 'milestone' | 'completed';
+  email_type: 'chain_received' | '1hr_warning' | 'milestone' | 'completed' | 'ment_received';
   recipient_email: string;
   recipient_id: string | null;
-  chain_id: string;
+  chain_id: string | null;
   template_data: TemplateData;
 }
 
