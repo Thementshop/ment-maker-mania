@@ -145,6 +145,35 @@ export type Database = {
         }
         Relationships: []
       }
+      pause_token_usage: {
+        Row: {
+          chain_id: string
+          id: string
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          chain_id: string
+          id?: string
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          chain_id?: string
+          id?: string
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pause_token_usage_chain_id_fkey"
+            columns: ["chain_id"]
+            isOneToOne: false
+            referencedRelation: "ment_chains"
+            referencedColumns: ["chain_id"]
+          },
+        ]
+      }
       pending_ments: {
         Row: {
           category: string
@@ -205,11 +234,43 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_contacts: {
+        Row: {
+          contact_email: string
+          contact_name: string | null
+          created_at: string | null
+          id: string
+          last_sent_at: string | null
+          times_sent: number | null
+          user_id: string
+        }
+        Insert: {
+          contact_email: string
+          contact_name?: string | null
+          created_at?: string | null
+          id?: string
+          last_sent_at?: string | null
+          times_sent?: number | null
+          user_id: string
+        }
+        Update: {
+          contact_email?: string
+          contact_name?: string | null
+          created_at?: string | null
+          id?: string
+          last_sent_at?: string | null
+          times_sent?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       sent_ments: {
         Row: {
           category: string
           compliment_text: string
           id: string
+          personal_note: string | null
+          recipient_email: string | null
           recipient_type: string
           sender_id: string
           sent_at: string | null
@@ -218,6 +279,8 @@ export type Database = {
           category: string
           compliment_text: string
           id?: string
+          personal_note?: string | null
+          recipient_email?: string | null
           recipient_type: string
           sender_id: string
           sent_at?: string | null
@@ -226,6 +289,8 @@ export type Database = {
           category?: string
           compliment_text?: string
           id?: string
+          personal_note?: string | null
+          recipient_email?: string | null
           recipient_type?: string
           sender_id?: string
           sent_at?: string | null
