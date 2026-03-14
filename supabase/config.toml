@@ -11,3 +11,18 @@ verify_jwt = false
 
 [functions.test-email]
 verify_jwt = false
+
+[functions.send-a-ment]
+verify_jwt = false
+
+[functions.check-expiring-chains]
+verify_jwt = false
+
+[functions.send-completed-email]
+verify_jwt = false
+
+[functions.send-milestone-email]
+verify_jwt = false
+
+[functions.keep-alive]
+verify_jwt = false
