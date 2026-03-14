@@ -21,18 +21,16 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
+    const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
     const token = authHeader.replace('Bearer ', '');
-    const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
+    const { data: { user: authUser }, error: authError } = await adminClient.auth.getUser(token);
+    if (authError || !authUser) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    const userId = claimsData.claims.sub;
-    const userEmail = claimsData.claims.email as string;
+    const userId = authUser.id;
+    const userEmail = authUser.email as string;
 
     const { recipient_email, compliment_text, compliment_category, personal_note } = await req.json();
 
@@ -44,7 +42,7 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "You can't send a ment to yourself" }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    const adminClient = createClient(supabaseUrl, serviceRoleKey);
+    // Insert sent ment (reusing adminClient from above)
 
     // Insert sent ment
     const { error: insertError } = await adminClient
