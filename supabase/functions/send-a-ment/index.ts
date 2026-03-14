@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "You can't send a ment to yourself" }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    const adminClient = createClient(supabaseUrl, serviceRoleKey);
+    // Insert sent ment (reusing adminClient from above)
 
     // Insert sent ment
     const { error: insertError } = await adminClient
