@@ -33,6 +33,7 @@ interface TemplateData {
   urgent_chain_url?: string;
   other_chains?: OtherChain[];
   compliments?: ComplimentEntry[];
+  personal_note?: string;
 }
 
 interface SendEmailRequest {
