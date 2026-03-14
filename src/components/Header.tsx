@@ -7,6 +7,7 @@ import unwrappedMint from '@/assets/unwrapped-mint.png';
 import HowItWorksModal from './HowItWorksModal';
 import AccountSettingsModal from './AccountSettingsModal';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Settings, Ticket } from 'lucide-react';
 
 interface HeaderProps {
