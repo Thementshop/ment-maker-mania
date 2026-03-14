@@ -299,6 +299,56 @@ function buildCompletedEmail(data: TemplateData): string {
 </td></tr></table></body></html>`;
 }
 
+// ─── TEMPLATE 5: Ment Received (Single Compliment, No Chain) ───
+function buildMentReceivedEmail(data: TemplateData): string {
+  const personalNoteHtml = data.personal_note ? `
+    <div style="background-color:#f0fdf4;border-left:4px solid #22c55e;border-radius:0 8px 8px 0;padding:12px 16px;margin:0 0 24px;">
+      <p style="color:#6b7280;font-size:12px;font-weight:bold;margin:0 0 4px;">Personal note from ${escapeHtml(data.sender_name || 'your friend')}:</p>
+      <p style="color:#166534;font-size:15px;font-style:italic;margin:0;">"${escapeHtml(data.personal_note)}"</p>
+    </div>` : '';
+
+  const appUrl = data.app_url || 'https://ment-maker-mania.lovable.app';
+
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background-color:#f0fdf4;font-family:Arial,Helvetica,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f0fdf4;padding:40px 20px;"><tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.1);">
+  <tr><td style="background-color:#22c55e;padding:30px;text-align:center;">
+    <h1 style="color:#ffffff;margin:0;font-size:28px;">💚 Ment Shop</h1>
+    <p style="color:#dcfce7;margin:8px 0 0;font-size:14px;">Spreading Kindness, One Compliment at a Time</p>
+  </td></tr>
+  <tr><td style="padding:40px 30px;">
+    <h2 style="color:#166534;margin:0 0 20px;font-size:22px;">Hey ${escapeHtml(data.recipient_name)}! 💚</h2>
+    <p style="color:#374151;font-size:16px;line-height:1.6;margin:0 0 20px;">
+      Someone sent you a compliment!
+    </p>
+    <div style="text-align:center;margin:0 0 24px;">
+      <div style="display:inline-block;background-color:#f0fdf4;border-radius:12px;padding:24px 32px;">
+        <p style="font-size:40px;margin:0;">🎁</p>
+        <p style="color:#166534;font-size:18px;font-weight:bold;margin:8px 0 0;">Your compliment is waiting...</p>
+      </div>
+    </div>
+    <div style="text-align:center;margin:0 0 24px;">
+      <a href="${escapeHtml(appUrl)}" style="display:inline-block;background-color:#22c55e;color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:16px;font-weight:bold;">
+        See Your Compliment →
+      </a>
+    </div>
+    ${personalNoteHtml}
+    <div style="background-color:#f0fdf4;border-radius:8px;padding:12px 16px;margin:0 0 24px;text-align:center;">
+      <p style="color:#166534;font-size:14px;margin:0;">💚 No timer, no pressure – just a little kindness to brighten your day!</p>
+    </div>
+    <div style="border-top:1px solid #e5e7eb;padding-top:20px;text-align:center;">
+      <p style="color:#6b7280;font-size:14px;font-weight:bold;margin:0 0 8px;">Want to spread the kindness?</p>
+      <a href="${escapeHtml(appUrl)}" style="color:#22c55e;font-size:14px;font-weight:bold;text-decoration:none;">
+        Send a compliment or start a chain →
+      </a>
+    </div>
+  </td></tr>
+  ${footer}
+</table>
+</td></tr></table></body></html>`;
+}
+
 // ─── Build email by type ───
 function buildEmail(type: string, data: TemplateData): { subject: string; html: string } {
   const subject = getSubject(type, data);
@@ -318,6 +368,9 @@ function buildEmail(type: string, data: TemplateData): { subject: string; html: 
       break;
     case 'completed':
       html = buildCompletedEmail(data);
+      break;
+    case 'ment_received':
+      html = buildMentReceivedEmail(data);
       break;
     default:
       throw new Error(`Unknown email type: ${type}`);
