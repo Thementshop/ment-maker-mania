@@ -10,7 +10,9 @@ import LevelUpModal from '@/components/LevelUpModal';
 import OnboardingModal from '@/components/OnboardingModal';
 import SendMentSection from '@/components/home/SendMentSection';
 import KindnessJarSection from '@/components/home/KindnessJarSection';
+import YourChainsCard from '@/components/home/YourChainsCard';
 import ChainDashboard from '@/components/chains/ChainDashboard';
+import StartChainModal from '@/components/chains/StartChainModal';
 import tmsBanner from '@/assets/TMS_banner.png';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -28,11 +30,11 @@ const Index = () => {
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSendAMentOpen, setIsSendAMentOpen] = useState(false);
+  const [isStartChainOpen, setIsStartChainOpen] = useState(false);
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [levelUpBonus, setLevelUpBonus] = useState(0);
   const [showOnboarding, setShowOnboarding] = useState(false);
 
-  // Show onboarding for first-time users
   useEffect(() => {
     const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding');
     if (!hasSeenOnboarding) {
@@ -42,12 +44,9 @@ const Index = () => {
 
   const handleSendMent = async (mentData: { category: string; complimentText: string; recipientType: string }) => {
     const result = await sendMent(mentData);
-    
     if (result.leveledUp) {
       setLevelUpBonus(result.bonusMints);
-      setTimeout(() => {
-        setShowLevelUp(true);
-      }, 500);
+      setTimeout(() => setShowLevelUp(true), 500);
     }
   };
 
@@ -55,7 +54,6 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-mint flex flex-col">
       <Header worldCount={worldKindnessCount} />
       
-      {/* Banner Image */}
       <div className="w-full">
         <img 
           src={tmsBanner} 
@@ -71,91 +69,53 @@ const Index = () => {
             <Tooltip>
               <TooltipTrigger asChild>
                 <div>
-                  <KindnessJarSection 
-                    jarCount={jarCount} 
-                    totalSent={totalSent} 
-                  />
+                  <KindnessJarSection jarCount={jarCount} totalSent={totalSent} />
                 </div>
               </TooltipTrigger>
-              <TooltipContent>
-                <p>Collect mints by sending kindness! 🍬</p>
-              </TooltipContent>
+              <TooltipContent><p>Collect mints by sending kindness! 🍬</p></TooltipContent>
             </Tooltip>
             
-            {/* Center: Send a Ment (chain-based) */}
+            {/* Center: Send A Ment (graphic button) */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <div>
                   <SendMentSection 
-                    onOpenModal={() => setIsModalOpen(true)} 
+                    onOpenModal={() => setIsSendAMentOpen(true)} 
                     totalSent={totalSent} 
                   />
                 </div>
               </TooltipTrigger>
-              <TooltipContent>
-                <p>Send compliments to earn mints! ✨</p>
-              </TooltipContent>
+              <TooltipContent><p>Send a compliment to earn mints! ✨</p></TooltipContent>
             </Tooltip>
             
-            {/* Right: Send A Ment (single, no chain) */}
-            <div className="bg-card rounded-2xl p-4 border border-border shadow-sm flex flex-col">
-              <h3 className="text-lg font-bold mb-2 flex items-center gap-2">
-                💌 Send A Ment
-              </h3>
-              <p className="text-sm text-muted-foreground mb-3 flex-1">
-                Send a single compliment — no timer, no pressure!
-              </p>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button 
-                    onClick={() => setIsSendAMentOpen(true)}
-                    className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors"
-                  >
-                    💚 Send A Ment
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Send a single compliment (no chain) 💌</p>
-                </TooltipContent>
-              </Tooltip>
-            </div>
+            {/* Right: Your Chains summary */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <YourChainsCard onStartChain={() => setIsStartChainOpen(true)} />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent><p>View your active chains and start new ones! 🔗</p></TooltipContent>
+            </Tooltip>
           </div>
         </TooltipProvider>
 
-        {/* Chain Dashboard Section */}
         <section id="chains" className="mt-8">
           <ChainDashboard />
         </section>
       </main>
       
       {/* Send Ment Modal (chain-based) */}
-      <SendMentModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        onSend={handleSendMent} 
-      />
+      <SendMentModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSend={handleSendMent} />
 
       {/* Send A Ment Modal (single, no chain) */}
-      <SendAMentModal
-        isOpen={isSendAMentOpen}
-        onClose={() => setIsSendAMentOpen(false)}
-      />
-      
-      {/* Level Up Modal */}
-      <LevelUpModal 
-        isOpen={showLevelUp} 
-        onClose={() => setShowLevelUp(false)} 
-        totalSent={totalSent} 
-        bonusMints={levelUpBonus} 
-      />
+      <SendAMentModal isOpen={isSendAMentOpen} onClose={() => setIsSendAMentOpen(false)} />
 
-      {/* Onboarding Modal */}
-      <OnboardingModal
-        isOpen={showOnboarding}
-        onClose={() => setShowOnboarding(false)}
-      />
+      {/* Start Chain Modal from card */}
+      <StartChainModal isOpen={isStartChainOpen} onClose={() => setIsStartChainOpen(false)} onSuccess={() => {}} />
       
-      {/* Footer */}
+      <LevelUpModal isOpen={showLevelUp} onClose={() => setShowLevelUp(false)} totalSent={totalSent} bonusMints={levelUpBonus} />
+      <OnboardingModal isOpen={showOnboarding} onClose={() => setShowOnboarding(false)} />
       <Footer />
     </div>
   );

@@ -125,7 +125,6 @@ Deno.serve(async (req) => {
             sender_name: senderName,
             compliment_text,
             compliment_category,
-            personal_note: personal_note || null,
             chain_url: 'https://ment-maker-mania.lovable.app',
             app_url: 'https://ment-maker-mania.lovable.app',
           },
