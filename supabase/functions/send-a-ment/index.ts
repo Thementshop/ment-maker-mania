@@ -32,7 +32,7 @@ Deno.serve(async (req) => {
     const userId = authUser.id;
     const userEmail = authUser.email as string;
 
-    const { recipient_email, compliment_text, compliment_category, personal_note } = await req.json();
+    const { recipient_email, compliment_text, compliment_category } = await req.json();
 
     if (!recipient_email || !compliment_text || !compliment_category) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -53,7 +53,6 @@ Deno.serve(async (req) => {
         compliment_text,
         category: compliment_category,
         recipient_type: 'email',
-        personal_note: personal_note || null,
       });
 
     if (insertError) {
@@ -126,7 +125,6 @@ Deno.serve(async (req) => {
             sender_name: senderName,
             compliment_text,
             compliment_category,
-            personal_note: personal_note || null,
             chain_url: 'https://ment-maker-mania.lovable.app',
             app_url: 'https://ment-maker-mania.lovable.app',
           },
