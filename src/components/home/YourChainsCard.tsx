@@ -51,7 +51,7 @@ const YourChainsCard = ({ onStartChain }: YourChainsCardProps) => {
         <img 
           src="/images/ment-chain.png" 
           alt="Ment Chain" 
-          className="h-[8.4rem] object-contain drop-shadow-md"
+          className="h-40 object-contain drop-shadow-md"
         />
       </div>
 
