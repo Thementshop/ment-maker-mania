@@ -10,9 +10,9 @@ interface SimplifiedJarProps {
 }
 
 const SimplifiedJar = ({ jarCount, totalSent }: SimplifiedJarProps) => {
-  const currentLevel = getCurrentLevel(totalSent);
-  const progress = getLevelProgress(totalSent);
-  const mentsToNext = getMentsToNextLevel(totalSent);
+  const currentLevel = getCurrentLevel(jarCount);
+  const progress = getLevelProgress(jarCount);
+  const mentsToNext = getMentsToNextLevel(jarCount);
 
   return (
     <div className="flex flex-col items-center gap-4 w-full">
