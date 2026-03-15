@@ -53,7 +53,6 @@ Deno.serve(async (req) => {
         compliment_text,
         category: compliment_category,
         recipient_type: 'email',
-        personal_note: personal_note || null,
       });
 
     if (insertError) {
