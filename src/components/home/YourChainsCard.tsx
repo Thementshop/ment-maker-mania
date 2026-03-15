@@ -47,6 +47,14 @@ const YourChainsCard = ({ onStartChain }: YourChainsCardProps) => {
       animate={{ opacity: 1, scale: 1 }}
       transition={{ delay: 0.3, type: 'spring' }}
     >
+      <div className="w-full flex justify-center mb-4 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg p-4">
+        <img 
+          src="/images/ment-chain.png" 
+          alt="Ment Chain" 
+          className="h-28 object-contain drop-shadow-md"
+        />
+      </div>
+
       <h3 className="text-lg font-bold mb-2 flex items-center gap-2">
         🔗 Your Chains
       </h3>
