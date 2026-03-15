@@ -304,12 +304,6 @@ function buildCompletedEmail(data: TemplateData): string {
 
 // ─── TEMPLATE 5: Ment Received (Single Compliment, No Chain) ───
 function buildMentReceivedEmail(data: TemplateData): string {
-  const personalNoteHtml = data.personal_note ? `
-    <div style="background-color:#f0fdf4;border-left:4px solid #22c55e;border-radius:0 8px 8px 0;padding:12px 16px;margin:0 0 24px;">
-      <p style="color:#6b7280;font-size:12px;font-weight:bold;margin:0 0 4px;">Personal note from ${escapeHtml(data.sender_name || 'your friend')}:</p>
-      <p style="color:#166534;font-size:15px;font-style:italic;margin:0;">"${escapeHtml(data.personal_note)}"</p>
-    </div>` : '';
-
   const appUrl = data.app_url || 'https://ment-maker-mania.lovable.app';
 
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
@@ -336,7 +330,6 @@ function buildMentReceivedEmail(data: TemplateData): string {
         See Your Compliment →
       </a>
     </div>
-    ${personalNoteHtml}
     <div style="background-color:#f0fdf4;border-radius:8px;padding:12px 16px;margin:0 0 24px;text-align:center;">
       <p style="color:#166534;font-size:14px;margin:0;">💚 No timer, no pressure – just a little kindness to brighten your day!</p>
     </div>
