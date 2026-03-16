@@ -109,9 +109,9 @@ export default {
         "spin-slow": "spin-slow 20s linear infinite",
       },
       boxShadow: {
-        mint: "0 8px 32px -8px hsl(145 63% 49% / 0.4)",
+        mint: "0 8px 32px -8px hsl(120 96% 67% / 0.4)",
         candy: "0 4px 20px -4px hsl(340 100% 71% / 0.3)",
-        glass: "0 20px 60px -20px hsl(145 63% 49% / 0.2)",
+        glass: "0 20px 60px -20px hsl(120 96% 67% / 0.2)",
       },
     },
   },

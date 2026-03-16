@@ -55,7 +55,7 @@
     --glass-border: 0 0% 100%;
     
     /* Shadows */
-    --shadow-mint: 0 8px 32px -8px hsl(145 63% 49% / 0.4);
+    --shadow-mint: 0 8px 32px -8px hsl(120 96% 67% / 0.4);
     --shadow-candy: 0 4px 20px -4px hsl(340 100% 71% / 0.3);
     
     /* Sidebar (keeping defaults) */
