@@ -127,8 +127,8 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
                     alt="mint"
                     className="absolute"
                     style={{
-                      width: '11px',
-                      height: '11px',
+                      width: `${MINT_SIZE}px`,
+                      height: `${MINT_SIZE}px`,
                       left: `${left}px`,
                       bottom: `${bottom}px`,
                       transform: `rotate(${rotation}deg) scale(${scale})`,
