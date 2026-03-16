@@ -335,7 +335,7 @@ function buildMentReceivedEmail(data: TemplateData): string {
     </div>
     <div style="border-top:1px solid #e5e7eb;padding-top:20px;text-align:center;">
       <p style="color:#6b7280;font-size:14px;font-weight:bold;margin:0 0 8px;">Want to spread the kindness?</p>
-      <a href="${escapeHtml(appUrl)}" style="color:#22c55e;font-size:14px;font-weight:bold;text-decoration:none;">
+      <a href="${escapeHtml(appUrl)}" style="color:#58fc59;font-size:14px;font-weight:bold;text-decoration:none;">
         Send a compliment or start a chain →
       </a>
     </div>
