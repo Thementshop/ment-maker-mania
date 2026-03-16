@@ -204,7 +204,7 @@ function build1hrWarningBatchedEmail(data: TemplateData): string {
       ${otherChainsHtml}
     </div>
     <div style="text-align:center;margin:0 0 20px;">
-      <a href="${escapeHtml(appUrl)}" style="display:inline-block;background-color:#22c55e;color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:16px;font-weight:bold;">
+      <a href="${escapeHtml(appUrl)}" style="display:inline-block;background-color:#58fc59;color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:16px;font-weight:bold;">
         View All Your Chains →
       </a>
     </div>
