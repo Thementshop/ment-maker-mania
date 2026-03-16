@@ -118,7 +118,7 @@ function buildChainReceivedEmail(data: TemplateData): string {
       </div>
     </div>
     <div style="text-align:center;margin:0 0 24px;">
-      <a href="${escapeHtml(data.chain_url)}" style="display:inline-block;background-color:#22c55e;color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:16px;font-weight:bold;">
+      <a href="${escapeHtml(data.chain_url)}" style="display:inline-block;background-color:#58fc59;color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:16px;font-weight:bold;">
         Reveal Your Compliment →
       </a>
     </div>
