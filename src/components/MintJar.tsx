@@ -43,38 +43,39 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
   // Calculate how many mints to show (cap at 60 for performance)
   const mintsToShow = Math.min(jarCount, 60);
 
-  // Container dimensions for the jar interior
-  const INTERIOR_WIDTH = 60;
-  const INTERIOR_HEIGHT = 70;
-  const MINT_SIZE = 10;
+  // Jar interior dimensions
+  const INTERIOR_WIDTH = 62;
+  const INTERIOR_HEIGHT = 90;
+  const MINT_SIZE = 9;
 
+  // Generate random-looking but deterministic positions that settle naturally
   const getMintPosition = (index: number) => {
-    const mintsPerRow = 5;
-    const row = Math.floor(index / mintsPerRow);
-    const col = index % mintsPerRow;
+    // Use seeded pseudo-random for each mint
+    const seed1 = Math.sin(index * 127.1 + 311.7) * 43758.5453;
+    const seed2 = Math.sin(index * 269.5 + 183.3) * 43758.5453;
+    const seed3 = Math.sin(index * 419.2 + 371.9) * 43758.5453;
+    const rand1 = seed1 - Math.floor(seed1); // 0-1
+    const rand2 = seed2 - Math.floor(seed2);
+    const rand3 = seed3 - Math.floor(seed3);
 
-    // Stagger odd rows
-    const isOddRow = row % 2 === 1;
-    const staggerOffset = isOddRow ? 4 : 0;
+    // Pack from bottom up: lower indices = lower in jar
+    // Each "layer" holds roughly 5-7 mints at random x positions
+    const layer = Math.floor(index / 6);
+    const layerHeight = MINT_SIZE * 0.75; // overlap layers like real candy
 
-    // Tight spacing so mints stay strictly within bounds
-    const spacing = (INTERIOR_WIDTH - MINT_SIZE) / (mintsPerRow - 1);
-    
-    // Small jitter but clamped to stay inside
-    const jitterX = Math.sin(index * 12.34) * 1;
-    const jitterY = Math.cos(index * 23.45) * 1;
-
-    const rawLeft = col * spacing + staggerOffset + jitterX;
-    // Clamp so mint never exceeds container
+    // Random x within jar interior, clamped
+    const rawLeft = rand1 * (INTERIOR_WIDTH - MINT_SIZE);
     const left = Math.max(0, Math.min(rawLeft, INTERIOR_WIDTH - MINT_SIZE));
-    const bottom = row * 9 + jitterY;
+
+    // Stack upward with slight randomness per layer
+    const bottom = layer * layerHeight + (rand2 * 3);
 
     return {
       left,
       bottom,
-      rotation: Math.sin(index * 45.67) * 10,
-      scale: 0.9 + Math.sin(index * 6.78) * 0.05,
-      delay: index * 0.012,
+      rotation: (rand3 - 0.5) * 30, // -15 to +15 degrees
+      scale: 0.85 + rand1 * 0.2,     // varied sizes 0.85-1.05
+      delay: index * 0.01,
     };
   };
 
@@ -105,11 +106,11 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
             transition={{ type: 'spring', stiffness: 200 }}
           />
 
-          {/* Mints container - strictly inside jar glass */}
+          {/* Mints container - strictly inside jar glass body */}
           <div
             className="absolute overflow-hidden z-30"
             style={{
-              bottom: '62px',
+              bottom: '52px',
               left: '50%',
               transform: 'translateX(-50%)',
               width: `${INTERIOR_WIDTH}px`,
