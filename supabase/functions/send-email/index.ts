@@ -102,7 +102,7 @@ function buildChainReceivedEmail(data: TemplateData): string {
 <body style="margin:0;padding:0;background-color:#f0fdf4;font-family:Arial,Helvetica,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f0fdf4;padding:40px 20px;"><tr><td align="center">
 <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.1);">
-  <tr><td style="background-color:#22c55e;padding:30px;text-align:center;">
+  <tr><td style="background-color:#58fc59;padding:30px;text-align:center;">
     <h1 style="color:#ffffff;margin:0;font-size:28px;">💚 Ment Shop</h1>
     <p style="color:#dcfce7;margin:8px 0 0;font-size:14px;">Spreading Kindness, One Compliment at a Time</p>
   </td></tr>
