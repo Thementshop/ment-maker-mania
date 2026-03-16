@@ -240,7 +240,7 @@ function buildMilestoneEmail(data: TemplateData): string {
       <a href="${escapeHtml(data.chain_url)}" style="display:inline-block;background-color:#8b5cf6;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:bold;margin:0 4px;">
         View Chain History →
       </a>
-      ${data.share_url ? `<a href="${escapeHtml(data.share_url)}" style="display:inline-block;background-color:#22c55e;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:bold;margin:0 4px;">
+      ${data.share_url ? `<a href="${escapeHtml(data.share_url)}" style="display:inline-block;background-color:#58fc59;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:bold;margin:0 4px;">
         Share This Achievement →
       </a>` : ''}
     </div>
