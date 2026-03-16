@@ -40,25 +40,21 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
     previousTierRef.current = newTier;
   }, [jarCount]);
 
-  // Generate mint positions inside the jar
-  const mintsToRender = Math.min(jarCount, 80);
-  const mintPositions = Array.from({ length: mintsToRender }, (_, i) => {
-    // Pack mints from bottom up, spread across width
-    const row = Math.floor(i / 6);
-    const col = i % 6;
-    const rowStagger = row % 2 === 1 ? 8 : 0;
-    const baseX = 10 + col * 14 + rowStagger;
-    const baseY = 92 - row * 8;
-    const xOff = (Math.sin(i * 7.3) * 4);
-    const yOff = (Math.cos(i * 5.1) * 3);
-    const rotation = ((i * 47) % 360) - 180;
-    return {
-      x: Math.max(5, Math.min(90, baseX + xOff)),
-      y: Math.max(15, Math.min(95, baseY + yOff)),
-      rotation,
-      delay: i * 0.02,
-    };
-  });
+  // Realistic gravity-based stacking
+  const mintsToRender = Math.min(jarCount, 100);
+  const mintSize = 14;
+  const jarWidth = 140;
+  const mintsPerRow = Math.floor(jarWidth / mintSize);
+
+  const getMintPosition = (index: number) => {
+    const row = Math.floor(index / mintsPerRow);
+    const col = index % mintsPerRow;
+    const rowOffset = (row % 2) * (mintSize / 2);
+    const left = col * mintSize + rowOffset + (jarWidth - mintsPerRow * mintSize) / 2;
+    const bottom = row * mintSize * 0.9;
+    const rotation = (index * 37) % 360;
+    return { left, bottom, rotation, delay: index * 0.02 };
+  };
 
   return (
     <div className="flex flex-col items-center gap-3 w-full">
@@ -74,33 +70,46 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
       {/* Jar Display */}
       <div className="relative w-56 h-64 flex items-center justify-center">
         {/* Layer 1: Mints (behind jar glass) */}
-        <div className="absolute inset-0 z-10 flex items-end justify-center pb-8">
-          <div className="relative w-40 h-40 overflow-hidden">
-            {mintPositions.map((pos, i) => (
-              <motion.div
-                key={i}
-                className="absolute rounded-full"
-                style={{
-                  width: '14px',
-                  height: '14px',
-                  bottom: `${Math.floor(i / 7) * 12}px`,
-                  left: `${(i % 7) * 18 + (Math.floor(i / 7) % 2) * 9}px`,
-                  background:
-                    'conic-gradient(from 0deg, hsl(var(--primary)) 0deg 30deg, #ffffff 30deg 60deg, hsl(var(--primary)) 60deg 90deg, #ffffff 90deg 120deg, hsl(var(--primary)) 120deg 150deg, #ffffff 150deg 180deg, hsl(var(--primary)) 180deg 210deg, #ffffff 210deg 240deg, hsl(var(--primary)) 240deg 270deg, #ffffff 270deg 300deg, hsl(var(--primary)) 300deg 330deg, #ffffff 330deg 360deg)',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-                  transform: `rotate(${i * 23}deg)`,
-                  opacity: 0.9,
-                }}
-                initial={{ y: -40, opacity: 0, scale: 0.3 }}
-                animate={{ y: 0, opacity: 0.9, scale: 1 }}
-                transition={{
-                  type: 'spring',
-                  stiffness: 200,
-                  damping: 14,
-                  delay: pos.delay,
-                }}
-              />
-            ))}
+        <div className="absolute inset-0 z-10 flex items-center justify-center">
+          <div className="relative" style={{ width: '200px', height: '240px' }}>
+            <div
+              className="absolute"
+              style={{
+                bottom: '40px',
+                left: '30px',
+                width: '140px',
+                height: '160px',
+              }}
+            >
+              {Array.from({ length: mintsToRender }).map((_, i) => {
+                const { left, bottom, rotation, delay } = getMintPosition(i);
+                return (
+                  <motion.div
+                    key={i}
+                    className="absolute rounded-full"
+                    style={{
+                      width: '14px',
+                      height: '14px',
+                      left: `${left}px`,
+                      bottom: `${bottom}px`,
+                      background:
+                        'conic-gradient(from 0deg, hsl(var(--primary)) 0deg 30deg, #ffffff 30deg 60deg, hsl(var(--primary)) 60deg 90deg, #ffffff 90deg 120deg, hsl(var(--primary)) 120deg 150deg, #ffffff 150deg 180deg, hsl(var(--primary)) 180deg 210deg, #ffffff 210deg 240deg, hsl(var(--primary)) 240deg 270deg, #ffffff 270deg 300deg, hsl(var(--primary)) 300deg 330deg, #ffffff 330deg 360deg)',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
+                      transform: `rotate(${rotation}deg)`,
+                      opacity: 0.95,
+                    }}
+                    initial={{ y: -40, opacity: 0, scale: 0.3 }}
+                    animate={{ y: 0, opacity: 0.95, scale: 1 }}
+                    transition={{
+                      type: 'spring',
+                      stiffness: 200,
+                      damping: 14,
+                      delay,
+                    }}
+                  />
+                );
+              })}
+            </div>
           </div>
         </div>
 
