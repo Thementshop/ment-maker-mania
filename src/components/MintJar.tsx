@@ -40,20 +40,22 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
     previousTierRef.current = newTier;
   }, [jarCount]);
 
-  // Realistic gravity-based stacking
-  const mintsToRender = Math.min(jarCount, 100);
-  const mintSize = 14;
-  const jarWidth = 140;
-  const mintsPerRow = Math.floor(jarWidth / mintSize);
+  // Calculate how many mints to show (cap at 50 for performance)
+  const mintsToShow = Math.min(jarCount, 50);
 
   const getMintPosition = (index: number) => {
+    const mintsPerRow = 8;
     const row = Math.floor(index / mintsPerRow);
     const col = index % mintsPerRow;
-    const rowOffset = (row % 2) * (mintSize / 2);
-    const left = col * mintSize + rowOffset + (jarWidth - mintsPerRow * mintSize) / 2;
-    const bottom = row * mintSize * 0.9;
-    const rotation = (index * 37) % 360;
-    return { left, bottom, rotation, delay: index * 0.02 };
+    const randomX = Math.sin(index * 12.34) * 5;
+    const randomY = Math.cos(index * 23.45) * 3;
+    return {
+      left: col * 16 + randomX,
+      bottom: row * 14 + randomY,
+      rotation: (index * 43) % 360,
+      scale: 0.9 + Math.sin(index * 6.78) * 0.1,
+      delay: index * 0.02,
+    };
   };
 
   return (
