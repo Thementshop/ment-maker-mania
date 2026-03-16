@@ -92,7 +92,7 @@ const footer = `
   </p>
   <p style="color:#9ca3af;font-size:12px;margin:0;">
     Ment Shop – Spreading Kindness, One Compliment at a Time<br>
-    Questions? Email <a href="mailto:info@mentshop.com" style="color:#22c55e;">info@mentshop.com</a>
+    Questions? Email <a href="mailto:info@mentshop.com" style="color:#58fc59;">info@mentshop.com</a>
   </p>
 </td></tr>`;
 
