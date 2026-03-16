@@ -292,7 +292,7 @@ function buildCompletedEmail(data: TemplateData): string {
       </p>
     </div>
     <div style="text-align:center;">
-      <a href="${escapeHtml(appUrl)}" style="display:inline-block;background-color:#22c55e;color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:16px;font-weight:bold;">
+      <a href="${escapeHtml(appUrl)}" style="display:inline-block;background-color:#58fc59;color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:16px;font-weight:bold;">
         Start Another Chain →
       </a>
     </div>
