@@ -61,7 +61,7 @@ const MintCircleGraphic: React.FC<MintCircleGraphicProps> = ({
       )}
       style={{
         filter: isLegendary 
-          ? 'drop-shadow(0 0 20px rgba(46, 204, 113, 0.6))' 
+          ? 'drop-shadow(0 0 20px rgba(88, 252, 89, 0.6))' 
           : undefined,
       }}
     >
