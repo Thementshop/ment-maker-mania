@@ -40,21 +40,34 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
     previousTierRef.current = newTier;
   }, [jarCount]);
 
-  // Calculate how many mints to show (cap at 50 for performance)
-  const mintsToShow = Math.min(jarCount, 50);
+  // Calculate how many mints to show (cap at 60 for performance)
+  const mintsToShow = Math.min(jarCount, 60);
 
-  const getMintPosition = (index: number) => {
-    const mintsPerRow = 8;
+  // Fill ratio: what percentage of the jar interior should be filled
+  // At 0 mints = 0%, scales up so ~50+ mints = ~80% full
+  const fillPercent = Math.min((mintsToShow / 60) * 80, 80);
+
+  const getMintPosition = (index: number, totalMints: number) => {
+    // Dense packing: more mints per row, tighter vertical spacing
+    const mintsPerRow = 9;
     const row = Math.floor(index / mintsPerRow);
     const col = index % mintsPerRow;
-    const randomX = Math.sin(index * 12.34) * 5;
-    const randomY = Math.cos(index * 23.45) * 3;
+    
+    // Stagger odd rows for natural candy settling look
+    const isOddRow = row % 2 === 1;
+    const staggerOffset = isOddRow ? 7 : 0;
+    
+    // Randomization for natural look (deterministic based on index)
+    const randomX = Math.sin(index * 12.34) * 3;
+    const randomY = Math.cos(index * 23.45) * 2;
+    const randomRotation = Math.sin(index * 45.67) * 15;
+    
     return {
-      left: col * 16 + randomX,
-      bottom: row * 14 + randomY,
-      rotation: (index * 43) % 360,
-      scale: 0.9 + Math.sin(index * 6.78) * 0.1,
-      delay: index * 0.02,
+      left: col * 14 + staggerOffset + randomX + 2,
+      bottom: row * 12 + randomY,
+      rotation: randomRotation,
+      scale: 0.85 + Math.sin(index * 6.78) * 0.15,
+      delay: index * 0.015,
     };
   };
 
@@ -85,21 +98,22 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
             transition={{ type: 'spring', stiffness: 200 }}
           />
 
-          {/* Mints - positioned relative to jar center */}
+          {/* Mints container - anchored to BOTTOM of jar interior */}
           <div
             className="absolute overflow-hidden z-10"
             style={{
-              top: '50%',
+              // Anchor to bottom of jar body
+              bottom: '18px',       // Just above jar base
               left: '50%',
-              transform: 'translate(-50%, -50%)',
-              marginTop: '50px',
-              width: '130px',
-              height: '140px',
+              transform: 'translateX(-50%)',
+              width: '130px',       // Jar interior width
+              height: '160px',      // Full interior height available
             }}
           >
+            {/* Mints stack from bottom up naturally */}
             <div className="relative w-full h-full">
               {Array.from({ length: mintsToShow }).map((_, i) => {
-                const { left, bottom, rotation, scale, delay } = getMintPosition(i);
+                const { left, bottom, rotation, scale, delay } = getMintPosition(i, mintsToShow);
                 return (
                   <motion.img
                     key={i}
@@ -107,15 +121,15 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
                     alt="mint"
                     className="absolute"
                     style={{
-                      width: '16px',
-                      height: '16px',
+                      width: '15px',
+                      height: '15px',
                       left: `${left}px`,
                       bottom: `${bottom}px`,
                       transform: `rotate(${rotation}deg) scale(${scale})`,
                       opacity: 0.95,
                     }}
-                    initial={{ y: -40, opacity: 0, scale: 0.3 }}
-                    animate={{ y: 0, opacity: 0.95, scale: 1 }}
+                    initial={{ y: -30, opacity: 0, scale: 0.3 }}
+                    animate={{ y: 0, opacity: 0.95, scale }}
                     transition={{
                       type: 'spring',
                       stiffness: 200,
