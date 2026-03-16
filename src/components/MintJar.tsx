@@ -40,25 +40,21 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
     previousTierRef.current = newTier;
   }, [jarCount]);
 
-  // Generate mint positions inside the jar
-  const mintsToRender = Math.min(jarCount, 80);
-  const mintPositions = Array.from({ length: mintsToRender }, (_, i) => {
-    // Pack mints from bottom up, spread across width
-    const row = Math.floor(i / 6);
-    const col = i % 6;
-    const rowStagger = row % 2 === 1 ? 8 : 0;
-    const baseX = 10 + col * 14 + rowStagger;
-    const baseY = 92 - row * 8;
-    const xOff = (Math.sin(i * 7.3) * 4);
-    const yOff = (Math.cos(i * 5.1) * 3);
-    const rotation = ((i * 47) % 360) - 180;
-    return {
-      x: Math.max(5, Math.min(90, baseX + xOff)),
-      y: Math.max(15, Math.min(95, baseY + yOff)),
-      rotation,
-      delay: i * 0.02,
-    };
-  });
+  // Realistic gravity-based stacking
+  const mintsToRender = Math.min(jarCount, 100);
+  const mintSize = 14;
+  const jarWidth = 140;
+  const mintsPerRow = Math.floor(jarWidth / mintSize);
+
+  const getMintPosition = (index: number) => {
+    const row = Math.floor(index / mintsPerRow);
+    const col = index % mintsPerRow;
+    const rowOffset = (row % 2) * (mintSize / 2);
+    const left = col * mintSize + rowOffset + (jarWidth - mintsPerRow * mintSize) / 2;
+    const bottom = row * mintSize * 0.9;
+    const rotation = (index * 37) % 360;
+    return { left, bottom, rotation, delay: index * 0.02 };
+  };
 
   return (
     <div className="flex flex-col items-center gap-3 w-full">
