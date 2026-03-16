@@ -43,26 +43,37 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
   // Calculate how many mints to show (cap at 60 for performance)
   const mintsToShow = Math.min(jarCount, 60);
 
+  // Container dimensions for the jar interior
+  const INTERIOR_WIDTH = 60;
+  const INTERIOR_HEIGHT = 70;
+  const MINT_SIZE = 10;
+
   const getMintPosition = (index: number) => {
-    // Tight packing to stay strictly inside the jar interior
     const mintsPerRow = 5;
     const row = Math.floor(index / mintsPerRow);
     const col = index % mintsPerRow;
 
-    // Slight stagger for natural settling look
+    // Stagger odd rows
     const isOddRow = row % 2 === 1;
-    const staggerOffset = isOddRow ? 5 : 0;
+    const staggerOffset = isOddRow ? 4 : 0;
 
-    // Small deterministic jitter so candies don't look like a rigid grid
-    const randomX = Math.sin(index * 12.34) * 1.5;
-    const randomY = Math.cos(index * 23.45) * 1.2;
-    const randomRotation = Math.sin(index * 45.67) * 12;
+    // Tight spacing so mints stay strictly within bounds
+    const spacing = (INTERIOR_WIDTH - MINT_SIZE) / (mintsPerRow - 1);
+    
+    // Small jitter but clamped to stay inside
+    const jitterX = Math.sin(index * 12.34) * 1;
+    const jitterY = Math.cos(index * 23.45) * 1;
+
+    const rawLeft = col * spacing + staggerOffset + jitterX;
+    // Clamp so mint never exceeds container
+    const left = Math.max(0, Math.min(rawLeft, INTERIOR_WIDTH - MINT_SIZE));
+    const bottom = row * 9 + jitterY;
 
     return {
-      left: col * 10 + staggerOffset + randomX,
-      bottom: row * 8 + randomY,
-      rotation: randomRotation,
-      scale: 0.9 + Math.sin(index * 6.78) * 0.08,
+      left,
+      bottom,
+      rotation: Math.sin(index * 45.67) * 10,
+      scale: 0.9 + Math.sin(index * 6.78) * 0.05,
       delay: index * 0.012,
     };
   };
@@ -94,15 +105,15 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
             transition={{ type: 'spring', stiffness: 200 }}
           />
 
-          {/* Mints container - IN FRONT of jar, clipped to interior */}
+          {/* Mints container - strictly inside jar glass */}
           <div
             className="absolute overflow-hidden z-30"
             style={{
-              bottom: '68px',
+              bottom: '62px',
               left: '50%',
               transform: 'translateX(-50%)',
-              width: '72px',
-              height: '80px',
+              width: `${INTERIOR_WIDTH}px`,
+              height: `${INTERIOR_HEIGHT}px`,
             }}
           >
             {/* Mints stack from bottom up naturally */}
