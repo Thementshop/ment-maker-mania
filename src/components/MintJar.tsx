@@ -43,31 +43,27 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
   // Calculate how many mints to show (cap at 60 for performance)
   const mintsToShow = Math.min(jarCount, 60);
 
-  // Fill ratio: what percentage of the jar interior should be filled
-  // At 0 mints = 0%, scales up so ~50+ mints = ~80% full
-  const fillPercent = Math.min((mintsToShow / 60) * 80, 80);
-
-  const getMintPosition = (index: number, totalMints: number) => {
-    // Dense packing: more mints per row, tighter vertical spacing
-    const mintsPerRow = 9;
+  const getMintPosition = (index: number) => {
+    // Tight packing to stay strictly inside the jar interior
+    const mintsPerRow = 5;
     const row = Math.floor(index / mintsPerRow);
     const col = index % mintsPerRow;
-    
-    // Stagger odd rows for natural candy settling look
+
+    // Slight stagger for natural settling look
     const isOddRow = row % 2 === 1;
-    const staggerOffset = isOddRow ? 7 : 0;
-    
-    // Randomization for natural look (deterministic based on index)
-    const randomX = Math.sin(index * 12.34) * 3;
-    const randomY = Math.cos(index * 23.45) * 2;
-    const randomRotation = Math.sin(index * 45.67) * 15;
-    
+    const staggerOffset = isOddRow ? 5 : 0;
+
+    // Small deterministic jitter so candies don't look like a rigid grid
+    const randomX = Math.sin(index * 12.34) * 1.5;
+    const randomY = Math.cos(index * 23.45) * 1.2;
+    const randomRotation = Math.sin(index * 45.67) * 12;
+
     return {
-      left: col * 14 + staggerOffset + randomX + 2,
-      bottom: row * 12 + randomY,
+      left: col * 10 + staggerOffset + randomX,
+      bottom: row * 8 + randomY,
       rotation: randomRotation,
-      scale: 0.85 + Math.sin(index * 6.78) * 0.15,
-      delay: index * 0.015,
+      scale: 0.9 + Math.sin(index * 6.78) * 0.08,
+      delay: index * 0.012,
     };
   };
 
