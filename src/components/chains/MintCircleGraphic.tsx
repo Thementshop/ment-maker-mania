@@ -68,8 +68,8 @@ const MintCircleGraphic: React.FC<MintCircleGraphicProps> = ({
       <defs>
         {/* Mint green gradient */}
         <linearGradient id="mintGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#2ECC71" />
-          <stop offset="100%" stopColor="#27AE60" />
+          <stop offset="0%" stopColor="#58fc59" />
+          <stop offset="100%" stopColor="#3ed83f" />
         </linearGradient>
 
         {/* Metallic chain gradient */}
