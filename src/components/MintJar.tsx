@@ -75,12 +75,12 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
         <div className="absolute inset-0 z-10 flex items-center justify-center">
           <div className="relative" style={{ width: '200px', height: '240px' }}>
             <div
-              className="absolute"
+              className="absolute overflow-hidden"
               style={{
-                bottom: '40px',
-                left: '30px',
-                width: '140px',
-                height: '160px',
+                bottom: '70px',
+                left: '32px',
+                width: '136px',
+                height: '130px',
               }}
             >
               {Array.from({ length: mintsToShow }).map((_, i) => {
@@ -92,8 +92,8 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
                     alt="mint"
                     className="absolute"
                     style={{
-                      width: '18px',
-                      height: '18px',
+                      width: '16px',
+                      height: '16px',
                       left: `${left}px`,
                       bottom: `${bottom}px`,
                       transform: `rotate(${rotation}deg) scale(${scale})`,
