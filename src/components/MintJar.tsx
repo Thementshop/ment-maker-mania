@@ -98,18 +98,19 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
           <div
             className="absolute overflow-hidden z-10"
             style={{
-              // Positioned inside the jar's glass body
-              bottom: '60px',       // Sweet spot inside glass body
+              // Strictly constrained to jar interior so mints don't appear beside/below
+              bottom: '74px',
               left: '50%',
               transform: 'translateX(-50%)',
-              width: '105px',       // Fits within glass walls
-              height: '120px',      // Fills jar interior
+              width: '58px',
+              height: '56px',
+              clipPath: 'inset(0 round 12px 12px 8px 8px)',
             }}
           >
             {/* Mints stack from bottom up naturally */}
             <div className="relative w-full h-full">
               {Array.from({ length: mintsToShow }).map((_, i) => {
-                const { left, bottom, rotation, scale, delay } = getMintPosition(i, mintsToShow);
+                const { left, bottom, rotation, scale, delay } = getMintPosition(i);
                 return (
                   <motion.img
                     key={i}
@@ -117,8 +118,8 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
                     alt="mint"
                     className="absolute"
                     style={{
-                      width: '15px',
-                      height: '15px',
+                      width: '11px',
+                      height: '11px',
                       left: `${left}px`,
                       bottom: `${bottom}px`,
                       transform: `rotate(${rotation}deg) scale(${scale})`,
