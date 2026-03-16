@@ -43,38 +43,45 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
   // Calculate how many mints to show (cap at 60 for performance)
   const mintsToShow = Math.min(jarCount, 60);
 
-  // Jar interior dimensions
-  const INTERIOR_WIDTH = 62;
-  const INTERIOR_HEIGHT = 90;
-  const MINT_SIZE = 9;
+  // Jar image analysis (jar-tier-1.png is 1344x896):
+  // The glass body is NOT centered - it's slightly left of center
+  // When rendered at 224x240 with object-contain:
+  // Image scales to fit: 224px wide → height = 224*(896/1344) = 149px
+  // Vertical offset: (240-149)/2 = 45px from top
+  // Jar glass interior (relative to the 224x149 rendered image):
+  //   Left wall: ~35% of 224 = 78px
+  //   Right wall: ~58% of 224 = 130px  → interior width ~52px
+  //   Bottom: ~82% of 149 + 45 offset = 167 from top → 240-167 = 73px from bottom
+  //   Top of glass: ~42% of 149 + 45 = 108 from top → 240-108 = 132px from bottom
+  // So interior box: left=78, bottom=73, width=52, height=59
+  
+  const JAR_INTERIOR = {
+    left: 78,      // px from left edge of 224px container
+    bottom: 73,    // px from bottom of 240px container
+    width: 50,     // interior width
+    height: 55,    // interior height (glass body only)
+  };
+  const MINT_SIZE = 8;
 
-  // Generate random-looking but deterministic positions that settle naturally
   const getMintPosition = (index: number) => {
-    // Use seeded pseudo-random for each mint
-    const seed1 = Math.sin(index * 127.1 + 311.7) * 43758.5453;
-    const seed2 = Math.sin(index * 269.5 + 183.3) * 43758.5453;
-    const seed3 = Math.sin(index * 419.2 + 371.9) * 43758.5453;
-    const rand1 = seed1 - Math.floor(seed1); // 0-1
-    const rand2 = seed2 - Math.floor(seed2);
-    const rand3 = seed3 - Math.floor(seed3);
+    // Seeded pseudo-random
+    const s1 = Math.sin(index * 127.1 + 311.7) * 43758.5453;
+    const s2 = Math.sin(index * 269.5 + 183.3) * 43758.5453;
+    const s3 = Math.sin(index * 419.2 + 371.9) * 43758.5453;
+    const r1 = s1 - Math.floor(s1);
+    const r2 = s2 - Math.floor(s2);
+    const r3 = s3 - Math.floor(s3);
 
-    // Pack from bottom up: lower indices = lower in jar
-    // Each "layer" holds roughly 5-7 mints at random x positions
-    const layer = Math.floor(index / 6);
-    const layerHeight = MINT_SIZE * 0.75; // overlap layers like real candy
-
-    // Random x within jar interior, clamped
-    const rawLeft = rand1 * (INTERIOR_WIDTH - MINT_SIZE);
-    const left = Math.max(0, Math.min(rawLeft, INTERIOR_WIDTH - MINT_SIZE));
-
-    // Stack upward with slight randomness per layer
-    const bottom = layer * layerHeight + (rand2 * 3);
+    // Layer-based stacking from bottom
+    const layer = Math.floor(index / 5);
+    const layerY = layer * (MINT_SIZE * 0.7) + r2 * 2;
+    const x = r1 * (JAR_INTERIOR.width - MINT_SIZE);
 
     return {
-      left,
-      bottom,
-      rotation: (rand3 - 0.5) * 30, // -15 to +15 degrees
-      scale: 0.85 + rand1 * 0.2,     // varied sizes 0.85-1.05
+      left: Math.max(0, Math.min(x, JAR_INTERIOR.width - MINT_SIZE)),
+      bottom: Math.max(0, Math.min(layerY, JAR_INTERIOR.height - MINT_SIZE)),
+      rotation: (r3 - 0.5) * 25,
+      scale: 0.85 + r1 * 0.2,
       delay: index * 0.01,
     };
   };
@@ -106,15 +113,14 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
             transition={{ type: 'spring', stiffness: 200 }}
           />
 
-          {/* Mints container - strictly inside jar glass body */}
+          {/* Mints container - precisely mapped to jar glass interior */}
           <div
             className="absolute overflow-hidden z-30"
             style={{
-              bottom: '52px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              width: `${INTERIOR_WIDTH}px`,
-              height: `${INTERIOR_HEIGHT}px`,
+              bottom: `${JAR_INTERIOR.bottom}px`,
+              left: `${JAR_INTERIOR.left}px`,
+              width: `${JAR_INTERIOR.width}px`,
+              height: `${JAR_INTERIOR.height}px`,
             }}
           >
             {/* Mints stack from bottom up naturally */}
