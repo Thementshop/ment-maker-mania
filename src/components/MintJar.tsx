@@ -1,0 +1,236 @@
+import { motion, AnimatePresence } from 'framer-motion';
+import { getCurrentTier, getNextTier, getTierProgress, getMintsToNextTier } from '@/utils/jarTiers';
+import { getCurrentLevel, getLevelProgress, getMentsToNextLevel } from '@/store/gameStore';
+import { Progress } from '@/components/ui/progress';
+import { Sparkles } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import confetti from 'canvas-confetti';
+
+interface MintJarProps {
+  jarCount: number;
+  totalSent: number;
+}
+
+const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
+  const currentTier = getCurrentTier(jarCount);
+  const nextTier = getNextTier(jarCount);
+  const tierProgress = getTierProgress(jarCount);
+  const mintsToNext = getMintsToNextTier(jarCount);
+  const currentLevel = getCurrentLevel(jarCount);
+  const levelProgress = getLevelProgress(jarCount);
+  const mentsToNextLevel = getMentsToNextLevel(jarCount);
+
+  const [showTierUp, setShowTierUp] = useState(false);
+  const previousTierRef = useRef(currentTier.tier);
+
+  useEffect(() => {
+    const newTier = getCurrentTier(jarCount).tier;
+    if (newTier > previousTierRef.current) {
+      setShowTierUp(true);
+      // Confetti
+      const end = Date.now() + 3000;
+      const frame = () => {
+        confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#58fc59', '#FFD740', '#FF6B9D'] });
+        confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#58fc59', '#4FC3F7', '#B39DDB'] });
+        if (Date.now() < end) requestAnimationFrame(frame);
+      };
+      frame();
+      setTimeout(() => setShowTierUp(false), 4000);
+    }
+    previousTierRef.current = newTier;
+  }, [jarCount]);
+
+  // Generate mint positions inside the jar
+  const mintsToRender = Math.min(jarCount, 80);
+  const mintPositions = Array.from({ length: mintsToRender }, (_, i) => {
+    // Pack mints from bottom up, spread across width
+    const row = Math.floor(i / 6);
+    const col = i % 6;
+    const rowStagger = row % 2 === 1 ? 8 : 0;
+    const baseX = 10 + col * 14 + rowStagger;
+    const baseY = 92 - row * 8;
+    const xOff = (Math.sin(i * 7.3) * 4);
+    const yOff = (Math.cos(i * 5.1) * 3);
+    const rotation = ((i * 47) % 360) - 180;
+    return {
+      x: Math.max(5, Math.min(90, baseX + xOff)),
+      y: Math.max(15, Math.min(95, baseY + yOff)),
+      rotation,
+      delay: i * 0.02,
+    };
+  });
+
+  return (
+    <div className="flex flex-col items-center gap-3 w-full">
+      {/* Title */}
+      <h2 className="font-display text-xl font-bold text-foreground flex items-center gap-2">
+        <Sparkles className="h-5 w-5 text-primary" />
+        Kindness Jar
+        <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold">
+          Level {currentLevel.level}
+        </span>
+      </h2>
+
+      {/* Jar Display */}
+      <div className="relative w-48 h-56 flex items-center justify-center">
+        {/* Mints layer (behind jar) */}
+        <div className="absolute inset-0 overflow-hidden" style={{ zIndex: 1 }}>
+          <div className="absolute" style={{ left: '18%', right: '18%', top: '20%', bottom: '8%' }}>
+            {mintPositions.map((pos, i) => (
+              <motion.div
+                key={i}
+                className="absolute rounded-full"
+                style={{
+                  width: '12px',
+                  height: '12px',
+                  left: `${pos.x}%`,
+                  top: `${pos.y}%`,
+                  background:
+                    'conic-gradient(from 0deg, hsl(var(--primary)) 0deg 30deg, #ffffff 30deg 60deg, hsl(var(--primary)) 60deg 90deg, #ffffff 90deg 120deg, hsl(var(--primary)) 120deg 150deg, #ffffff 150deg 180deg, hsl(var(--primary)) 180deg 210deg, #ffffff 210deg 240deg, hsl(var(--primary)) 240deg 270deg, #ffffff 270deg 300deg, hsl(var(--primary)) 300deg 330deg, #ffffff 330deg 360deg)',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
+                  transform: `translate(-50%, -50%) rotate(${pos.rotation}deg)`,
+                }}
+                initial={{ y: -40, opacity: 0, scale: 0.3 }}
+                animate={{ y: 0, opacity: 1, scale: 1 }}
+                transition={{
+                  type: 'spring',
+                  stiffness: 200,
+                  damping: 14,
+                  delay: pos.delay,
+                }}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Jar image layer */}
+        <motion.img
+          key={currentTier.tier}
+          src={currentTier.image}
+          alt={`${currentTier.name} Jar`}
+          className="relative w-44 h-auto object-contain drop-shadow-2xl"
+          style={{ zIndex: 2 }}
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: 'spring', stiffness: 200 }}
+        />
+
+        {/* Tier badge */}
+        <motion.div
+          className="absolute top-0 right-0 bg-gradient-to-br from-amber-400 to-amber-600 text-white px-2.5 py-0.5 rounded-full text-xs font-bold shadow-lg"
+          style={{ zIndex: 3 }}
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: 'spring', delay: 0.3 }}
+        >
+          {currentTier.name}
+        </motion.div>
+      </div>
+
+      {/* Mint count */}
+      <div className="text-center">
+        <motion.span
+          key={jarCount}
+          className="font-display text-5xl font-bold text-primary"
+          initial={{ scale: 1.2 }}
+          animate={{ scale: 1 }}
+          transition={{ type: 'spring', stiffness: 300 }}
+        >
+          {jarCount}
+        </motion.span>
+        <p className="text-sm text-muted-foreground mt-1">Total Mints Collected</p>
+      </div>
+
+      {/* Level Info */}
+      <div className="w-full max-w-xs">
+        <div className="flex items-center justify-center gap-2 mb-2">
+          <span className="text-sm font-semibold text-foreground">
+            Level {currentLevel.level}: {currentLevel.name}
+          </span>
+        </div>
+        {currentLevel.level < 25 && (
+          <div className="space-y-1">
+            <Progress value={levelProgress} className="h-3" />
+            <p className="text-xs text-muted-foreground text-center">
+              {mentsToNextLevel} ments to Level {currentLevel.level + 1}
+            </p>
+          </div>
+        )}
+        {currentLevel.level >= 25 && (
+          <p className="text-xs text-primary text-center font-semibold">
+            🎉 Max Level Reached!
+          </p>
+        )}
+      </div>
+
+      {/* Tier Progress (next jar) */}
+      {nextTier && (
+        <div className="w-full max-w-xs mt-1">
+          <div className="flex justify-between text-xs text-muted-foreground mb-1">
+            <span>{currentTier.name} Jar</span>
+            <span>{nextTier.name} Jar</span>
+          </div>
+          <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
+            <motion.div
+              className="h-full rounded-full bg-gradient-to-r from-amber-400 to-amber-600"
+              initial={{ width: 0 }}
+              animate={{ width: `${Math.min(tierProgress, 100)}%` }}
+              transition={{ duration: 0.5, ease: 'easeOut' }}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground text-center mt-1">
+            {mintsToNext} mints until <strong>{nextTier.name}</strong> jar
+          </p>
+        </div>
+      )}
+      {!nextTier && (
+        <p className="text-xs text-primary text-center font-semibold">
+          🏆 Max Tier Reached!
+        </p>
+      )}
+
+      {/* Tier-Up Celebration Modal */}
+      <AnimatePresence>
+        {showTierUp && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/60 backdrop-blur-sm p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowTierUp(false)}
+          >
+            <motion.div
+              className="relative w-full max-w-sm rounded-3xl bg-gradient-to-br from-amber-400 to-amber-600 p-8 text-center text-white shadow-2xl"
+              initial={{ scale: 0.5, opacity: 0, y: 50 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.5, opacity: 0, y: 50 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <span className="text-6xl">🎉</span>
+              <h2 className="mt-4 font-display text-3xl font-bold">JAR UPGRADE!</h2>
+              <p className="mt-2 text-lg opacity-90">
+                Your jar evolved to <strong>{currentTier.name}</strong>!
+              </p>
+              <img
+                src={currentTier.image}
+                className="w-32 h-auto mx-auto mt-4 drop-shadow-2xl"
+                alt={`${currentTier.name} Jar`}
+              />
+              <motion.button
+                className="mt-6 rounded-full bg-white px-8 py-3 font-display font-bold text-amber-600 transition-transform hover:scale-105"
+                onClick={() => setShowTierUp(false)}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Amazing! ✨
+              </motion.button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+export default MintJar;
