@@ -92,7 +92,7 @@ const SendAMentModal = ({ isOpen, onClose }: SendAMentModalProps) => {
       }
 
       setStep('success');
-      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#2ECC71', '#FF6B9D', '#4FC3F7', '#FFD740', '#B39DDB'] });
+      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#58fc59', '#FF6B9D', '#4FC3F7', '#FFD740', '#B39DDB'] });
       toast({ title: "Compliment sent! +1 mint earned 💚", description: `Your ment was sent to ${recipientEmail}` });
       setTimeout(() => handleClose(), 2500);
     } catch (error: any) {

@@ -59,7 +59,7 @@ const Store = () => {
         origin: {
           y: 0.6
         },
-        colors: ['#2ECC71', '#27AE60', '#F1C40F', '#E74C3C']
+        colors: ['#58fc59', '#3ed83f', '#F1C40F', '#E74C3C']
       });
       toast({
         title: "Free token claimed! 🎉",

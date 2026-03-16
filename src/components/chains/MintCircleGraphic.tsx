@@ -87,9 +87,9 @@ const MintCircleGraphic: React.FC<MintCircleGraphicProps> = ({
         {/* Legendary glow gradient */}
         {isLegendary && (
           <radialGradient id="legendaryGlow">
-            <stop offset="0%" stopColor="#2ECC71" stopOpacity="0.5" />
-            <stop offset="60%" stopColor="#2ECC71" stopOpacity="0.2" />
-            <stop offset="100%" stopColor="#2ECC71" stopOpacity="0" />
+            <stop offset="0%" stopColor="#58fc59" stopOpacity="0.5" />
+            <stop offset="60%" stopColor="#58fc59" stopOpacity="0.2" />
+            <stop offset="100%" stopColor="#58fc59" stopOpacity="0" />
           </radialGradient>
         )}
 

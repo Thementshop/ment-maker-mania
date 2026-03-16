@@ -20,7 +20,7 @@ const MintButton = ({
       ease: 'easeInOut'
     }}>
         <motion.img src={wrappedMint} alt="Send a Ment" className="w-40 h-40 object-contain mx-auto" animate={{
-        filter: ['drop-shadow(0 0 20px rgba(46, 204, 113, 0.6)) drop-shadow(0 0 40px rgba(46, 204, 113, 0.4))', 'drop-shadow(0 0 35px rgba(46, 204, 113, 0.9)) drop-shadow(0 0 60px rgba(46, 204, 113, 0.6))', 'drop-shadow(0 0 20px rgba(46, 204, 113, 0.6)) drop-shadow(0 0 40px rgba(46, 204, 113, 0.4))'],
+        filter: ['drop-shadow(0 0 20px rgba(88, 252, 89, 0.6)) drop-shadow(0 0 40px rgba(88, 252, 89, 0.4))', 'drop-shadow(0 0 35px rgba(88, 252, 89, 0.9)) drop-shadow(0 0 60px rgba(88, 252, 89, 0.6))', 'drop-shadow(0 0 20px rgba(88, 252, 89, 0.6)) drop-shadow(0 0 40px rgba(88, 252, 89, 0.4))'],
         scale: [1, 1.05, 1]
       }} transition={{
         duration: 2,

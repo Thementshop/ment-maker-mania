@@ -313,7 +313,7 @@
   position: absolute;
   inset: -3px;
   border-radius: inherit;
-  background: linear-gradient(90deg, #FFD700, #FF6347, #A855F7, #3B82F6, #2ECC71, #FFD700);
+  background: linear-gradient(90deg, #FFD700, #FF6347, #A855F7, #3B82F6, #58fc59, #FFD700);
   background-size: 300% 100%;
   z-index: -1;
   animation: chain-rainbow-border 4s linear infinite;
