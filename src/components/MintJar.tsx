@@ -92,7 +92,7 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
               top: '50%',
               left: '50%',
               transform: 'translate(-50%, -50%)',
-              marginTop: '20px',
+              marginTop: '50px',
               width: '130px',
               height: '140px',
             }}
