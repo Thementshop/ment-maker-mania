@@ -32,21 +32,36 @@ export interface GameState {
 }
 
 export const LEVELS = [
-  { level: 1, name: "Ment Maker", minMents: 0, maxMents: 24, reward: 10 },
-  { level: 2, name: "Encourage-Ment", minMents: 25, maxMents: 49, reward: 15 },
-  { level: 3, name: "Compli-Mentor", minMents: 50, maxMents: 99, reward: 20 },
-  { level: 4, name: "Senti-Mental", minMents: 100, maxMents: 174, reward: 25 },
-  { level: 5, name: "Mo-Ment Maker", minMents: 175, maxMents: 274, reward: 30 },
-  { level: 6, name: "Excite-Ment", minMents: 275, maxMents: 399, reward: 40 },
-  { level: 7, name: "Engage-Ment Pro", minMents: 400, maxMents: 549, reward: 50 },
-  { level: 8, name: "Fulfill-Ment", minMents: 550, maxMents: 724, reward: 60 },
-  { level: 9, name: "Amaze-Ment", minMents: 725, maxMents: 924, reward: 75 },
-  { level: 10, name: "Empower-Ment", minMents: 925, maxMents: 1149, reward: 100 },
-  { level: 11, name: "Enlighten-Ment", minMents: 1150, maxMents: 1399, reward: 125 },
-  { level: 12, name: "Accomplish-Ment", minMents: 1400, maxMents: 1699, reward: 150 },
-  { level: 13, name: "Astonish-Ment", minMents: 1700, maxMents: 2049, reward: 200 },
-  { level: 14, name: "Enchant-Ment", minMents: 2050, maxMents: 2499, reward: 250 },
-  { level: 15, name: "Ment Legend", minMents: 2500, maxMents: Infinity, reward: 500 },
+  // Tier 1: Basic Jar (0-99)
+  { level: 1, name: "Ment Maker", minMents: 0, maxMents: 19, reward: 5 },
+  { level: 2, name: "Encourage-Ment", minMents: 20, maxMents: 39, reward: 8 },
+  { level: 3, name: "Compli-Mentor", minMents: 40, maxMents: 59, reward: 10 },
+  { level: 4, name: "Senti-Mental", minMents: 60, maxMents: 79, reward: 12 },
+  { level: 5, name: "Mo-Ment Maker", minMents: 80, maxMents: 99, reward: 15 },
+  // Tier 2: Premium Jar (100-249)
+  { level: 6, name: "Excite-Ment", minMents: 100, maxMents: 129, reward: 18 },
+  { level: 7, name: "Engage-Ment Pro", minMents: 130, maxMents: 159, reward: 20 },
+  { level: 8, name: "Fulfill-Ment", minMents: 160, maxMents: 194, reward: 25 },
+  { level: 9, name: "Amaze-Ment", minMents: 195, maxMents: 224, reward: 28 },
+  { level: 10, name: "Empower-Ment", minMents: 225, maxMents: 249, reward: 30 },
+  // Tier 3: Deluxe Jar (250-499)
+  { level: 11, name: "Enlighten-Ment", minMents: 250, maxMents: 299, reward: 35 },
+  { level: 12, name: "Accomplish-Ment", minMents: 300, maxMents: 349, reward: 40 },
+  { level: 13, name: "Astonish-Ment", minMents: 350, maxMents: 399, reward: 45 },
+  { level: 14, name: "Enchant-Ment", minMents: 400, maxMents: 449, reward: 50 },
+  { level: 15, name: "Embodi-Ment", minMents: 450, maxMents: 499, reward: 55 },
+  // Tier 4: Elite Jar (500-999)
+  { level: 16, name: "Enrich-Ment", minMents: 500, maxMents: 599, reward: 60 },
+  { level: 17, name: "Endow-Ment", minMents: 600, maxMents: 699, reward: 70 },
+  { level: 18, name: "Achieve-Ment", minMents: 700, maxMents: 799, reward: 80 },
+  { level: 19, name: "Refine-Ment", minMents: 800, maxMents: 899, reward: 90 },
+  { level: 20, name: "Entertain-Ment", minMents: 900, maxMents: 999, reward: 100 },
+  // Tier 5: Treasure Jar (1000+)
+  { level: 21, name: "Environ-Ment", minMents: 1000, maxMents: 1249, reward: 125 },
+  { level: 22, name: "Establish-Ment", minMents: 1250, maxMents: 1499, reward: 150 },
+  { level: 23, name: "Transcend-Ment", minMents: 1500, maxMents: 1999, reward: 200 },
+  { level: 24, name: "Monumen-Tal", minMents: 2000, maxMents: 2499, reward: 300 },
+  { level: 25, name: "Ment Legend", minMents: 2500, maxMents: Infinity, reward: 500 },
 ];
 
 export const getCurrentLevel = (totalSent: number) => {
