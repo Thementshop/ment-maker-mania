@@ -94,17 +94,15 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
             transition={{ type: 'spring', stiffness: 200 }}
           />
 
-          {/* Mints container - anchored to BOTTOM of jar interior */}
+          {/* Mints container - IN FRONT of jar, clipped to interior */}
           <div
-            className="absolute overflow-hidden z-10"
+            className="absolute overflow-hidden z-30"
             style={{
-              // Strictly constrained to jar interior so mints don't appear beside/below
-              bottom: '74px',
+              bottom: '68px',
               left: '50%',
               transform: 'translateX(-50%)',
-              width: '58px',
-              height: '56px',
-              clipPath: 'inset(0 round 12px 12px 8px 8px)',
+              width: '72px',
+              height: '80px',
             }}
           >
             {/* Mints stack from bottom up naturally */}
