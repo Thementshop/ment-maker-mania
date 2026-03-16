@@ -32,7 +32,7 @@ const LevelUpModal = ({ isOpen, onClose, totalSent, bonusMints }: LevelUpModalPr
           angle: 120,
           spread: 55,
           origin: { x: 1 },
-          colors: ['#2ECC71', '#4FC3F7', '#B39DDB'],
+          colors: ['#58fc59', '#4FC3F7', '#B39DDB'],
         });
         
         if (Date.now() < end) {
