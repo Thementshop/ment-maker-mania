@@ -19,7 +19,7 @@ const LevelBadge = ({
         </span>
       </motion.div>
       
-      {currentLevel.level < 15 && <div className="w-full max-w-xs">
+      {currentLevel.level < 25 && <div className="w-full max-w-xs">
           <div className="mb-1 flex justify-between text-xs text-muted-foreground">
             <span>Progress</span>
             <span>{mentsToNext} to Level {currentLevel.level + 1}</span>
