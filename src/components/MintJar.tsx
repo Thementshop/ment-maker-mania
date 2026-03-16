@@ -70,19 +70,34 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
       </h2>
 
       {/* Jar Display */}
-      <div className="relative w-56 h-64 flex items-center justify-center">
-        {/* Layer 1: Mints (behind jar glass) */}
-        <div className="absolute inset-0 z-10 flex items-center justify-center">
-          <div className="relative" style={{ width: '200px', height: '240px' }}>
-            <div
-              className="absolute overflow-hidden"
-              style={{
-                bottom: '70px',
-                left: '32px',
-                width: '136px',
-                height: '130px',
-              }}
-            >
+      <div className="relative w-full h-64 flex items-center justify-center">
+        {/* Single container for both jar and mints */}
+        <div className="relative" style={{ width: '224px', height: '240px' }}>
+          {/* Jar image - reference point */}
+          <motion.img
+            key={currentTier.tier}
+            src={currentTier.image}
+            alt={`${currentTier.name} Jar`}
+            className="absolute inset-0 w-full h-full object-contain z-20 pointer-events-none"
+            style={{ filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.3))' }}
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: 'spring', stiffness: 200 }}
+          />
+
+          {/* Mints - positioned relative to jar center */}
+          <div
+            className="absolute overflow-hidden z-10"
+            style={{
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              marginTop: '20px',
+              width: '130px',
+              height: '140px',
+            }}
+          >
+            <div className="relative w-full h-full">
               {Array.from({ length: mintsToShow }).map((_, i) => {
                 const { left, bottom, rotation, scale, delay } = getMintPosition(i);
                 return (
@@ -114,21 +129,7 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
           </div>
         </div>
 
-        {/* Layer 2: Jar image (on top - mints show through glass) */}
-        <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
-          <motion.img
-            key={currentTier.tier}
-            src={currentTier.image}
-            alt={`${currentTier.name} Jar`}
-            className="w-56 h-auto object-contain"
-            style={{ filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.3))' }}
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: 'spring', stiffness: 200 }}
-          />
-        </div>
-
-        {/* Layer 3: Tier badge (front-most) */}
+        {/* Tier badge */}
         <motion.div
           className="absolute top-2 right-2 z-30 bg-gradient-to-br from-amber-400 to-amber-600 text-white px-2.5 py-0.5 rounded-full text-xs font-bold shadow-lg"
           initial={{ scale: 0 }}
