@@ -56,9 +56,9 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
   // So interior box: left=78, bottom=73, width=52, height=59
   
   const JAR_INTERIOR = {
-    left: 78,      // px from left edge of 224px container
+    left: 82,      // shifted 4px right to center on glass body
     bottom: 73,    // px from bottom of 240px container
-    width: 50,     // interior width
+    width: 54,     // slightly wider spread across jar base
     height: 55,    // interior height (glass body only)
   };
   const MINT_SIZE = 8;
