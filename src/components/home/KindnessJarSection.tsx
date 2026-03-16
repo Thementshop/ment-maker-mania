@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import SimplifiedJar from '@/components/SimplifiedJar';
+import MintJar from '@/components/MintJar';
 
 interface KindnessJarSectionProps {
   jarCount: number;
@@ -14,7 +14,7 @@ const KindnessJarSection = ({ jarCount, totalSent }: KindnessJarSectionProps) =>
       animate={{ opacity: 1, scale: 1 }}
       transition={{ delay: 0.2, type: 'spring' }}
     >
-      <SimplifiedJar jarCount={jarCount} totalSent={totalSent} />
+      <MintJar jarCount={jarCount} totalSent={totalSent} />
     </motion.div>
   );
 };

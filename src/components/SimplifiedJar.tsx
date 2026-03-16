@@ -45,7 +45,7 @@ const SimplifiedJar = ({ jarCount, totalSent }: SimplifiedJarProps) => {
         </div>
 
         {/* Progress Bar */}
-        {currentLevel.level < 15 && (
+        {currentLevel.level < 25 && (
           <div className="space-y-1">
             <Progress value={progress} className="h-3" />
             <p className="text-xs text-muted-foreground text-center">
@@ -54,7 +54,7 @@ const SimplifiedJar = ({ jarCount, totalSent }: SimplifiedJarProps) => {
           </div>
         )}
 
-        {currentLevel.level === 15 && (
+        {currentLevel.level === 25 && (
           <p className="text-xs text-primary text-center font-semibold">
             🎉 Max Level Reached!
           </p>
