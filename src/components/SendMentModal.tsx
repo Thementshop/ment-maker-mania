@@ -60,7 +60,7 @@ const SendMentModal = ({ isOpen, onClose, onSend }: SendMentModalProps) => {
         particleCount: 100,
         spread: 70,
         origin: { y: 0.6 },
-        colors: ['#2ECC71', '#FF6B9D', '#4FC3F7', '#FFD740', '#B39DDB'],
+        colors: ['#58fc59', '#FF6B9D', '#4FC3F7', '#FFD740', '#B39DDB'],
       });
       
       setStep('success');

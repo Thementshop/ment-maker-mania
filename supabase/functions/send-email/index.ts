@@ -92,7 +92,7 @@ const footer = `
   </p>
   <p style="color:#9ca3af;font-size:12px;margin:0;">
     Ment Shop – Spreading Kindness, One Compliment at a Time<br>
-    Questions? Email <a href="mailto:info@mentshop.com" style="color:#22c55e;">info@mentshop.com</a>
+    Questions? Email <a href="mailto:info@mentshop.com" style="color:#58fc59;">info@mentshop.com</a>
   </p>
 </td></tr>`;
 
@@ -102,7 +102,7 @@ function buildChainReceivedEmail(data: TemplateData): string {
 <body style="margin:0;padding:0;background-color:#f0fdf4;font-family:Arial,Helvetica,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f0fdf4;padding:40px 20px;"><tr><td align="center">
 <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.1);">
-  <tr><td style="background-color:#22c55e;padding:30px;text-align:center;">
+  <tr><td style="background-color:#58fc59;padding:30px;text-align:center;">
     <h1 style="color:#ffffff;margin:0;font-size:28px;">💚 Ment Shop</h1>
     <p style="color:#dcfce7;margin:8px 0 0;font-size:14px;">Spreading Kindness, One Compliment at a Time</p>
   </td></tr>
@@ -118,7 +118,7 @@ function buildChainReceivedEmail(data: TemplateData): string {
       </div>
     </div>
     <div style="text-align:center;margin:0 0 24px;">
-      <a href="${escapeHtml(data.chain_url)}" style="display:inline-block;background-color:#22c55e;color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:16px;font-weight:bold;">
+      <a href="${escapeHtml(data.chain_url)}" style="display:inline-block;background-color:#58fc59;color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:16px;font-weight:bold;">
         Reveal Your Compliment →
       </a>
     </div>
@@ -204,7 +204,7 @@ function build1hrWarningBatchedEmail(data: TemplateData): string {
       ${otherChainsHtml}
     </div>
     <div style="text-align:center;margin:0 0 20px;">
-      <a href="${escapeHtml(appUrl)}" style="display:inline-block;background-color:#22c55e;color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:16px;font-weight:bold;">
+      <a href="${escapeHtml(appUrl)}" style="display:inline-block;background-color:#58fc59;color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:16px;font-weight:bold;">
         View All Your Chains →
       </a>
     </div>
@@ -240,7 +240,7 @@ function buildMilestoneEmail(data: TemplateData): string {
       <a href="${escapeHtml(data.chain_url)}" style="display:inline-block;background-color:#8b5cf6;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:bold;margin:0 4px;">
         View Chain History →
       </a>
-      ${data.share_url ? `<a href="${escapeHtml(data.share_url)}" style="display:inline-block;background-color:#22c55e;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:bold;margin:0 4px;">
+      ${data.share_url ? `<a href="${escapeHtml(data.share_url)}" style="display:inline-block;background-color:#58fc59;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:bold;margin:0 4px;">
         Share This Achievement →
       </a>` : ''}
     </div>
@@ -269,7 +269,7 @@ function buildCompletedEmail(data: TemplateData): string {
 <body style="margin:0;padding:0;background-color:#f0fdf4;font-family:Arial,Helvetica,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f0fdf4;padding:40px 20px;"><tr><td align="center">
 <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.1);">
-  <tr><td style="background-color:#22c55e;padding:30px;text-align:center;">
+  <tr><td style="background-color:#58fc59;padding:30px;text-align:center;">
     <p style="font-size:48px;margin:0;">💚</p>
     <h1 style="color:#ffffff;margin:8px 0 0;font-size:28px;">Chain Complete!</h1>
   </td></tr>
@@ -292,7 +292,7 @@ function buildCompletedEmail(data: TemplateData): string {
       </p>
     </div>
     <div style="text-align:center;">
-      <a href="${escapeHtml(appUrl)}" style="display:inline-block;background-color:#22c55e;color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:16px;font-weight:bold;">
+      <a href="${escapeHtml(appUrl)}" style="display:inline-block;background-color:#58fc59;color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:16px;font-weight:bold;">
         Start Another Chain →
       </a>
     </div>
@@ -310,7 +310,7 @@ function buildMentReceivedEmail(data: TemplateData): string {
 <body style="margin:0;padding:0;background-color:#f0fdf4;font-family:Arial,Helvetica,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f0fdf4;padding:40px 20px;"><tr><td align="center">
 <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.1);">
-  <tr><td style="background-color:#22c55e;padding:30px;text-align:center;">
+  <tr><td style="background-color:#58fc59;padding:30px;text-align:center;">
     <h1 style="color:#ffffff;margin:0;font-size:28px;">💚 Ment Shop</h1>
     <p style="color:#dcfce7;margin:8px 0 0;font-size:14px;">Spreading Kindness, One Compliment at a Time</p>
   </td></tr>
@@ -326,7 +326,7 @@ function buildMentReceivedEmail(data: TemplateData): string {
       </div>
     </div>
     <div style="text-align:center;margin:0 0 24px;">
-      <a href="${escapeHtml(appUrl)}" style="display:inline-block;background-color:#22c55e;color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:16px;font-weight:bold;">
+      <a href="${escapeHtml(appUrl)}" style="display:inline-block;background-color:#58fc59;color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:16px;font-weight:bold;">
         See Your Compliment →
       </a>
     </div>
@@ -335,7 +335,7 @@ function buildMentReceivedEmail(data: TemplateData): string {
     </div>
     <div style="border-top:1px solid #e5e7eb;padding-top:20px;text-align:center;">
       <p style="color:#6b7280;font-size:14px;font-weight:bold;margin:0 0 8px;">Want to spread the kindness?</p>
-      <a href="${escapeHtml(appUrl)}" style="color:#22c55e;font-size:14px;font-weight:bold;text-decoration:none;">
+      <a href="${escapeHtml(appUrl)}" style="color:#58fc59;font-size:14px;font-weight:bold;text-decoration:none;">
         Send a compliment or start a chain →
       </a>
     </div>

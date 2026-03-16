@@ -134,7 +134,7 @@ const ChainPassModal = ({ isOpen, onClose, chain, receivedCompliment }: ChainPas
           particleCount: 100,
           spread: 70,
           origin: { y: 0.6 },
-          colors: ['#2ECC71', '#27AE60', '#1ABC9C', '#16A085']
+          colors: ['#58fc59', '#3ed83f', '#1ABC9C', '#16A085']
         });
 
         // Auto close after success

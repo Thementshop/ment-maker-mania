@@ -6,11 +6,11 @@
 
 @layer base {
   :root {
-    /* Core Candy Colors */
-    --mint: 145 63% 49%;
-    --mint-light: 145 63% 65%;
-    --mint-dark: 145 63% 35%;
-    --mint-glow: 145 63% 49%;
+    /* Core Candy Colors - Screamin' Green */
+    --mint: 120 96% 67%;
+    --mint-light: 120 96% 78%;
+    --mint-dark: 120 96% 50%;
+    --mint-glow: 120 96% 67%;
     
     /* Candy Accent Colors */
     --candy-pink: 340 100% 71%;
@@ -29,7 +29,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 145 30% 15%;
     
-    --primary: 145 63% 49%;
+    --primary: 120 96% 67%;
     --primary-foreground: 0 0% 100%;
     
     --secondary: 145 30% 95%;
@@ -46,7 +46,7 @@
     
     --border: 145 20% 88%;
     --input: 145 20% 88%;
-    --ring: 145 63% 49%;
+    --ring: 120 96% 67%;
     
     --radius: 1rem;
     
@@ -55,7 +55,7 @@
     --glass-border: 0 0% 100%;
     
     /* Shadows */
-    --shadow-mint: 0 8px 32px -8px hsl(145 63% 49% / 0.4);
+    --shadow-mint: 0 8px 32px -8px hsl(120 96% 67% / 0.4);
     --shadow-candy: 0 4px 20px -4px hsl(340 100% 71% / 0.3);
     
     /* Sidebar (keeping defaults) */
@@ -79,7 +79,7 @@
     --popover: 145 20% 12%;
     --popover-foreground: 145 20% 95%;
     
-    --primary: 145 63% 49%;
+    --primary: 120 96% 67%;
     --primary-foreground: 0 0% 100%;
     
     --secondary: 145 20% 18%;
@@ -96,7 +96,7 @@
     
     --border: 145 15% 25%;
     --input: 145 15% 25%;
-    --ring: 145 63% 49%;
+    --ring: 120 96% 67%;
     
     --glass-bg: 145 20% 15%;
     --glass-border: 145 20% 30%;
@@ -250,10 +250,10 @@
 /* Legendary tier glow animation */
 @keyframes legendary-glow {
   0%, 100% {
-    filter: drop-shadow(0 0 15px rgba(46, 204, 113, 0.6));
+    filter: drop-shadow(0 0 15px rgba(88, 252, 89, 0.6));
   }
   50% {
-    filter: drop-shadow(0 0 30px rgba(46, 204, 113, 0.9));
+    filter: drop-shadow(0 0 30px rgba(88, 252, 89, 0.9));
   }
 }
 
@@ -313,7 +313,7 @@
   position: absolute;
   inset: -3px;
   border-radius: inherit;
-  background: linear-gradient(90deg, #FFD700, #FF6347, #A855F7, #3B82F6, #2ECC71, #FFD700);
+  background: linear-gradient(90deg, #FFD700, #FF6347, #A855F7, #3B82F6, #58fc59, #FFD700);
   background-size: 300% 100%;
   z-index: -1;
   animation: chain-rainbow-border 4s linear infinite;
