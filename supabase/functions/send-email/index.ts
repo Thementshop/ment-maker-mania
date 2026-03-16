@@ -88,7 +88,7 @@ function getSubject(emailType: string, data: TemplateData): string {
 const footer = `
 <tr><td style="background-color:#f9fafb;padding:20px 30px;text-align:center;">
   <p style="color:#6b7280;font-size:12px;line-height:1.5;margin:0 0 8px;">
-    💡 Tip: Add hello@mentshop.com to your contacts so our emails always reach your inbox!
+    💡 Tip: Add info@mentshop.com to your contacts so our emails always reach your inbox!
   </p>
   <p style="color:#9ca3af;font-size:12px;margin:0;">
     Ment Shop – Spreading Kindness, One Compliment at a Time<br>
@@ -445,7 +445,7 @@ Deno.serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: 'Ment Shop <hello@mentshop.com>',
+          from: 'Ment Shop <info@mentshop.com>',
           to: recipient_email,
           subject,
           html,
