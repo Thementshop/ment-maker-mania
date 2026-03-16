@@ -103,11 +103,11 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
             className="absolute overflow-hidden z-10"
             style={{
               // Positioned inside the jar's glass body
-              bottom: '55px',       // Above jar base, inside glass
+              bottom: '60px',       // Sweet spot inside glass body
               left: '50%',
               transform: 'translateX(-50%)',
-              width: '110px',       // Narrower to stay within glass walls
-              height: '120px',      // Constrained to jar interior
+              width: '105px',       // Fits within glass walls
+              height: '120px',      // Fills jar interior
             }}
           >
             {/* Mints stack from bottom up naturally */}
