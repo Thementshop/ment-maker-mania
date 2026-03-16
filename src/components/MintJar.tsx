@@ -72,26 +72,27 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
       </h2>
 
       {/* Jar Display */}
-      <div className="relative w-48 h-56 flex items-center justify-center">
-        {/* Mints layer (behind jar) */}
-        <div className="absolute inset-0 overflow-hidden" style={{ zIndex: 1 }}>
-          <div className="absolute" style={{ left: '18%', right: '18%', top: '20%', bottom: '8%' }}>
+      <div className="relative w-56 h-64 flex items-center justify-center">
+        {/* Layer 1: Mints (behind jar glass) */}
+        <div className="absolute inset-0 z-10 flex items-end justify-center pb-8">
+          <div className="relative w-40 h-40 overflow-hidden">
             {mintPositions.map((pos, i) => (
               <motion.div
                 key={i}
                 className="absolute rounded-full"
                 style={{
-                  width: '12px',
-                  height: '12px',
-                  left: `${pos.x}%`,
-                  top: `${pos.y}%`,
+                  width: '14px',
+                  height: '14px',
+                  bottom: `${Math.floor(i / 7) * 12}px`,
+                  left: `${(i % 7) * 18 + (Math.floor(i / 7) % 2) * 9}px`,
                   background:
                     'conic-gradient(from 0deg, hsl(var(--primary)) 0deg 30deg, #ffffff 30deg 60deg, hsl(var(--primary)) 60deg 90deg, #ffffff 90deg 120deg, hsl(var(--primary)) 120deg 150deg, #ffffff 150deg 180deg, hsl(var(--primary)) 180deg 210deg, #ffffff 210deg 240deg, hsl(var(--primary)) 240deg 270deg, #ffffff 270deg 300deg, hsl(var(--primary)) 300deg 330deg, #ffffff 330deg 360deg)',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
-                  transform: `translate(-50%, -50%) rotate(${pos.rotation}deg)`,
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                  transform: `rotate(${i * 23}deg)`,
+                  opacity: 0.9,
                 }}
                 initial={{ y: -40, opacity: 0, scale: 0.3 }}
-                animate={{ y: 0, opacity: 1, scale: 1 }}
+                animate={{ y: 0, opacity: 0.9, scale: 1 }}
                 transition={{
                   type: 'spring',
                   stiffness: 200,
@@ -103,22 +104,23 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
           </div>
         </div>
 
-        {/* Jar image layer */}
-        <motion.img
-          key={currentTier.tier}
-          src={currentTier.image}
-          alt={`${currentTier.name} Jar`}
-          className="relative w-44 h-auto object-contain drop-shadow-2xl"
-          style={{ zIndex: 2 }}
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: 'spring', stiffness: 200 }}
-        />
+        {/* Layer 2: Jar image (on top - mints show through glass) */}
+        <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
+          <motion.img
+            key={currentTier.tier}
+            src={currentTier.image}
+            alt={`${currentTier.name} Jar`}
+            className="w-56 h-auto object-contain"
+            style={{ filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.3))' }}
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: 'spring', stiffness: 200 }}
+          />
+        </div>
 
-        {/* Tier badge */}
+        {/* Layer 3: Tier badge (front-most) */}
         <motion.div
-          className="absolute top-0 right-0 bg-gradient-to-br from-amber-400 to-amber-600 text-white px-2.5 py-0.5 rounded-full text-xs font-bold shadow-lg"
-          style={{ zIndex: 3 }}
+          className="absolute top-2 right-2 z-30 bg-gradient-to-br from-amber-400 to-amber-600 text-white px-2.5 py-0.5 rounded-full text-xs font-bold shadow-lg"
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ type: 'spring', delay: 0.3 }}
