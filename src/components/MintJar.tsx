@@ -174,7 +174,7 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
               </p>
               <img
                 src={currentTier.image}
-                className="w-32 h-auto mx-auto mt-4 drop-shadow-2xl"
+                className="w-32 h-auto mx-auto mt-4"
                 alt={`${currentTier.name} Jar`}
               />
               <motion.button
