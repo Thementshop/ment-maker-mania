@@ -67,6 +67,20 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
       <div className="relative w-full h-64 flex items-center justify-center rounded-2xl bg-white">
         <div className="relative w-56 h-64 rounded-2xl">
           <div className="absolute inset-0 rounded-2xl bg-white" aria-hidden="true" />
+
+          {/* White fill visible through glass */}
+          <div
+            className="absolute z-0 rounded-lg bg-white"
+            style={{
+              left: '50%',
+              top: '50%',
+              transform: 'translate(-50%, -50%)',
+              width: '60%',
+              height: '65%',
+            }}
+            aria-hidden="true"
+          />
+
           <motion.img
             key={jarImage}
             src={jarImage}
