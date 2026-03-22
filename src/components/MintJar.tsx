@@ -65,7 +65,7 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
 
       {/* Jar Display */}
       <div className="relative w-full h-64 flex items-center justify-center">
-        <div className="relative" style={{ width: '224px', height: '260px' }}>
+        <div className="relative bg-white rounded-2xl" style={{ width: '224px', height: '260px' }}>
           <motion.img
             key={jarImage}
             src={jarImage}
