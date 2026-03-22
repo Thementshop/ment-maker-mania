@@ -45,19 +45,20 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
 
   const getMintPosition = (index: number) => {
     const seed = index;
-    const mintsPerLayer = 7;
-    const layerHeight = 16;
+    const mintsPerLayer = 6;
+    const layerHeight = 14;
     const layer = Math.floor(index / mintsPerLayer);
 
-    const randomX = ((seed * 37) % 100);
+    // Keep X within 5-85% to prevent overflow at edges
+    const randomX = 5 + ((seed * 37) % 80);
     const baseY = layer * layerHeight;
-    const randomYOffset = ((seed * 23) % 8) - 4;
+    const randomYOffset = ((seed * 23) % 6) - 3;
 
     return {
       left: `${randomX}%`,
       bottom: `${baseY + randomYOffset}px`,
-      rotation: (seed * 47) % 360,
-      scale: 0.85 + ((seed * 13) % 30) / 100,
+      rotation: ((seed * 47) % 30) - 15,
+      scale: 0.85 + ((seed * 13) % 20) / 100,
     };
   };
 
@@ -80,11 +81,10 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
           <div
             className="absolute z-0"
             style={{
-              bottom: '80px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              width: '140px',
-              height: '180px',
+              bottom: '73px',
+              left: '82px',
+              width: '62px',
+              height: '120px',
               overflow: 'hidden',
             }}
           >
@@ -97,8 +97,8 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
                   alt="mint"
                   className="absolute transition-all duration-500 ease-out"
                   style={{
-                    width: '22px',
-                    height: '22px',
+                    width: '14px',
+                    height: '14px',
                     left: pos.left,
                     bottom: pos.bottom,
                     transform: `rotate(${pos.rotation}deg) scale(${pos.scale})`,
