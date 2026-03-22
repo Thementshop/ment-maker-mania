@@ -113,8 +113,8 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
                   alt="mint"
                   className="absolute transition-all duration-500 ease-out"
                   style={{
-                    width: '14px',
-                    height: '14px',
+                    width: `${tierConfig.mintSize}px`,
+                    height: `${tierConfig.mintSize}px`,
                     left: pos.left,
                     bottom: pos.bottom,
                     transform: `rotate(${pos.rotation}deg) scale(${pos.scale})`,
