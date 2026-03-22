@@ -61,15 +61,77 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
     };
   };
 
-        {/* Tier badge */}
-        <motion.div
-          className="absolute top-2 right-2 z-30 bg-gradient-to-br from-amber-400 to-amber-600 text-white px-2.5 py-0.5 rounded-full text-xs font-bold shadow-lg"
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ type: 'spring', delay: 0.3 }}
-        >
-          {currentTier.name}
-        </motion.div>
+  return (
+    <div className="flex flex-col items-center gap-3 w-full">
+      {/* Title */}
+      <h2 className="font-display text-xl font-bold text-foreground flex items-center gap-2">
+        <Sparkles className="h-5 w-5 text-primary" />
+        Kindness Jar
+        <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold">
+          Level {currentLevel.level}
+        </span>
+      </h2>
+
+      {/* Jar Display */}
+      <div className="relative w-full h-64 flex items-center justify-center">
+        <div className="relative" style={{ width: '224px', height: '260px' }}>
+
+          {/* MINT PILE - Behind jar glass */}
+          <div
+            className="absolute z-0"
+            style={{
+              bottom: '50px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: '140px',
+              height: '180px',
+              overflow: 'hidden',
+            }}
+          >
+            {Array.from({ length: mintCount }).map((_, i) => {
+              const pos = getMintPosition(i);
+              return (
+                <img
+                  key={i}
+                  src="/images/mint-candy.png"
+                  alt="mint"
+                  className="absolute transition-all duration-500 ease-out"
+                  style={{
+                    width: '22px',
+                    height: '22px',
+                    left: pos.left,
+                    bottom: pos.bottom,
+                    transform: `rotate(${pos.rotation}deg) scale(${pos.scale})`,
+                    opacity: 0.95,
+                    filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.2))',
+                  }}
+                />
+              );
+            })}
+          </div>
+
+          {/* JAR IMAGE - On top */}
+          <motion.img
+            key={currentTier.tier}
+            src={currentTier.image}
+            alt={`${currentTier.name} Jar`}
+            className="absolute inset-0 w-full h-full object-contain z-10 pointer-events-none"
+            style={{ filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.3))' }}
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: 'spring', stiffness: 200 }}
+          />
+
+          {/* Tier badge */}
+          <motion.div
+            className="absolute top-2 right-2 z-20 bg-gradient-to-br from-amber-400 to-amber-600 text-white px-2.5 py-0.5 rounded-full text-xs font-bold shadow-lg"
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: 'spring', delay: 0.3 }}
+          >
+            {currentTier.name}
+          </motion.div>
+        </div>
       </div>
 
       {/* Mint count */}
