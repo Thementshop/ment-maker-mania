@@ -64,28 +64,16 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
       </h2>
 
       {/* Jar Display */}
-      <div className="relative w-full h-64 flex items-center justify-center rounded-2xl bg-white">
-        <div className="relative w-56 h-64 rounded-2xl">
-          <div className="absolute inset-0 rounded-2xl bg-white" aria-hidden="true" />
-
-          {/* White fill visible through glass */}
-          <div
-            className="absolute z-0 rounded-lg bg-white"
-            style={{
-              left: '50%',
-              top: '50%',
-              transform: 'translate(-50%, -50%)',
-              width: '60%',
-              height: '65%',
-            }}
-            aria-hidden="true"
-          />
-
+      <div className="relative w-full h-64 flex items-center justify-center rounded-2xl" style={{ backgroundColor: '#ffffff' }}>
+        <div className="relative w-56 h-64 rounded-2xl" style={{ backgroundColor: '#ffffff' }}>
+          {/* White fill behind glass so mints don't show checkerboard */}
+          <div aria-hidden="true" style={{ position: 'absolute', left: '20%', top: '18%', width: '60%', height: '62%', backgroundColor: '#ffffff', borderRadius: '12px', zIndex: 1 }} />
           <motion.img
             key={jarImage}
             src={jarImage}
             alt={`Jar with ${jarCount} mints`}
-            className="absolute inset-0 z-10 w-full h-full object-contain"
+            className="absolute inset-0 w-full h-full object-contain"
+            style={{ zIndex: 2 }}
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: 'spring', stiffness: 200 }}
