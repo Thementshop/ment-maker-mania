@@ -47,11 +47,11 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
     mintsPerLayer: number; layerHeight: number;
     xRange: { min: number; max: number };
   }> = {
-    1: { bottom: '46px', width: '102px', height: '132px', clipPath: 'ellipse(45% 48% at 50% 54%)', mintSize: 14, mintsPerLayer: 6, layerHeight: 14, xRange: { min: 5, max: 85 } },
-    2: { bottom: '50px', width: '108px', height: '136px', clipPath: 'ellipse(46% 47% at 50% 53%)', mintSize: 14, mintsPerLayer: 6, layerHeight: 14, xRange: { min: 5, max: 85 } },
-    3: { bottom: '52px', width: '112px', height: '140px', clipPath: 'ellipse(46% 48% at 50% 52%)', mintSize: 15, mintsPerLayer: 7, layerHeight: 13, xRange: { min: 4, max: 86 } },
-    4: { bottom: '54px', width: '116px', height: '144px', clipPath: 'ellipse(47% 48% at 50% 52%)', mintSize: 15, mintsPerLayer: 7, layerHeight: 13, xRange: { min: 4, max: 86 } },
-    5: { bottom: '56px', width: '120px', height: '148px', clipPath: 'ellipse(47% 49% at 50% 51%)', mintSize: 16, mintsPerLayer: 7, layerHeight: 13, xRange: { min: 3, max: 87 } },
+    1: { bottom: '130px', width: '140px', height: '150px', clipPath: 'ellipse(45% 48% at 50% 54%)', mintSize: 24, mintsPerLayer: 6, layerHeight: 14, xRange: { min: 5, max: 85 } },
+    2: { bottom: '130px', width: '135px', height: '145px', clipPath: 'ellipse(46% 47% at 50% 53%)', mintSize: 24, mintsPerLayer: 6, layerHeight: 14, xRange: { min: 5, max: 85 } },
+    3: { bottom: '140px', width: '130px', height: '135px', clipPath: 'ellipse(46% 48% at 50% 52%)', mintSize: 24, mintsPerLayer: 7, layerHeight: 13, xRange: { min: 4, max: 86 } },
+    4: { bottom: '150px', width: '125px', height: '130px', clipPath: 'ellipse(47% 48% at 50% 52%)', mintSize: 24, mintsPerLayer: 7, layerHeight: 13, xRange: { min: 4, max: 86 } },
+    5: { bottom: '160px', width: '120px', height: '125px', clipPath: 'ellipse(47% 49% at 50% 51%)', mintSize: 24, mintsPerLayer: 7, layerHeight: 13, xRange: { min: 3, max: 87 } },
   };
 
   const tierConfig = TIER_MINT_CONFIGS[currentTier.tier] || TIER_MINT_CONFIGS[1];
