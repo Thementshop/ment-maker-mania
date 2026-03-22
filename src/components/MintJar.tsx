@@ -40,18 +40,32 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
     previousTierRef.current = newTier;
   }, [jarCount]);
 
+  // Tier-specific mint container configs
+  const TIER_MINT_CONFIGS: Record<number, {
+    bottom: string; width: string; height: string;
+    clipPath: string; mintSize: number;
+    mintsPerLayer: number; layerHeight: number;
+    xRange: { min: number; max: number };
+  }> = {
+    1: { bottom: '46px', width: '102px', height: '132px', clipPath: 'ellipse(45% 48% at 50% 54%)', mintSize: 14, mintsPerLayer: 6, layerHeight: 14, xRange: { min: 5, max: 85 } },
+    2: { bottom: '50px', width: '108px', height: '136px', clipPath: 'ellipse(46% 47% at 50% 53%)', mintSize: 14, mintsPerLayer: 6, layerHeight: 14, xRange: { min: 5, max: 85 } },
+    3: { bottom: '52px', width: '112px', height: '140px', clipPath: 'ellipse(46% 48% at 50% 52%)', mintSize: 15, mintsPerLayer: 7, layerHeight: 13, xRange: { min: 4, max: 86 } },
+    4: { bottom: '54px', width: '116px', height: '144px', clipPath: 'ellipse(47% 48% at 50% 52%)', mintSize: 15, mintsPerLayer: 7, layerHeight: 13, xRange: { min: 4, max: 86 } },
+    5: { bottom: '56px', width: '120px', height: '148px', clipPath: 'ellipse(47% 49% at 50% 51%)', mintSize: 16, mintsPerLayer: 7, layerHeight: 13, xRange: { min: 3, max: 87 } },
+  };
+
+  const tierConfig = TIER_MINT_CONFIGS[currentTier.tier] || TIER_MINT_CONFIGS[1];
+
   // Calculate how many mints to show (cap at 60 for performance)
   const mintCount = Math.min(jarCount, 60);
 
   const getMintPosition = (index: number) => {
     const seed = index;
-    const mintsPerLayer = 6;
-    const layerHeight = 14;
-    const layer = Math.floor(index / mintsPerLayer);
+    const layer = Math.floor(index / tierConfig.mintsPerLayer);
 
-    // Keep X within 5-85% to prevent overflow at edges
-    const randomX = 5 + ((seed * 37) % 80);
-    const baseY = layer * layerHeight;
+    const xSpread = tierConfig.xRange.max - tierConfig.xRange.min;
+    const randomX = tierConfig.xRange.min + ((seed * 37) % xSpread);
+    const baseY = layer * tierConfig.layerHeight;
     const randomYOffset = ((seed * 23) % 6) - 3;
 
     return {
@@ -81,13 +95,13 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
           <div
             className="absolute z-0"
             style={{
-              bottom: '46px',
+              bottom: tierConfig.bottom,
               left: '50%',
               transform: 'translateX(-50%)',
-              width: '102px',
-              height: '132px',
+              width: tierConfig.width,
+              height: tierConfig.height,
               overflow: 'hidden',
-              clipPath: 'ellipse(45% 48% at 50% 54%)',
+              clipPath: tierConfig.clipPath,
             }}
           >
             {Array.from({ length: mintCount }).map((_, i) => {
@@ -99,8 +113,8 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
                   alt="mint"
                   className="absolute transition-all duration-500 ease-out"
                   style={{
-                    width: '14px',
-                    height: '14px',
+                    width: `${tierConfig.mintSize}px`,
+                    height: `${tierConfig.mintSize}px`,
                     left: pos.left,
                     bottom: pos.bottom,
                     transform: `rotate(${pos.rotation}deg) scale(${pos.scale})`,
