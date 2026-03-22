@@ -71,7 +71,7 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
             src={jarImage}
             alt={`Jar with ${jarCount} mints`}
             className="absolute inset-0 w-full h-full object-contain"
-            style={{ filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.3))' }}
+            style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.15))' }}
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: 'spring', stiffness: 200 }}
