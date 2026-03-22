@@ -11,6 +11,18 @@ interface MintJarProps {
   totalSent: number;
 }
 
+const getJarWithMintsImage = (count: number, emptyImage: string): string => {
+  if (count === 0) return emptyImage;
+  if (count === 1) return '/images/jar-1-mint.png';
+  if (count === 2) return '/images/jar-2-mints.png';
+  if (count === 3) return '/images/jar-3-mints.png';
+  if (count === 4) return '/images/jar-4-mints.png';
+  if (count < 25) return '/images/jar-5-mints.png';
+  if (count < 50) return '/images/jar-25-mints.png';
+  if (count < 100) return '/images/jar-50-mints.png';
+  return '/images/jar-100-mints.png';
+};
+
 const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
   const currentTier = getCurrentTier(jarCount);
   const nextTier = getNextTier(jarCount);
@@ -27,7 +39,6 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
     const newTier = getCurrentTier(jarCount).tier;
     if (newTier > previousTierRef.current) {
       setShowTierUp(true);
-      // Confetti
       const end = Date.now() + 3000;
       const frame = () => {
         confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#58fc59', '#FFD740', '#FF6B9D'] });
@@ -40,45 +51,10 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
     previousTierRef.current = newTier;
   }, [jarCount]);
 
-  // Tier-specific mint container configs
-  const TIER_MINT_CONFIGS: Record<number, {
-    bottom: string; width: string; height: string;
-    clipPath: string; mintSize: number;
-    mintsPerLayer: number; layerHeight: number;
-    xRange: { min: number; max: number };
-  }> = {
-    1: { bottom: '130px', width: '140px', height: '150px', clipPath: 'ellipse(45% 48% at 50% 54%)', mintSize: 24, mintsPerLayer: 6, layerHeight: 14, xRange: { min: 5, max: 85 } },
-    2: { bottom: '130px', width: '135px', height: '145px', clipPath: 'ellipse(46% 47% at 50% 53%)', mintSize: 24, mintsPerLayer: 6, layerHeight: 14, xRange: { min: 5, max: 85 } },
-    3: { bottom: '140px', width: '130px', height: '135px', clipPath: 'ellipse(46% 48% at 50% 52%)', mintSize: 24, mintsPerLayer: 7, layerHeight: 13, xRange: { min: 4, max: 86 } },
-    4: { bottom: '150px', width: '125px', height: '130px', clipPath: 'ellipse(47% 48% at 50% 52%)', mintSize: 24, mintsPerLayer: 7, layerHeight: 13, xRange: { min: 4, max: 86 } },
-    5: { bottom: '160px', width: '120px', height: '125px', clipPath: 'ellipse(47% 49% at 50% 51%)', mintSize: 24, mintsPerLayer: 7, layerHeight: 13, xRange: { min: 3, max: 87 } },
-  };
-
-  const tierConfig = TIER_MINT_CONFIGS[currentTier.tier] || TIER_MINT_CONFIGS[1];
-
-  // Calculate how many mints to show (cap at 60 for performance)
-  const mintCount = Math.min(jarCount, 60);
-
-  const getMintPosition = (index: number) => {
-    const seed = index;
-    const layer = Math.floor(index / tierConfig.mintsPerLayer);
-
-    const xSpread = tierConfig.xRange.max - tierConfig.xRange.min;
-    const randomX = tierConfig.xRange.min + ((seed * 37) % xSpread);
-    const baseY = layer * tierConfig.layerHeight;
-    const randomYOffset = ((seed * 23) % 6) - 3;
-
-    return {
-      left: `${randomX}%`,
-      bottom: `${baseY + randomYOffset}px`,
-      rotation: ((seed * 47) % 30) - 15,
-      scale: 0.85 + ((seed * 13) % 20) / 100,
-    };
-  };
+  const jarImage = getJarWithMintsImage(jarCount, currentTier.image);
 
   return (
     <div className="flex flex-col items-center gap-3 w-full">
-      {/* Title */}
       <h2 className="font-display text-xl font-bold text-foreground flex items-center gap-2">
         <Sparkles className="h-5 w-5 text-primary" />
         Kindness Jar
@@ -90,58 +66,17 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
       {/* Jar Display */}
       <div className="relative w-full h-64 flex items-center justify-center">
         <div className="relative" style={{ width: '224px', height: '260px' }}>
-
-          {/* MINT PILE - Behind jar glass */}
-          <div
-            className="absolute z-0"
-            style={{
-              bottom: tierConfig.bottom,
-              left: '50%',
-              transform: 'translateX(-50%)',
-              width: tierConfig.width,
-              height: tierConfig.height,
-              overflow: 'hidden',
-              clipPath: tierConfig.clipPath,
-            }}
-          >
-            {Array.from({ length: mintCount }).map((_, i) => {
-              const pos = getMintPosition(i);
-              return (
-                <img
-                  key={i}
-                  src="/images/mint-candy.png"
-                  alt="mint"
-                  className="absolute transition-all duration-500 ease-out"
-                  style={{
-                    width: `${tierConfig.mintSize}px`,
-                    height: `${tierConfig.mintSize}px`,
-                    left: pos.left,
-                    bottom: pos.bottom,
-                    transform: `rotate(${pos.rotation}deg) scale(${pos.scale})`,
-                    opacity: 0.95,
-                    objectFit: 'cover',
-                    borderRadius: '9999px',
-                    mixBlendMode: 'multiply',
-                    filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.2))',
-                  }}
-                />
-              );
-            })}
-          </div>
-
-          {/* JAR IMAGE - On top */}
           <motion.img
-            key={currentTier.tier}
-            src={currentTier.image}
-            alt={`${currentTier.name} Jar`}
-            className="absolute inset-0 w-full h-full object-contain z-10 pointer-events-none"
+            key={jarImage}
+            src={jarImage}
+            alt={`Jar with ${jarCount} mints`}
+            className="absolute inset-0 w-full h-full object-contain"
             style={{ filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.3))' }}
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: 'spring', stiffness: 200 }}
           />
 
-          {/* Tier badge */}
           <motion.div
             className="absolute top-2 right-2 z-20 bg-gradient-to-br from-amber-400 to-amber-600 text-white px-2.5 py-0.5 rounded-full text-xs font-bold shadow-lg"
             initial={{ scale: 0 }}
@@ -189,7 +124,7 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
         )}
       </div>
 
-      {/* Tier Progress (next jar) */}
+      {/* Tier Progress */}
       {nextTier && (
         <div className="w-full max-w-xs mt-1">
           <div className="flex justify-between text-xs text-muted-foreground mb-1">
