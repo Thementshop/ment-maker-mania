@@ -1,75 +1,37 @@
 
-Goal: add end-to-end observability so we can prove exactly where “hey2” is being dropped (RPC claim call, REST query construction, backend row visibility, or UI filtering).
 
-What I found from current code/state before implementation:
-- `useMentChains` already calls `claim_chains_for_user` on every fetch (not just login), but it times out client-side after 3s.
-- The backend visibility policy for chains already includes email matching (`lower(current_holder) = lower(auth.jwt()->>'email')`).
-- The app currently has multiple pipeline stages where rows can be hidden after fetch (especially UUID-only checks in chain dashboard tab filters).
-- Current logs are not granular enough to correlate one fetch cycle to one claim attempt and one raw response.
+## Recreate Candy Jar Fill - Plan
 
-Implementation plan
+### Problem
+The current implementation uses tiny 8px mints in a narrow 54x55px container with limited rotation, resulting in mints that don't look like naturally settled candy. The z-ordering also causes visibility issues.
 
-1) Instrument backend claim function with structured logs (migration)
-- File: new migration in `supabase/migrations/`
-- Update `public.claim_chains_for_user(claiming_user_id uuid)` to emit detailed server logs:
-  - function entry timestamp + `claiming_user_id`
-  - resolved user email
-  - candidate chain rows found for claiming (ids/names/status/current_holder)
-  - rows updated in `ment_chains` (ids)
-  - rows updated in `chain_links` (count)
-  - total duration ms
-  - explicit error log in exception block
-- Keep return type and behavior compatible (`integer`) so existing frontend code does not break.
-- Purpose: confirm whether claim actually runs, what it sees, and what it changes each call.
+### Approach
+Rewrite the jar display section of `MintJar.tsx` based on the user's provided implementation pattern:
 
-2) Add fetch-cycle correlation logging in `useMentChains`
-- File: `src/hooks/useMentChains.ts`
-- For every fetch run, generate `fetchDebugId` and log:
-  - user identity inputs: `user.id`, `user.email`, `session.user?.email`, JWT email (decoded from access token for comparison)
-  - exact OR filter string and full REST URL being requested
-  - claim RPC lifecycle:
-    - start
-    - result vs timeout vs error
-    - elapsed time
-    - late resolution (if timed out locally but completes later)
-  - raw REST payload before any local mapping/filtering
-  - per-row diagnostics for each returned chain:
-    - `matchesStartedBy`
-    - `matchesHolderUuid`
-    - `matchesHolderEmail`
-    - `status`
-  - final counts at each stage:
-    - raw rows
-    - rows mapped to typed chains
-    - your-turn rows
-- Purpose: prove whether “hey2” is absent from API response or dropped later.
+**File: `src/components/MintJar.tsx`**
 
-3) Add UI pipeline logs where additional filtering occurs
-- File: `src/components/chains/ChainDashboard.tsx`
-- Add debug logs for:
-  - incoming `chainData` IDs/names/current_holder/status
-  - active-tab filtered IDs
-  - your-turn detection results (and why each row passed/failed)
-- Purpose: catch cases where rows are fetched but hidden by UUID-only client checks.
+1. **Z-order fix**: Render mints BEHIND the jar glass (z-0) with jar on top (z-10), badge at z-20. This lets the glass overlay create the "seen through glass" effect naturally.
 
-4) Verify backend policy state and visibility with direct SQL diagnostics
-- During implementation validation, run read-only backend checks:
-  - policy definitions for `ment_chains` (confirm email clause is active)
-  - rows where `current_holder` is bdhp email or bdhp UUID (id/name/status/created_at)
-  - sanity query showing which rows should match the intended OR condition
-- Purpose: eliminate policy drift and confirm data shape.
+2. **Larger container**: Replace the tiny 54x55px interior box with a ~140x180px centered container positioned with `left: 50%; transform: translateX(-50%)` and `bottom: 50px`.
 
-5) Validation flow after instrumentation
-- Fresh sign-in as bdhp account.
-- Capture one fetch cycle using `fetchDebugId` and confirm:
-  - claim call attempted (and backend log entry exists)
-  - query includes both UUID + email conditions
-  - raw API includes/excludes “hey2”
-  - if raw includes “hey2” but UI doesn’t: fix client tab filters to dual-match UUID/email.
-  - if raw excludes “hey2” and query email missing: fix email source fallback (`user.email` → `session.user.email`/JWT email).
-- Keep debug logs prefixed (`[MentChainsDebug]`) so they are easy to grep and remove later.
+3. **Bigger mints**: Increase from 8px to 22px so they're actually visible and match the reference.
 
-Technical notes / guardrails
-- I will not touch auto-generated integration files.
-- No auth behavior changes; this is observability-first.
-- Logging volume will be scoped and clearly prefixed so it can be rolled back cleanly after diagnosis.
+4. **New positioning algorithm**:
+   - 7 mints per layer, 16px layer height
+   - Percentage-based X positioning (`(seed * 37) % 100`)
+   - Full 360° rotation (`(seed * 47) % 360`)
+   - Scale range 0.85-1.15
+   - Random Y jitter per mint for natural settling
+
+5. **Drop shadows**: Add `filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2))` to each mint.
+
+6. **Remove motion animations on individual mints** - use simple CSS transitions (`transition-all duration-500 ease-out`) instead of framer-motion per mint for better performance.
+
+7. **Keep everything else**: Title, count display, level progress, tier progress, tier-up celebration modal all stay unchanged.
+
+### Technical Details
+- Only `src/components/MintJar.tsx` needs changes (lines ~58-156)
+- Container wrapper grows from 224x240 to 224x260 to accommodate taller fill
+- Cap remains at 60 mints for performance
+- Only uses `/images/mint-candy.png` - no mixed candy types
+
