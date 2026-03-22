@@ -81,13 +81,13 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
           <div
             className="absolute z-0"
             style={{
-              bottom: '120px',
+              bottom: '46px',
               left: '50%',
               transform: 'translateX(-50%)',
-              width: '140px',
-              height: '180px',
+              width: '102px',
+              height: '132px',
               overflow: 'hidden',
-              clipPath: 'ellipse(46% 47% at 50% 54%)',
+              clipPath: 'ellipse(45% 48% at 50% 54%)',
             }}
           >
             {Array.from({ length: mintCount }).map((_, i) => {
@@ -105,6 +105,9 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
                     bottom: pos.bottom,
                     transform: `rotate(${pos.rotation}deg) scale(${pos.scale})`,
                     opacity: 0.95,
+                    objectFit: 'cover',
+                    borderRadius: '9999px',
+                    mixBlendMode: 'multiply',
                     filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.2))',
                   }}
                 />
