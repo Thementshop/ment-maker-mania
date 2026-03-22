@@ -82,10 +82,12 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
             className="absolute z-0"
             style={{
               bottom: '120px',
-              left: '82px',
-              width: '62px',
-              height: '120px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: '140px',
+              height: '180px',
               overflow: 'hidden',
+              clipPath: 'ellipse(46% 47% at 50% 54%)',
             }}
           >
             {Array.from({ length: mintCount }).map((_, i) => {
