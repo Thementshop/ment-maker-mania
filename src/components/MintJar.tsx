@@ -41,120 +41,25 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
   }, [jarCount]);
 
   // Calculate how many mints to show (cap at 60 for performance)
-  const mintsToShow = Math.min(jarCount, 60);
-
-  // Jar image analysis (jar-tier-1.png is 1344x896):
-  // The glass body is NOT centered - it's slightly left of center
-  // When rendered at 224x240 with object-contain:
-  // Image scales to fit: 224px wide → height = 224*(896/1344) = 149px
-  // Vertical offset: (240-149)/2 = 45px from top
-  // Jar glass interior (relative to the 224x149 rendered image):
-  //   Left wall: ~35% of 224 = 78px
-  //   Right wall: ~58% of 224 = 130px  → interior width ~52px
-  //   Bottom: ~82% of 149 + 45 offset = 167 from top → 240-167 = 73px from bottom
-  //   Top of glass: ~42% of 149 + 45 = 108 from top → 240-108 = 132px from bottom
-  // So interior box: left=78, bottom=73, width=52, height=59
-  
-  const JAR_INTERIOR = {
-    left: 82,      // shifted 4px right to center on glass body
-    bottom: 73,    // px from bottom of 240px container
-    width: 54,     // slightly wider spread across jar base
-    height: 55,    // interior height (glass body only)
-  };
-  const MINT_SIZE = 8;
+  const mintCount = Math.min(jarCount, 60);
 
   const getMintPosition = (index: number) => {
-    // Seeded pseudo-random
-    const s1 = Math.sin(index * 127.1 + 311.7) * 43758.5453;
-    const s2 = Math.sin(index * 269.5 + 183.3) * 43758.5453;
-    const s3 = Math.sin(index * 419.2 + 371.9) * 43758.5453;
-    const r1 = s1 - Math.floor(s1);
-    const r2 = s2 - Math.floor(s2);
-    const r3 = s3 - Math.floor(s3);
+    const seed = index;
+    const mintsPerLayer = 7;
+    const layerHeight = 16;
+    const layer = Math.floor(index / mintsPerLayer);
 
-    // Layer-based stacking from bottom
-    const layer = Math.floor(index / 5);
-    const layerY = layer * (MINT_SIZE * 0.7) + r2 * 2;
-    const x = r1 * (JAR_INTERIOR.width - MINT_SIZE);
+    const randomX = ((seed * 37) % 100);
+    const baseY = layer * layerHeight;
+    const randomYOffset = ((seed * 23) % 8) - 4;
 
     return {
-      left: Math.max(0, Math.min(x, JAR_INTERIOR.width - MINT_SIZE)),
-      bottom: Math.max(0, Math.min(layerY, JAR_INTERIOR.height - MINT_SIZE)),
-      rotation: (r3 - 0.5) * 25,
-      scale: 0.85 + r1 * 0.2,
-      delay: index * 0.01,
+      left: `${randomX}%`,
+      bottom: `${baseY + randomYOffset}px`,
+      rotation: (seed * 47) % 360,
+      scale: 0.85 + ((seed * 13) % 30) / 100,
     };
   };
-
-  return (
-    <div className="flex flex-col items-center gap-3 w-full">
-      {/* Title */}
-      <h2 className="font-display text-xl font-bold text-foreground flex items-center gap-2">
-        <Sparkles className="h-5 w-5 text-primary" />
-        Kindness Jar
-        <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold">
-          Level {currentLevel.level}
-        </span>
-      </h2>
-
-      {/* Jar Display */}
-      <div className="relative w-full h-64 flex items-center justify-center">
-        {/* Single container for both jar and mints */}
-        <div className="relative" style={{ width: '224px', height: '240px' }}>
-          {/* Jar image - reference point */}
-          <motion.img
-            key={currentTier.tier}
-            src={currentTier.image}
-            alt={`${currentTier.name} Jar`}
-            className="absolute inset-0 w-full h-full object-contain z-20 pointer-events-none"
-            style={{ filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.3))' }}
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: 'spring', stiffness: 200 }}
-          />
-
-          {/* Mints container - precisely mapped to jar glass interior */}
-          <div
-            className="absolute overflow-hidden z-30"
-            style={{
-              bottom: `${JAR_INTERIOR.bottom}px`,
-              left: `${JAR_INTERIOR.left}px`,
-              width: `${JAR_INTERIOR.width}px`,
-              height: `${JAR_INTERIOR.height}px`,
-            }}
-          >
-            {/* Mints stack from bottom up naturally */}
-            <div className="relative w-full h-full">
-              {Array.from({ length: mintsToShow }).map((_, i) => {
-                const { left, bottom, rotation, scale, delay } = getMintPosition(i);
-                return (
-                  <motion.img
-                    key={i}
-                    src="/images/mint-candy.png"
-                    alt="mint"
-                    className="absolute"
-                    style={{
-                      width: `${MINT_SIZE}px`,
-                      height: `${MINT_SIZE}px`,
-                      left: `${left}px`,
-                      bottom: `${bottom}px`,
-                      transform: `rotate(${rotation}deg) scale(${scale})`,
-                      opacity: 0.95,
-                    }}
-                    initial={{ y: -30, opacity: 0, scale: 0.3 }}
-                    animate={{ y: 0, opacity: 0.95, scale }}
-                    transition={{
-                      type: 'spring',
-                      stiffness: 200,
-                      damping: 14,
-                      delay,
-                    }}
-                  />
-                );
-              })}
-            </div>
-          </div>
-        </div>
 
         {/* Tier badge */}
         <motion.div
