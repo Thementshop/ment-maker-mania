@@ -80,7 +80,7 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
           <div
             className="absolute z-0"
             style={{
-              bottom: '50px',
+              bottom: '80px',
               left: '50%',
               transform: 'translateX(-50%)',
               width: '140px',
