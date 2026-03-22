@@ -65,12 +65,13 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
 
       {/* Jar Display */}
       <div className="relative w-full h-64 flex items-center justify-center">
-        <div className="relative bg-white rounded-2xl" style={{ width: '224px', height: '260px' }}>
+        <div className="relative w-56 h-64 rounded-2xl">
+          <div className="absolute inset-0 rounded-2xl bg-background" aria-hidden="true" />
           <motion.img
             key={jarImage}
             src={jarImage}
             alt={`Jar with ${jarCount} mints`}
-            className="absolute inset-0 w-full h-full object-contain"
+            className="absolute inset-0 z-10 w-full h-full object-contain"
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: 'spring', stiffness: 200 }}
