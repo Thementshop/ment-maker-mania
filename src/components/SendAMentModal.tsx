@@ -63,6 +63,11 @@ const SendAMentModal = ({ isOpen, onClose }: SendAMentModalProps) => {
 
   const handleSend = async (compliment?: string) => {
     if (!user || !session) return;
+    if (!recipientEmail.trim()) {
+      toast({ title: "No recipient", description: "Please enter an email address first.", variant: "destructive" });
+      setStep('email');
+      return;
+    }
     const complimentToSend = compliment || selectedCompliment;
     setStep('sending');
 

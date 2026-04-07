@@ -95,9 +95,6 @@ const Index = () => {
         </section>
       </main>
       
-      {/* Send Ment Modal (chain-based) */}
-      <SendMentModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSend={handleSendMent} />
-
       {/* Send A Ment Modal (single, no chain) */}
       <SendAMentModal isOpen={isSendAMentOpen} onClose={() => setIsSendAMentOpen(false)} />
 
