@@ -62,7 +62,7 @@ const categorySubjects: Record<string, string> = {
   'special-occasions': "🎉 Someone's celebrating you!",
   'funny-slang': "😄 Someone made you smile!",
   affirmation: "✨ Someone sees your light!",
-  default: "💚 You received a kindness chain!",
+  default: "💚 Someone sent you a compliment!",
 };
 
 function getSubject(emailType: string, data: TemplateData): string {
