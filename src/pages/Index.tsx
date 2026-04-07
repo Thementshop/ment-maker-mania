@@ -4,7 +4,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useChainNotifications } from '@/hooks/useChainNotifications';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import SendMentModal from '@/components/SendMentModal';
 import SendAMentModal from '@/components/SendAMentModal';
 import LevelUpModal from '@/components/LevelUpModal';
 import OnboardingModal from '@/components/OnboardingModal';
@@ -28,7 +27,6 @@ const Index = () => {
     sendMent
   } = useGameStore();
   
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSendAMentOpen, setIsSendAMentOpen] = useState(false);
   const [isStartChainOpen, setIsStartChainOpen] = useState(false);
   const [showLevelUp, setShowLevelUp] = useState(false);
@@ -41,14 +39,6 @@ const Index = () => {
       setShowOnboarding(true);
     }
   }, []);
-
-  const handleSendMent = async (mentData: { category: string; complimentText: string; recipientType: string }) => {
-    const result = await sendMent(mentData);
-    if (result.leveledUp) {
-      setLevelUpBonus(result.bonusMints);
-      setTimeout(() => setShowLevelUp(true), 500);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gradient-mint flex flex-col">
@@ -105,9 +95,6 @@ const Index = () => {
         </section>
       </main>
       
-      {/* Send Ment Modal (chain-based) */}
-      <SendMentModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSend={handleSendMent} />
-
       {/* Send A Ment Modal (single, no chain) */}
       <SendAMentModal isOpen={isSendAMentOpen} onClose={() => setIsSendAMentOpen(false)} />
 
