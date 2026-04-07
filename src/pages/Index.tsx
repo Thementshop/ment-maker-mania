@@ -40,14 +40,6 @@ const Index = () => {
     }
   }, []);
 
-  const handleSendMent = async (mentData: { category: string; complimentText: string; recipientType: string }) => {
-    const result = await sendMent(mentData);
-    if (result.leveledUp) {
-      setLevelUpBonus(result.bonusMints);
-      setTimeout(() => setShowLevelUp(true), 500);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gradient-mint flex flex-col">
       <Header worldCount={worldKindnessCount} />
