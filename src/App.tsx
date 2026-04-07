@@ -34,6 +34,7 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/chain/:chainId" element={<ChainPage />} />
+            <Route path="/ment/:mentId" element={<MentPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
