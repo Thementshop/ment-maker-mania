@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { complimentCategories } from '@/data/compliments';
 import { motion, AnimatePresence } from 'framer-motion';
 import wrappedMint from '@/assets/wrapped-mint.png';
@@ -14,6 +13,9 @@ interface MentData {
   sender_name: string;
 }
 
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
 const MentPage = () => {
   const { mentId } = useParams<{ mentId: string }>();
   const [ment, setMent] = useState<MentData | null>(null);
@@ -24,42 +26,59 @@ const MentPage = () => {
   useEffect(() => {
     const fetchMent = async () => {
       if (!mentId) {
-        setError('This ment has already been unwrapped or doesn\'t exist');
+        setError("This ment has already been unwrapped or doesn't exist");
         setLoading(false);
         return;
       }
 
-      const { data, error: fetchError } = await supabase
-        .from('sent_ments')
-        .select('compliment_text, category, sent_at, sender_id')
-        .eq('id', mentId)
-        .maybeSingle();
+      try {
+        // Fetch sent_ment via REST (no auth required)
+        const mentRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/sent_ments?id=eq.${mentId}&select=compliment_text,category,sent_at,sender_id`,
+          {
+            headers: {
+              apikey: SUPABASE_KEY,
+              Authorization: `Bearer ${SUPABASE_KEY}`,
+            },
+          }
+        );
+        const mentRows = await mentRes.json();
 
-      if (fetchError || !data) {
-        setError('This ment has already been unwrapped or doesn\'t exist');
-        setLoading(false);
-        return;
-      }
-
-      // Fetch sender display name from profiles
-      let senderName = 'Someone';
-      if (data.sender_id) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('display_name')
-          .eq('id', data.sender_id)
-          .maybeSingle();
-        if (profile?.display_name) {
-          senderName = profile.display_name;
+        if (!mentRes.ok || !mentRows?.length) {
+          setError("This ment has already been unwrapped or doesn't exist");
+          setLoading(false);
+          return;
         }
-      }
 
-      setMent({
-        compliment_text: data.compliment_text,
-        category: data.category,
-        sent_at: data.sent_at,
-        sender_name: senderName,
-      });
+        const data = mentRows[0];
+
+        // Fetch sender display name via REST
+        let senderName = 'Someone';
+        if (data.sender_id) {
+          const profileRes = await fetch(
+            `${SUPABASE_URL}/rest/v1/profiles?id=eq.${data.sender_id}&select=display_name`,
+            {
+              headers: {
+                apikey: SUPABASE_KEY,
+                Authorization: `Bearer ${SUPABASE_KEY}`,
+              },
+            }
+          );
+          const profiles = await profileRes.json();
+          if (profiles?.[0]?.display_name) {
+            senderName = profiles[0].display_name;
+          }
+        }
+
+        setMent({
+          compliment_text: data.compliment_text,
+          category: data.category,
+          sent_at: data.sent_at,
+          sender_name: senderName,
+        });
+      } catch {
+        setError("This ment has already been unwrapped or doesn't exist");
+      }
       setLoading(false);
     };
 
@@ -125,7 +144,6 @@ const MentPage = () => {
         className="w-full max-w-md rounded-3xl bg-white p-8 shadow-2xl text-center"
         style={{ boxShadow: '0 25px 60px -12px rgba(88, 252, 89, 0.25)' }}
       >
-        {/* Wrapped state */}
         <AnimatePresence mode="wait">
           {!unwrapped ? (
             <motion.div
@@ -167,7 +185,6 @@ const MentPage = () => {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="flex flex-col items-center"
             >
-              {/* Unwrapped mint with bounce */}
               <motion.div
                 initial={{ y: -30, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
@@ -176,7 +193,6 @@ const MentPage = () => {
                 <img src={unwrappedMint} alt="Unwrapped ment" className="h-28 w-28 object-contain" />
               </motion.div>
 
-              {/* Category emoji */}
               {categoryInfo && (
                 <motion.span
                   className="text-4xl mt-3 block"
@@ -188,7 +204,6 @@ const MentPage = () => {
                 </motion.span>
               )}
 
-              {/* Compliment */}
               <motion.div
                 className="rounded-2xl p-6 my-5 w-full"
                 style={{ background: 'linear-gradient(135deg, rgba(88,252,89,0.08), rgba(88,252,89,0.15))', border: '2px solid rgba(88,252,89,0.3)' }}
@@ -201,7 +216,6 @@ const MentPage = () => {
                 </p>
               </motion.div>
 
-              {/* Sender attribution */}
               <motion.p
                 className="text-sm mb-6"
                 style={{ color: '#166534' }}
@@ -212,7 +226,6 @@ const MentPage = () => {
                 💚 No timer, no pressure — just kindness from <strong>{ment!.sender_name}</strong>
               </motion.p>
 
-              {/* CTAs */}
               <motion.div
                 className="space-y-3 w-full"
                 initial={{ opacity: 0, y: 10 }}
