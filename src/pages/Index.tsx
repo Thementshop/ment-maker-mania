@@ -4,7 +4,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useChainNotifications } from '@/hooks/useChainNotifications';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import SendMentModal from '@/components/SendMentModal';
 import SendAMentModal from '@/components/SendAMentModal';
 import LevelUpModal from '@/components/LevelUpModal';
 import OnboardingModal from '@/components/OnboardingModal';
