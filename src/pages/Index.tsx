@@ -27,7 +27,6 @@ const Index = () => {
     sendMent
   } = useGameStore();
   
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSendAMentOpen, setIsSendAMentOpen] = useState(false);
   const [isStartChainOpen, setIsStartChainOpen] = useState(false);
   const [showLevelUp, setShowLevelUp] = useState(false);
