@@ -70,7 +70,7 @@ function getSubject(emailType: string, data: TemplateData): string {
     case 'chain_received':
       return categorySubjects[data.compliment_category || 'default'] || categorySubjects.default;
     case 'ment_received':
-      return categorySubjects[data.compliment_category || 'default'] || categorySubjects.default;
+      return categorySubjects[data.compliment_category || 'default'] || "💚 Someone sent you a compliment!";
     case '1hr_warning':
       if (data.other_chains && data.other_chains.length > 0) {
         return `⏰ You have ${(data.other_chains.length + 1)} chains expiring soon!`;
