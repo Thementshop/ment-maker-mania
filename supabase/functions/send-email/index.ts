@@ -327,7 +327,7 @@ function buildMentReceivedEmail(data: TemplateData): string {
       </div>
     </div>
     <div style="text-align:center;margin:0 0 24px;">
-      <a href="${escapeHtml(appUrl)}" style="display:inline-block;background-color:#58fc59;color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:16px;font-weight:bold;">
+      <a href="${escapeHtml(appUrl)}/ment/${data.ment_id || ''}" style="display:inline-block;background-color:#58fc59;color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:16px;font-weight:bold;">
         See Your Compliment →
       </a>
     </div>

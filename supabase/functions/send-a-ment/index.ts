@@ -129,6 +129,7 @@ Deno.serve(async (req) => {
             compliment_category,
             chain_url: 'https://ment-maker-mania.lovable.app',
             app_url: 'https://ment-maker-mania.lovable.app',
+            ment_id: insertedMent?.id || '',
           },
         }),
       });
