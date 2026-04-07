@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Store from "./pages/Store";
 import ChainPage from "./pages/ChainPage";
+import MentPage from "./pages/MentPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
