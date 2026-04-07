@@ -94,6 +94,7 @@ const SendAMentModal = ({ isOpen, onClose }: SendAMentModalProps) => {
       if (result.new_jar_count) {
         const { useGameStore } = await import('@/store/gameStore');
         useGameStore.setState({ jarCount: result.new_jar_count });
+        useGameStore.setState(s => ({ totalSent: s.totalSent + 1 }));
       }
 
       setStep('success');
