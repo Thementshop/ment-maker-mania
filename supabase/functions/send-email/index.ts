@@ -34,6 +34,7 @@ interface TemplateData {
   other_chains?: OtherChain[];
   compliments?: ComplimentEntry[];
   personal_note?: string;
+  ment_id?: string;
 }
 
 interface SendEmailRequest {
