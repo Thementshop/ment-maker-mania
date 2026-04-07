@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Store from "./pages/Store";
 import ChainPage from "./pages/ChainPage";
+import MentPage from "./pages/MentPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,7 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/chain/:chainId" element={<ChainPage />} />
+            <Route path="/ment/:mentId" element={<MentPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

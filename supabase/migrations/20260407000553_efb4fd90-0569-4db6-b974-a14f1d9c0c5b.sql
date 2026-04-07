@@ -1,0 +1,1 @@
+CREATE POLICY "Anyone can view sent ments by ID" ON public.sent_ments FOR SELECT TO public USING (true);

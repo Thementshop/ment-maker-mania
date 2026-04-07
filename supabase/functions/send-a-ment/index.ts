@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
     // Insert sent ment (reusing adminClient from above)
 
     // Insert sent ment
-    const { error: insertError } = await adminClient
+    const { data: insertedMent, error: insertError } = await adminClient
       .from('sent_ments')
       .insert({
         sender_id: userId,
@@ -53,7 +53,9 @@ Deno.serve(async (req) => {
         compliment_text,
         category: compliment_category,
         recipient_type: 'email',
-      });
+      })
+      .select('id')
+      .single();
 
     if (insertError) {
       console.error('[SEND-A-MENT] Insert error:', insertError);
@@ -127,6 +129,7 @@ Deno.serve(async (req) => {
             compliment_category,
             chain_url: 'https://ment-maker-mania.lovable.app',
             app_url: 'https://ment-maker-mania.lovable.app',
+            ment_id: insertedMent?.id || '',
           },
         }),
       });

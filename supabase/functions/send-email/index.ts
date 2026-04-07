@@ -34,6 +34,7 @@ interface TemplateData {
   other_chains?: OtherChain[];
   compliments?: ComplimentEntry[];
   personal_note?: string;
+  ment_id?: string;
 }
 
 interface SendEmailRequest {
@@ -61,7 +62,7 @@ const categorySubjects: Record<string, string> = {
   'special-occasions': "🎉 Someone's celebrating you!",
   'funny-slang': "😄 Someone made you smile!",
   affirmation: "✨ Someone sees your light!",
-  default: "💚 You received a kindness chain!",
+  default: "💚 Someone sent you a compliment!",
 };
 
 function getSubject(emailType: string, data: TemplateData): string {
@@ -69,7 +70,7 @@ function getSubject(emailType: string, data: TemplateData): string {
     case 'chain_received':
       return categorySubjects[data.compliment_category || 'default'] || categorySubjects.default;
     case 'ment_received':
-      return categorySubjects[data.compliment_category || 'default'] || categorySubjects.default;
+      return categorySubjects[data.compliment_category || 'default'] || "💚 Someone sent you a compliment!";
     case '1hr_warning':
       if (data.other_chains && data.other_chains.length > 0) {
         return `⏰ You have ${(data.other_chains.length + 1)} chains expiring soon!`;
@@ -326,7 +327,7 @@ function buildMentReceivedEmail(data: TemplateData): string {
       </div>
     </div>
     <div style="text-align:center;margin:0 0 24px;">
-      <a href="${escapeHtml(appUrl)}" style="display:inline-block;background-color:#58fc59;color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:16px;font-weight:bold;">
+      <a href="${escapeHtml(appUrl)}/ment/${data.ment_id || ''}" style="display:inline-block;background-color:#58fc59;color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:16px;font-weight:bold;">
         See Your Compliment →
       </a>
     </div>
