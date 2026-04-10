@@ -1,37 +1,31 @@
 
 
-## Recreate Candy Jar Fill - Plan
+# Plan: Generate "The Ment Shop" Overview Report (.docx)
 
-### Problem
-The current implementation uses tiny 8px mints in a narrow 54x55px container with limited rotation, resulting in mints that don't look like naturally settled candy. The z-ordering also causes visibility issues.
+## Summary
+Generate a professional Word document explaining The Ment Shop PWA — what it is, how it works, and its full feature set — using the `docx` npm library. Output to `/mnt/documents/The_Ment_Shop_Report.docx`.
 
-### Approach
-Rewrite the jar display section of `MintJar.tsx` based on the user's provided implementation pattern:
+## Document Structure
 
-**File: `src/components/MintJar.tsx`**
+1. **Title Page** — "The Ment Shop: The Candy Store of Compliments" with date
+2. **Overview** — PWA for gamified kindness; users send compliments ("ments"), earn mints, level up
+3. **Core Loop** — Sign up → Send a ment → Earn a mint → Level up → Unlock jar tiers
+4. **Send A Ment Flow** — Email entry → Category selection → Compliment pick → Send with email delivery
+5. **Compliment Categories** — 6 categories (Love, Encouragement, Sympathy, Special Occasions, Funny/Slang, Affirmation) with ~20 compliments each
+6. **The Kindness Jar** — Visual jar that fills with mints; 5 tiers (Basic → Treasure) mapped to mint count ranges
+7. **Leveling System** — 25 levels across 5 tiers with "-ment" themed names, bonus mint rewards per level-up (table of all 25 levels)
+8. **Ment Chains** — Chain-passing feature: start a chain → pass via email → 24hr timer → 8 visual tiers (Sprouting → World-Changer) → leaderboard
+9. **Recipient Experience** — Public pages at /ment/:id and /chain/:chainId, tap-to-unwrap animation, no login required
+10. **Real-Time Features** — World Kindness Counter, chain dashboard updates
+11. **Technology Stack** — React 18, Vite, TypeScript, Tailwind, Framer Motion, Zustand, Lovable Cloud
 
-1. **Z-order fix**: Render mints BEHIND the jar glass (z-0) with jar on top (z-10), badge at z-20. This lets the glass overlay create the "seen through glass" effect naturally.
+## Technical approach
+- Write a Node.js script using the `docx` library (already globally installed)
+- TMS green (#58fc59) accents on headings and table headers
+- US Letter page size, Arial font
+- QA via LibreOffice PDF conversion + page image inspection
+- Output: `/mnt/documents/The_Ment_Shop_Report.docx`
 
-2. **Larger container**: Replace the tiny 54x55px interior box with a ~140x180px centered container positioned with `left: 50%; transform: translateX(-50%)` and `bottom: 50px`.
-
-3. **Bigger mints**: Increase from 8px to 22px so they're actually visible and match the reference.
-
-4. **New positioning algorithm**:
-   - 7 mints per layer, 16px layer height
-   - Percentage-based X positioning (`(seed * 37) % 100`)
-   - Full 360° rotation (`(seed * 47) % 360`)
-   - Scale range 0.85-1.15
-   - Random Y jitter per mint for natural settling
-
-5. **Drop shadows**: Add `filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2))` to each mint.
-
-6. **Remove motion animations on individual mints** - use simple CSS transitions (`transition-all duration-500 ease-out`) instead of framer-motion per mint for better performance.
-
-7. **Keep everything else**: Title, count display, level progress, tier progress, tier-up celebration modal all stay unchanged.
-
-### Technical Details
-- Only `src/components/MintJar.tsx` needs changes (lines ~58-156)
-- Container wrapper grows from 224x240 to 224x260 to accommodate taller fill
-- Cap remains at 60 mints for performance
-- Only uses `/images/mint-candy.png` - no mixed candy types
+## No project files modified
+This is a standalone artifact generation task.
 
