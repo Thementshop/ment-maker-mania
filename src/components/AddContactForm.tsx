@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { UserPlus, Phone, Mail } from 'lucide-react';
 import type { UserContact } from '@/components/ContactSelector';
+import { getFreshAccessToken } from '@/utils/freshToken';
 
 interface AddContactFormProps {
   onSaved: (contact: UserContact) => void;
