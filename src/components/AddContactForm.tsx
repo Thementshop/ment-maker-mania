@@ -36,27 +36,57 @@ const AddContactForm = ({ onSaved, onBack, initialName = '' }: AddContactFormPro
     setSaving(true);
 
     const deliveryPref = phone.trim() ? 'text' : 'email';
+    const cleanPhone = phone.trim().replace(/\D/g, '') || null;
+    const cleanEmail = email.trim().toLowerCase() || null;
 
-    const { data, error } = await supabase
-      .from('user_contacts')
-      .insert({
-        user_id: user.id,
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session?.access_token) {
+        toast({ title: 'Not logged in', description: 'Please log in and try again.', variant: 'destructive' });
+        setSaving(false);
+        return;
+      }
+
+      const body = {
         contact_name: name.trim(),
-        phone: phone.trim() || null,
-        email: email.trim() || null,
+        user_id: user.id,
+        phone: cleanPhone,
+        email: cleanEmail,
         delivery_preference: deliveryPref,
-      })
-      .select()
-      .single();
+      };
 
-    setSaving(false);
+      const res = await fetch(`${supabaseUrl}/rest/v1/user_contacts?select=*`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${session.access_token}`,
+          'Prefer': 'return=representation',
+        },
+        body: JSON.stringify(body),
+      });
 
-    if (error) {
-      toast({ title: 'Could not save contact', description: error.message, variant: 'destructive' });
-      return;
+      const result = await res.json();
+
+      if (!res.ok) {
+        const msg = Array.isArray(result) ? result[0]?.message : result?.message || 'Unknown error';
+        console.error('[AddContact] Save failed:', result);
+        toast({ title: 'Could not save contact', description: msg, variant: 'destructive' });
+        setSaving(false);
+        return;
+      }
+
+      const saved = Array.isArray(result) ? result[0] : result;
+      setSaving(false);
+      onSaved(saved as UserContact);
+    } catch (err: any) {
+      console.error('[AddContact] Exception:', err);
+      toast({ title: 'Error saving contact', description: err.message || 'Something went wrong', variant: 'destructive' });
+      setSaving(false);
     }
-
-    onSaved(data as UserContact);
   };
 
   return (
