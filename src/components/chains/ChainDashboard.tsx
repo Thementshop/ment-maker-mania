@@ -295,16 +295,6 @@ const ChainDashboard = () => {
         )
       )}
 
-      {/* Start Chain Button (bottom floating) */}
-      <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-20 md:hidden">
-        <Button
-          onClick={handleStartChain}
-          size="lg"
-          className="rounded-full shadow-lg bg-primary hover:bg-primary/90 px-6"
-        >
-          🔗 Start A Chain
-        </Button>
-      </div>
 
       {/* Start Chain Modal */}
       <StartChainModal
