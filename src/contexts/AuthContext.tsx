@@ -108,6 +108,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
+        console.log('[MINT DEBUG] onAuthStateChange fired', { event, hasUser: !!newSession?.user });
         if (!isSubscribed) return;
         
         setSession(newSession);
@@ -118,10 +119,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         clearTimeout(authTimeout);
         
         if (newSession?.user) {
-          // Reset debounce if switching users
-          if (lastLoadedAtRef.current) {
-            lastLoadedAtRef.current = 0;
-          }
+          console.log('[MINT DEBUG] Auth user found, calling loadUserGameState from onAuthStateChange');
           // Set immediate fallback profile from user metadata
           const meta = newSession.user.user_metadata;
           if (isSubscribed) {
@@ -138,8 +136,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           claimChains(newSession.user.id);
           loadUserGameState(newSession.user.id, newSession.access_token);
         } else {
+          console.log('[MINT DEBUG] No user in session, resetting state');
           setProfile(null);
-          lastLoadedAtRef.current = 0;
           useGameStore.getState().resetState();
           useGameStore.getState().unsubscribeFromWorldCounter();
         }
@@ -148,14 +146,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     // Initial session check
     supabase.auth.getSession().then(async ({ data: { session: existingSession } }) => {
+      console.log('[MINT DEBUG] getSession returned', { hasUser: !!existingSession?.user });
       if (!isSubscribed) return;
       
       setSession(existingSession);
       setUser(existingSession?.user ?? null);
-      setIsLoading(false);  // Auth check complete immediately
+      setIsLoading(false);
       clearTimeout(authTimeout);
       
       if (existingSession?.user) {
+        console.log('[MINT DEBUG] Existing session found, calling loadUserGameState from getSession');
         // Immediate fallback profile from metadata
         const meta = existingSession.user.user_metadata;
         if (isSubscribed) {
