@@ -146,18 +146,20 @@ Deno.serve(async (req) => {
                          now.getUTCMonth() !== lastStart.getUTCMonth() ||
                          now.getUTCFullYear() !== lastStart.getUTCFullYear();
         const newJar = (gameState?.jar_count ?? 25) + 5;
+        const newTotalSent = (gameState?.total_sent ?? 0) + 1;
         
         adminClient
           .from('user_game_state')
           .update({
             jar_count: newJar,
+            total_sent: newTotalSent,
             chains_started_today: isNewDay ? 1 : (gameState?.chains_started_today || 0) + 1,
             last_chain_start_date: now.toISOString()
           })
           .eq('user_id', userId)
           .then(({ error }) => {
             if (error) console.warn('Creator mint award failed:', error);
-            else console.log('Creator awarded +5 mints, new jar:', newJar);
+            else console.log('Creator awarded +5 mints, new jar:', newJar, 'total_sent:', newTotalSent);
           });
       });
 
