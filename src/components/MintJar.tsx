@@ -54,7 +54,7 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
   return (
     <div className="flex flex-col items-center w-full">
       {/* Level name with personality */}
-      <p className="text-sm font-bold text-foreground text-center mb-2">
+      <p className="font-bold text-foreground text-center mb-2 text-lg">
         Level {currentLevel.level}: {currentLevel.name}
       </p>
 
