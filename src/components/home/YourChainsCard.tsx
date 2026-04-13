@@ -77,9 +77,13 @@ const YourChainsCard = ({ onStartChain }: YourChainsCardProps) => {
               <p className="text-xs text-muted-foreground">+{myTurnChains.length - 2} more waiting</p>
             )}
           </>
+        ) : activeChains.length > 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No chains need your attention right now.
+          </p>
         ) : (
           <p className="text-sm text-muted-foreground">
-            No active chains right now!
+            No active chains yet — start one!
           </p>
         )}
 

@@ -246,10 +246,13 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
         description: `Your chain "${finalName}" has been sent to ${recipientCount} ${recipientCount === 1 ? 'person' : 'people'}! 5 mints added to your jar.`,
       });
 
-      // Mint award happens server-side (fire-and-forget), optimistically add +5
+      // Mint award happens server-side (fire-and-forget), optimistically add +5 jar and +1 totalSent
       const { useGameStore } = await import('@/store/gameStore');
-      const currentJar = useGameStore.getState().jarCount;
-      useGameStore.setState({ jarCount: currentJar + 5 });
+      const state = useGameStore.getState();
+      useGameStore.setState({ 
+        jarCount: state.jarCount + 5,
+        totalSent: state.totalSent + 1,
+      });
       
       confetti({
         particleCount: 100,
