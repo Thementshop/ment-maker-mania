@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import ContactSelector, { type UserContact } from '@/components/ContactSelector';
 import AddContactForm from '@/components/AddContactForm';
 import { supabase } from '@/integrations/supabase/client';
+import { getFreshAccessToken } from '@/utils/freshToken';
 import confetti from 'canvas-confetti';
 import wrappedMint from '@/assets/wrapped-mint.png';
 import unwrappedMint from '@/assets/unwrapped-mint.png';
@@ -66,11 +67,17 @@ const SendAMentModal = ({ isOpen, onClose }: SendAMentModalProps) => {
   };
 
   const handleSend = async (compliment?: string) => {
-    if (!user || !session || !selectedContact) return;
+    if (!user || !selectedContact) return;
     const complimentToSend = compliment || selectedCompliment;
     setStep('sending');
 
     try {
+      const accessToken = await getFreshAccessToken();
+      if (!accessToken) {
+        toast({ title: "Session expired", description: "Please sign in again.", variant: "destructive" });
+        setStep('contact');
+        return;
+      }
       const recipientIdentifier = deliveryMethod === 'text' ? selectedContact.phone : selectedContact.email;
 
       if (deliveryMethod === 'email' && selectedContact.email) {
@@ -81,7 +88,7 @@ const SendAMentModal = ({ isOpen, onClose }: SendAMentModalProps) => {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${session.access_token}`,
+              'Authorization': `Bearer ${accessToken}`,
             },
             body: JSON.stringify({
               recipient_email: selectedContact.email,
@@ -106,7 +113,7 @@ const SendAMentModal = ({ isOpen, onClose }: SendAMentModalProps) => {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${session.access_token}`,
+              'Authorization': `Bearer ${accessToken}`,
             },
             body: JSON.stringify({
               phone_number: selectedContact.phone,
@@ -131,7 +138,7 @@ const SendAMentModal = ({ isOpen, onClose }: SendAMentModalProps) => {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${session.access_token}`,
+                'Authorization': `Bearer ${accessToken}`,
               },
               body: JSON.stringify({
                 recipient_email: selectedContact.email,
