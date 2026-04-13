@@ -59,37 +59,31 @@ const YourChainsCard = ({ onStartChain }: YourChainsCardProps) => {
         🔗 Your Chains
       </h3>
 
-      <div className="flex-1 mb-3">
+      <div className="flex-1 mb-3 space-y-2">
         {isLoading ? (
           <p className="text-sm text-muted-foreground">Loading...</p>
-        ) : myTurnChains.length > 0 ? (
-          <>
-            <div className="text-sm font-semibold mb-2 text-foreground">⏰ Your Turn:</div>
-            {myTurnChains.slice(0, 2).map(chain => (
-              <div key={chain.chain_id} className="mb-2 p-2 bg-accent/50 rounded-lg">
-                <div className="font-medium text-sm text-foreground truncate">
-                  {chain.chain_name || `Chain #${chain.chain_id.slice(0, 6)}`}
-                </div>
-                <ChainTimer expiresAt={chain.expires_at} />
-              </div>
-            ))}
-            {myTurnChains.length > 2 && (
-              <p className="text-xs text-muted-foreground">+{myTurnChains.length - 2} more waiting</p>
-            )}
-          </>
-        ) : activeChains.length > 0 ? (
+        ) : activeChains.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            No chains need your attention right now.
+            No chains yet. Start one below!
           </p>
         ) : (
-          <p className="text-sm text-muted-foreground">
-            No active chains yet — start one!
-          </p>
+          <>
+            {myTurnChains.length > 0 ? (
+              <p className="text-sm font-semibold text-destructive">
+                🔴 {myTurnChains.length} chain{myTurnChains.length !== 1 ? 's' : ''} waiting on you
+              </p>
+            ) : (
+              <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+                ✅ All caught up! No chains need your attention
+              </p>
+            )}
+            {activeChains.length - myTurnChains.length > 0 && (
+              <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
+                🟢 {activeChains.length - myTurnChains.length} active chain{activeChains.length - myTurnChains.length !== 1 ? 's' : ''} going strong
+              </p>
+            )}
+          </>
         )}
-
-        <div className="text-xs text-muted-foreground mt-2">
-          {activeChains.length} active chain{activeChains.length !== 1 ? 's' : ''}
-        </div>
       </div>
 
       <button
