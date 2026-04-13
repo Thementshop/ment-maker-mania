@@ -91,23 +91,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
     };
 
-    // Load game state only once per session
+    // Load game state - no debounce, just track to avoid duplicate concurrent calls
     const loadUserGameState = async (userId: string, token?: string) => {
-      const now = Date.now();
-      if (lastLoadedAtRef.current && (now - lastLoadedAtRef.current) < 2000) {
-        const currentJar = useGameStore.getState().jarCount;
-        if (currentJar !== 25) return;
-        console.log('[MINT DEBUG] Jar still at default 25, forcing reload');
-      }
-      lastLoadedAtRef.current = now;
+      console.log('[MINT DEBUG] loadUserGameState ENTERED', { userId, hasToken: !!token });
       
       try {
+        console.log('[MINT DEBUG] Calling loadGameState...');
         await useGameStore.getState().loadGameState(userId, token);
         useGameStore.getState().subscribeToWorldCounter();
         console.log('[MINT DEBUG] After loadGameState, jarCount:', useGameStore.getState().jarCount);
       } catch (error) {
-        console.error('Failed to load game state:', error);
-        lastLoadedAtRef.current = 0;
+        console.error('[MINT DEBUG] Failed to load game state:', error);
       }
     };
 
