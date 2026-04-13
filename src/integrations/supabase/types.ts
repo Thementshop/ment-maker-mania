@@ -326,6 +326,42 @@ export type Database = {
           },
         ]
       }
+      user_contacts: {
+        Row: {
+          contact_name: string
+          created_at: string
+          delivery_preference: string
+          email: string | null
+          id: string
+          last_sent_at: string | null
+          phone: string | null
+          total_ments_sent: number
+          user_id: string
+        }
+        Insert: {
+          contact_name: string
+          created_at?: string
+          delivery_preference?: string
+          email?: string | null
+          id?: string
+          last_sent_at?: string | null
+          phone?: string | null
+          total_ments_sent?: number
+          user_id: string
+        }
+        Update: {
+          contact_name?: string
+          created_at?: string
+          delivery_preference?: string
+          email?: string | null
+          id?: string
+          last_sent_at?: string | null
+          phone?: string | null
+          total_ments_sent?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_game_state: {
         Row: {
           broken_chains_today: number | null
