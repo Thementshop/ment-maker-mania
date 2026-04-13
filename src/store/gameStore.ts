@@ -125,60 +125,84 @@ export const useGameStore = create<GameState>()((set, get) => ({
   ...initialState,
   
   loadGameState: async (userId: string, passedToken?: string) => {
+    console.log('[MINT DEBUG] loadGameState EXECUTE', {
+      userId,
+      hasPassedToken: !!passedToken,
+      currentJarBefore: get().jarCount,
+    });
+
     set({ isLoading: true, userId });
 
     try {
-      // Use passed token to avoid Supabase JS client auth token lock contention
       let token = passedToken;
       if (!token) {
-        // Fallback: try to get from localStorage directly
+        console.log('[MINT DEBUG] No passed token, trying localStorage fallback');
         const storageKey = `sb-cjnukzmjenfvuopooumb-auth-token`;
         try {
           const stored = localStorage.getItem(storageKey);
           if (stored) {
             const parsed = JSON.parse(stored);
-            token = parsed?.access_token;
+            token = parsed?.access_token ?? parsed?.currentSession?.access_token ?? parsed?.session?.access_token;
           }
-        } catch {}
+        } catch (error) {
+          console.error('[MINT DEBUG] Failed to parse stored auth token', error);
+        }
       }
+
+      console.log('[MINT DEBUG] Token lookup result', { hasToken: !!token });
+
       if (!token) {
         console.warn('[MINT DEBUG] No auth token, skipping loadGameState');
         set({ isLoading: false });
         return;
       }
 
-      // Use direct REST to avoid Supabase JS client auth token lock contention
+      console.log('[MINT DEBUG] Fetching user_game_state via REST', { userId });
       const gameStatePromise = restFetch(
         'user_game_state',
         `select=jar_count,total_sent,current_level&user_id=eq.${userId}`,
         token
-      ).catch(e => { console.error('Error loading game state:', e); return null; });
+      ).catch(e => {
+        console.error('[MINT DEBUG] Error loading game state:', e);
+        return null;
+      });
 
       const pendingMentsPromise = restFetch(
         'pending_ments',
         `select=*&user_id=eq.${userId}&status=eq.pending`,
         token
-      ).catch(e => { console.error('Error loading pending ments:', e); return null; });
+      ).catch(e => {
+        console.error('[MINT DEBUG] Error loading pending ments:', e);
+        return null;
+      });
 
       const worldCounterPromise = restFetch(
         'world_kindness_counter',
         `select=count&id=eq.1`,
         token
-      ).catch(e => { console.error('Error loading world counter:', e); return null; });
+      ).catch(e => {
+        console.error('[MINT DEBUG] Error loading world counter:', e);
+        return null;
+      });
 
-      // Await game state first so jar updates ASAP
       const gameStateRows = await gameStatePromise;
       const gameState = gameStateRows?.[0] ?? null;
 
+      console.log('[MINT DEBUG] user_game_state response', gameStateRows);
       console.log('[MINT DEBUG] loadGameState setting jar_count:', gameState?.jar_count ?? 25, 'total_sent:', gameState?.total_sent ?? 0);
+
       set({
         jarCount: gameState?.jar_count ?? 25,
         totalSent: gameState?.total_sent ?? 0,
         currentLevel: gameState?.current_level ?? 1,
       });
-      console.log('[MINT DEBUG] loadGameState applied, store jarCount now:', get().jarCount);
 
-      // Then settle secondary queries
+      console.log('[MINT DEBUG] UI should update now', {
+        jarCount: get().jarCount,
+        totalSent: get().totalSent,
+        currentLevel: get().currentLevel,
+      });
+
       const [pendingMentsRows, worldCounterRows] = await Promise.all([pendingMentsPromise, worldCounterPromise]);
 
       if (pendingMentsRows) {
@@ -198,7 +222,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
         set({ worldKindnessCount: worldCounterRows[0].count ?? 0 });
       }
     } catch (error) {
-      console.error('Error loading game state:', error);
+      console.error('[MINT DEBUG] Error loading game state:', error);
     } finally {
       set({ isLoading: false });
     }
