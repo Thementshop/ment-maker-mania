@@ -113,7 +113,7 @@ const SendAMentModal = ({ isOpen, onClose }: SendAMentModalProps) => {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${session.access_token}`,
+              'Authorization': `Bearer ${accessToken}`,
             },
             body: JSON.stringify({
               phone_number: selectedContact.phone,
