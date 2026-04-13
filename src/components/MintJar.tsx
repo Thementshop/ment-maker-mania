@@ -53,6 +53,11 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
 
   return (
     <div className="flex flex-col items-center w-full">
+      {/* Level name with personality */}
+      <p className="text-sm font-bold text-foreground text-center mb-2">
+        Level {currentLevel.level}: {currentLevel.name}
+      </p>
+
       {/* Jar Display - Hero visual */}
       <div className="relative w-full flex items-center justify-center rounded-2xl py-2" style={{ backgroundColor: '#ffffff' }}>
         <div className="relative w-56 h-56 rounded-2xl" style={{ backgroundColor: '#ffffff' }}>
@@ -69,11 +74,6 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
           />
         </div>
       </div>
-
-      {/* Level name with personality */}
-      <p className="text-sm font-bold text-foreground text-center mt-2">
-        Level {currentLevel.level}: {currentLevel.name}
-      </p>
 
       {/* Mint count - simple */}
       <motion.p
