@@ -67,11 +67,17 @@ const SendAMentModal = ({ isOpen, onClose }: SendAMentModalProps) => {
   };
 
   const handleSend = async (compliment?: string) => {
-    if (!user || !session || !selectedContact) return;
+    if (!user || !selectedContact) return;
     const complimentToSend = compliment || selectedCompliment;
     setStep('sending');
 
     try {
+      const accessToken = await getFreshAccessToken();
+      if (!accessToken) {
+        toast({ title: "Session expired", description: "Please sign in again.", variant: "destructive" });
+        setStep('contact');
+        return;
+      }
       const recipientIdentifier = deliveryMethod === 'text' ? selectedContact.phone : selectedContact.email;
 
       if (deliveryMethod === 'email' && selectedContact.email) {
