@@ -92,24 +92,22 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     };
 
     // Load game state only once per session
-    const loadUserGameState = async (userId: string) => {
+    const loadUserGameState = async (userId: string, token?: string) => {
       const now = Date.now();
-      // Debounce: skip if loaded for same user within 2 seconds
       if (lastLoadedAtRef.current && (now - lastLoadedAtRef.current) < 2000) {
-        // But verify data actually loaded — if jar is still default, force reload
         const currentJar = useGameStore.getState().jarCount;
-        if (currentJar !== 25) return; // Data loaded fine, skip
+        if (currentJar !== 25) return;
         console.log('[MINT DEBUG] Jar still at default 25, forcing reload');
       }
       lastLoadedAtRef.current = now;
       
       try {
-        await useGameStore.getState().loadGameState(userId);
+        await useGameStore.getState().loadGameState(userId, token);
         useGameStore.getState().subscribeToWorldCounter();
         console.log('[MINT DEBUG] After loadGameState, jarCount:', useGameStore.getState().jarCount);
       } catch (error) {
         console.error('Failed to load game state:', error);
-        lastLoadedAtRef.current = 0; // Allow retry on failure
+        lastLoadedAtRef.current = 0;
       }
     };
 
@@ -144,7 +142,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           if (isSubscribed && userProfile) setProfile(userProfile);
           // Claim chains and load game state in background
           claimChains(newSession.user.id);
-          loadUserGameState(newSession.user.id);
+          loadUserGameState(newSession.user.id, newSession.access_token);
         } else {
           setProfile(null);
           lastLoadedAtRef.current = 0;
@@ -176,7 +174,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         const userProfile = await fetchProfile(existingSession.user.id);
         if (isSubscribed && userProfile) setProfile(userProfile);
         claimChains(existingSession.user.id);
-        loadUserGameState(existingSession.user.id);
+        loadUserGameState(existingSession.user.id, existingSession.access_token);
       }
     });
 
