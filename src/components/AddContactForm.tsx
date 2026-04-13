@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { UserPlus, Phone, Mail } from 'lucide-react';
 import type { UserContact } from '@/components/ContactSelector';
@@ -13,7 +12,7 @@ interface AddContactFormProps {
 }
 
 const AddContactForm = ({ onSaved, onBack, initialName = '' }: AddContactFormProps) => {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const { toast } = useToast();
   const [name, setName] = useState(initialName);
   const [phone, setPhone] = useState('');
@@ -34,6 +33,7 @@ const AddContactForm = ({ onSaved, onBack, initialName = '' }: AddContactFormPro
   const handleSave = async () => {
     if (!validate() || !user) return;
     setSaving(true);
+    setErrors({});
 
     const deliveryPref = phone.trim() ? 'text' : 'email';
     const cleanPhone = phone.trim().replace(/\D/g, '') || null;
@@ -42,7 +42,10 @@ const AddContactForm = ({ onSaved, onBack, initialName = '' }: AddContactFormPro
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!supabaseUrl || !supabaseKey) {
+        throw new Error('App configuration is missing. Please refresh and try again.');
+      }
 
       if (!session?.access_token) {
         toast({ title: 'Not logged in', description: 'Please log in and try again.', variant: 'destructive' });
@@ -58,6 +61,9 @@ const AddContactForm = ({ onSaved, onBack, initialName = '' }: AddContactFormPro
         delivery_preference: deliveryPref,
       };
 
+      const controller = new AbortController();
+      const timeoutId = window.setTimeout(() => controller.abort(), 12000);
+
       const res = await fetch(`${supabaseUrl}/rest/v1/user_contacts?select=*`, {
         method: 'POST',
         headers: {
@@ -66,8 +72,11 @@ const AddContactForm = ({ onSaved, onBack, initialName = '' }: AddContactFormPro
           'Authorization': `Bearer ${session.access_token}`,
           'Prefer': 'return=representation',
         },
+        signal: controller.signal,
         body: JSON.stringify(body),
       });
+
+      window.clearTimeout(timeoutId);
 
       const result = await res.json();
 
@@ -83,8 +92,12 @@ const AddContactForm = ({ onSaved, onBack, initialName = '' }: AddContactFormPro
       setSaving(false);
       onSaved(saved as UserContact);
     } catch (err: any) {
+      const message = err?.name === 'AbortError'
+        ? 'Saving timed out. Please try again.'
+        : err?.message || 'Something went wrong';
+
       console.error('[AddContact] Exception:', err);
-      toast({ title: 'Error saving contact', description: err.message || 'Something went wrong', variant: 'destructive' });
+      toast({ title: 'Error saving contact', description: message, variant: 'destructive' });
       setSaving(false);
     }
   };
