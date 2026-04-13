@@ -41,7 +41,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const lastLoadedAtRef = useRef<number>(0);
+  
 
   // Fetch user profile
   const fetchProfile = async (userId: string) => {
