@@ -102,48 +102,84 @@ export const useGameStore = create<GameState>()((set, get) => ({
   
   loadGameState: async (userId: string) => {
     set({ isLoading: true, userId });
-    
-    // Timeout to prevent infinite loading
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Load timeout after 10s')), 10000)
-    );
-    
+
+    const queryWithTimeout = async <T>(query: Promise<T>, label: string, timeoutMs = 10000): Promise<T> => {
+      let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
+
+      try {
+        return await Promise.race([
+          query,
+          new Promise<never>((_, reject) => {
+            timeoutHandle = setTimeout(() => reject(new Error(`${label} load timeout after ${timeoutMs}ms`)), timeoutMs);
+          }),
+        ]);
+      } finally {
+        if (timeoutHandle) {
+          clearTimeout(timeoutHandle);
+        }
+      }
+    };
+
     try {
-      await Promise.race([
+      const gameStatePromise = queryWithTimeout(
         (async () => {
-          // Load user game state
-          const { data: gameState, error: gameError } = await supabase
+          return await supabase
             .from('user_game_state')
             .select('jar_count, total_sent, current_level')
             .eq('user_id', userId)
             .maybeSingle();
-          
-          if (gameError) {
-            console.error('Error loading game state:', gameError);
-          }
-          
-          // Load pending ments
-          const { data: pendingMentsData, error: pendingError } = await supabase
+        })(),
+        'game state'
+      );
+
+      const pendingMentsPromise = queryWithTimeout(
+        (async () => {
+          return await supabase
             .from('pending_ments')
             .select('*')
             .eq('user_id', userId)
             .eq('status', 'pending');
-          
-          if (pendingError) {
-            console.error('Error loading pending ments:', pendingError);
-          }
-          
-          // Load world counter
-          const { data: worldCounter, error: worldError } = await supabase
+        })(),
+        'pending ments'
+      );
+
+      const worldCounterPromise = queryWithTimeout(
+        (async () => {
+          return await supabase
             .from('world_kindness_counter')
             .select('count')
             .eq('id', 1)
             .maybeSingle();
-          
-          if (worldError) {
-            console.error('Error loading world counter:', worldError);
-          }
-          
+        })(),
+        'world counter'
+      );
+
+      const gameStateResult = await gameStatePromise;
+      const { data: gameState, error: gameError } = gameStateResult;
+
+      if (gameError) {
+        console.error('Error loading game state:', gameError);
+      } else {
+        console.log('[MINT DEBUG] loadGameState setting jar_count:', gameState?.jar_count ?? 25, 'total_sent:', gameState?.total_sent ?? 0);
+        set({
+          jarCount: gameState?.jar_count ?? 25,
+          totalSent: gameState?.total_sent ?? 0,
+          currentLevel: gameState?.current_level ?? 1,
+        });
+        console.log('[MINT DEBUG] loadGameState applied primary state, store jarCount now:', get().jarCount);
+      }
+
+      const [pendingMentsResult, worldCounterResult] = await Promise.allSettled([
+        pendingMentsPromise,
+        worldCounterPromise,
+      ]);
+
+      if (pendingMentsResult.status === 'fulfilled') {
+        const { data: pendingMentsData, error: pendingError } = pendingMentsResult.value;
+
+        if (pendingError) {
+          console.error('Error loading pending ments:', pendingError);
+        } else {
           const pendingMents: PendingMent[] = (pendingMentsData || []).map(m => ({
             id: m.id,
             category: m.category,
@@ -153,23 +189,27 @@ export const useGameStore = create<GameState>()((set, get) => ({
             recipientType: m.recipient_type,
             recipientValue: m.recipient_value || undefined,
           }));
-          
-          console.log('[MINT DEBUG] loadGameState setting jar_count:', gameState?.jar_count ?? 25, 'total_sent:', gameState?.total_sent ?? 0);
-          set({
-            jarCount: gameState?.jar_count ?? 25,
-            totalSent: gameState?.total_sent ?? 0,
-            currentLevel: gameState?.current_level ?? 1,
-            pendingMents,
-            worldKindnessCount: worldCounter?.count ?? 0,
-          });
-          console.log('[MINT DEBUG] loadGameState complete, store jarCount now:', get().jarCount);
-        })(),
-        timeoutPromise
-      ]);
+
+          set({ pendingMents });
+        }
+      } else {
+        console.error('Error loading pending ments:', pendingMentsResult.reason);
+      }
+
+      if (worldCounterResult.status === 'fulfilled') {
+        const { data: worldCounter, error: worldError } = worldCounterResult.value;
+
+        if (worldError) {
+          console.error('Error loading world counter:', worldError);
+        } else {
+          set({ worldKindnessCount: worldCounter?.count ?? 0 });
+        }
+      } else {
+        console.error('Error loading world counter:', worldCounterResult.reason);
+      }
     } catch (error) {
       console.error('Error loading game state:', error);
     } finally {
-      // ALWAYS set isLoading to false
       set({ isLoading: false });
     }
   },
