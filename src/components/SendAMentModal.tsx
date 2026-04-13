@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Mail, Smartphone, Users, Send } from 'lucide-react';
+import { X, Phone, Mail } from 'lucide-react';
 import { complimentCategories, ComplimentCategory } from '@/data/compliments';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import SavedContactsDropdown from '@/components/SavedContactsDropdown';
+import ContactSelector, { type UserContact } from '@/components/ContactSelector';
+import AddContactForm from '@/components/AddContactForm';
+import { supabase } from '@/integrations/supabase/client';
 import confetti from 'canvas-confetti';
 import wrappedMint from '@/assets/wrapped-mint.png';
 import unwrappedMint from '@/assets/unwrapped-mint.png';
@@ -14,40 +16,43 @@ interface SendAMentModalProps {
   onClose: () => void;
 }
 
-type Step = 'method' | 'email' | 'category' | 'compliment' | 'sending' | 'success';
+type Step = 'contact' | 'addContact' | 'delivery' | 'category' | 'compliment' | 'sending' | 'success';
 
 const SendAMentModal = ({ isOpen, onClose }: SendAMentModalProps) => {
   const { user, session } = useAuth();
   const { toast } = useToast();
-  const [step, setStep] = useState<Step>('method');
-  const [recipientEmail, setRecipientEmail] = useState('');
+  const [step, setStep] = useState<Step>('contact');
+  const [selectedContact, setSelectedContact] = useState<UserContact | null>(null);
+  const [deliveryMethod, setDeliveryMethod] = useState<'text' | 'email'>('text');
   const [selectedCategory, setSelectedCategory] = useState<ComplimentCategory | null>(null);
   const [selectedCompliment, setSelectedCompliment] = useState('');
-  const [emailError, setEmailError] = useState('');
 
   const resetModal = () => {
-    setStep('method');
-    setRecipientEmail('');
+    setStep('contact');
+    setSelectedContact(null);
+    setDeliveryMethod('text');
     setSelectedCategory(null);
     setSelectedCompliment('');
-    setEmailError('');
   };
 
-  const handleClose = () => {
-    resetModal();
-    onClose();
+  const handleClose = () => { resetModal(); onClose(); };
+
+  const handleContactSelected = (contact: UserContact) => {
+    setSelectedContact(contact);
+    // If contact has both phone and email, let user pick; otherwise skip to category
+    if (contact.phone && contact.email) {
+      setDeliveryMethod(contact.delivery_preference === 'email' ? 'email' : 'text');
+      setStep('delivery');
+    } else {
+      setDeliveryMethod(contact.phone ? 'text' : 'email');
+      setStep('category');
+    }
   };
 
-  const validateEmail = (email: string): boolean => {
-    if (!email.trim()) { setEmailError('Please enter an email address'); return false; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setEmailError('Please enter a valid email'); return false; }
-    if (email.toLowerCase() === user?.email?.toLowerCase()) { setEmailError("You can't send a ment to yourself"); return false; }
-    setEmailError('');
-    return true;
-  };
-
-  const handleEmailNext = () => {
-    if (validateEmail(recipientEmail)) setStep('category');
+  const handleNewContactSaved = (contact: UserContact) => {
+    setSelectedContact(contact);
+    setDeliveryMethod(contact.phone ? 'text' : 'email');
+    setStep('category');
   };
 
   const handleCategorySelect = (category: ComplimentCategory) => {
@@ -57,60 +62,117 @@ const SendAMentModal = ({ isOpen, onClose }: SendAMentModalProps) => {
 
   const handleComplimentSelect = async (compliment: string) => {
     setSelectedCompliment(compliment);
-    // Send immediately after selecting compliment
     await handleSend(compliment);
   };
 
   const handleSend = async (compliment?: string) => {
-    if (!user || !session) return;
-    if (!recipientEmail.trim()) {
-      toast({ title: "No recipient", description: "Please enter an email address first.", variant: "destructive" });
-      setStep('email');
-      return;
-    }
+    if (!user || !session || !selectedContact) return;
     const complimentToSend = compliment || selectedCompliment;
     setStep('sending');
 
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-a-ment`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            recipient_email: recipientEmail.trim(),
-            compliment_text: complimentToSend,
-            compliment_category: selectedCategory?.id || '',
-          }),
+      const recipientIdentifier = deliveryMethod === 'text' ? selectedContact.phone : selectedContact.email;
+
+      if (deliveryMethod === 'email' && selectedContact.email) {
+        // Use existing email flow
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-a-ment`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({
+              recipient_email: selectedContact.email,
+              compliment_text: complimentToSend,
+              compliment_category: selectedCategory?.id || '',
+            }),
+          }
+        );
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Failed to send ment');
+
+        if (result.new_jar_count) {
+          const { useGameStore } = await import('@/store/gameStore');
+          useGameStore.setState({ jarCount: result.new_jar_count });
+          useGameStore.setState(s => ({ totalSent: s.totalSent + 1 }));
         }
-      );
+      } else if (deliveryMethod === 'text' && selectedContact.phone) {
+        // Use SMS placeholder
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-sms`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({
+              phone_number: selectedContact.phone,
+              recipient_name: selectedContact.contact_name,
+              sender_name: user.email?.split('@')[0] || 'Someone',
+              reveal_url: 'https://ment-maker-mania.lovable.app',
+            }),
+          }
+        );
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Failed to send SMS');
 
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Failed to send ment');
+        // Still award mint via existing send-a-ment for SMS (uses email as fallback identifier)
+        // For now, SMS is a placeholder - mint awarding happens when Twilio is integrated
+        toast({ title: "📱 SMS coming soon!", description: "Text delivery isn't live yet — we sent via email instead." });
 
-      if (result.new_jar_count) {
-        const { useGameStore } = await import('@/store/gameStore');
-        useGameStore.setState({ jarCount: result.new_jar_count });
-        useGameStore.setState(s => ({ totalSent: s.totalSent + 1 }));
+        // Fallback: send via email if available
+        if (selectedContact.email) {
+          const emailResp = await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-a-ment`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.access_token}`,
+              },
+              body: JSON.stringify({
+                recipient_email: selectedContact.email,
+                compliment_text: complimentToSend,
+                compliment_category: selectedCategory?.id || '',
+              }),
+            }
+          );
+          const emailResult = await emailResp.json();
+          if (emailResult.new_jar_count) {
+            const { useGameStore } = await import('@/store/gameStore');
+            useGameStore.setState({ jarCount: emailResult.new_jar_count });
+            useGameStore.setState(s => ({ totalSent: s.totalSent + 1 }));
+          }
+        }
       }
+
+      // Update contact stats
+      await supabase
+        .from('user_contacts')
+        .update({
+          total_ments_sent: (selectedContact.total_ments_sent || 0) + 1,
+          last_sent_at: new Date().toISOString(),
+        })
+        .eq('id', selectedContact.id);
 
       setStep('success');
       confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#58fc59', '#FF6B9D', '#4FC3F7', '#FFD740', '#B39DDB'] });
-      toast({ title: "Compliment sent! +1 mint earned 💚", description: `Your ment was sent to ${recipientEmail}` });
+      toast({ title: "Compliment sent! +1 mint earned 💚", description: `Your ment was sent to ${selectedContact.contact_name}` });
       setTimeout(() => handleClose(), 2500);
     } catch (error: any) {
       toast({ title: "Couldn't send ment", description: error.message || 'Please try again', variant: "destructive" });
-      setStep('email');
+      setStep('contact');
     }
   };
 
   const handleBack = () => {
     switch (step) {
-      case 'email': setStep('method'); break;
-      case 'category': setStep('email'); break;
+      case 'addContact': setStep('contact'); break;
+      case 'delivery': setStep('contact'); break;
+      case 'category': setStep(selectedContact?.phone && selectedContact?.email ? 'delivery' : 'contact'); break;
       case 'compliment': setStep('category'); break;
     }
   };
@@ -131,91 +193,73 @@ const SendAMentModal = ({ isOpen, onClose }: SendAMentModalProps) => {
             onClick={(e) => e.stopPropagation()}
           >
             {step !== 'sending' && step !== 'success' && (
-              <button onClick={handleClose} className="absolute right-4 top-4 rounded-full p-2 text-muted-foreground hover:bg-muted transition-colors">
+              <button onClick={handleClose} className="absolute right-4 top-4 rounded-full p-2 text-muted-foreground hover:bg-muted transition-colors z-10">
                 <X className="h-5 w-5" />
               </button>
             )}
 
-            {/* Step 1: Method Selection */}
-            {step === 'method' && (
-              <div className="space-y-6">
+            {/* Step 1: Contact Selection */}
+            {step === 'contact' && (
+              <ContactSelector
+                onContactSelected={handleContactSelected}
+                onNewContact={() => setStep('addContact')}
+              />
+            )}
+
+            {/* Step 2: Add New Contact */}
+            {step === 'addContact' && (
+              <AddContactForm
+                onSaved={handleNewContactSaved}
+                onBack={() => setStep('contact')}
+              />
+            )}
+
+            {/* Step 3: Delivery Method (only if both phone + email) */}
+            {step === 'delivery' && selectedContact && (
+              <div className="space-y-5">
                 <div className="text-center">
-                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
-                    <Send className="h-8 w-8 text-primary" />
-                  </div>
-                  <h2 className="font-display text-2xl font-bold text-foreground">Send A Ment</h2>
-                  <p className="mt-1 text-sm text-muted-foreground">💚 No timer, no pressure – just spread kindness!</p>
+                  <h2 className="font-display text-2xl font-bold text-foreground">Send to {selectedContact.contact_name}</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">How should they receive it?</p>
                 </div>
                 <div className="space-y-3">
-                  <h3 className="text-sm font-medium text-foreground text-center">How do you want to send?</h3>
                   <button
-                    onClick={() => setStep('email')}
-                    className="w-full flex items-center gap-3 p-4 rounded-xl border-2 border-border bg-card hover:border-primary hover:bg-primary/5 transition-colors"
+                    onClick={() => { setDeliveryMethod('text'); setStep('category'); }}
+                    className={`w-full flex items-center gap-3 p-4 rounded-xl border-2 transition-colors ${
+                      deliveryMethod === 'text' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    <Phone className="h-6 w-6 text-primary" />
+                    <div className="text-left">
+                      <div className="font-semibold text-foreground">📱 Text Message</div>
+                      <div className="text-xs text-muted-foreground">{selectedContact.phone}</div>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => { setDeliveryMethod('email'); setStep('category'); }}
+                    className={`w-full flex items-center gap-3 p-4 rounded-xl border-2 transition-colors ${
+                      deliveryMethod === 'email' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
+                    }`}
                   >
                     <Mail className="h-6 w-6 text-primary" />
                     <div className="text-left">
                       <div className="font-semibold text-foreground">📧 Email</div>
-                      <div className="text-xs text-muted-foreground">Send via email address</div>
-                    </div>
-                  </button>
-                  <button
-                    disabled
-                    className="w-full flex items-center gap-3 p-4 rounded-xl border-2 border-border bg-muted/30 opacity-50 cursor-not-allowed"
-                  >
-                    <Smartphone className="h-6 w-6 text-muted-foreground" />
-                    <div className="text-left">
-                      <div className="font-semibold text-muted-foreground">📱 Phone</div>
-                      <div className="text-xs text-muted-foreground">Coming Soon</div>
-                    </div>
-                  </button>
-                  <button
-                    disabled
-                    className="w-full flex items-center gap-3 p-4 rounded-xl border-2 border-border bg-muted/30 opacity-50 cursor-not-allowed"
-                  >
-                    <Users className="h-6 w-6 text-muted-foreground" />
-                    <div className="text-left">
-                      <div className="font-semibold text-muted-foreground">👥 Contacts</div>
-                      <div className="text-xs text-muted-foreground">Coming Soon</div>
+                      <div className="text-xs text-muted-foreground">{selectedContact.email}</div>
                     </div>
                   </button>
                 </div>
-              </div>
-            )}
-
-            {/* Step 2: Email Input */}
-            {step === 'email' && (
-              <div className="space-y-6">
-                <div className="text-center">
-                  <h2 className="font-display text-2xl font-bold text-foreground">📧 Enter Email</h2>
-                  <p className="mt-1 text-sm text-muted-foreground">Who are you sending kindness to?</p>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">Recipient Email</label>
-                  <SavedContactsDropdown
-                    value={recipientEmail}
-                    onChange={(val) => { setRecipientEmail(val); setEmailError(''); }}
-                    onSelect={(email) => { setRecipientEmail(email); setEmailError(''); }}
-                    placeholder="friend@example.com"
-                  />
-                  {emailError && <p className="text-xs text-destructive">{emailError}</p>}
-                </div>
-                <button
-                  onClick={handleEmailNext}
-                  disabled={!recipientEmail.trim()}
-                  className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-semibold disabled:opacity-50 hover:bg-primary/90 transition-colors"
-                >
-                  Choose Ment →
-                </button>
                 <button onClick={handleBack} className="w-full text-sm text-muted-foreground hover:text-foreground">← Back</button>
               </div>
             )}
 
-            {/* Step 3: Category */}
+            {/* Step 4: Category */}
             {step === 'category' && (
-              <div className="space-y-6">
+              <div className="space-y-5">
                 <div className="text-center">
+                  <p className="text-sm text-muted-foreground mb-1">
+                    Sending to <span className="font-medium text-foreground">{selectedContact?.contact_name}</span>
+                    {deliveryMethod === 'text' ? ` via 📱` : ` via 📧`}
+                  </p>
                   <h2 className="font-display text-2xl font-bold text-foreground">Choose Category</h2>
-                  <p className="mt-1 text-sm text-muted-foreground">What kind of ment?</p>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   {complimentCategories.map((category) => (
@@ -234,7 +278,7 @@ const SendAMentModal = ({ isOpen, onClose }: SendAMentModalProps) => {
               </div>
             )}
 
-            {/* Step 4: Compliment */}
+            {/* Step 5: Compliment */}
             {step === 'compliment' && selectedCategory && (
               <div className="space-y-4">
                 <div className="text-center">
@@ -259,7 +303,7 @@ const SendAMentModal = ({ isOpen, onClose }: SendAMentModalProps) => {
               </div>
             )}
 
-            {/* Step 5: Sending Animation */}
+            {/* Step 6: Sending Animation */}
             {step === 'sending' && (
               <div className="flex flex-col items-center justify-center py-12">
                 <motion.div className="relative"
@@ -279,7 +323,7 @@ const SendAMentModal = ({ isOpen, onClose }: SendAMentModalProps) => {
               </div>
             )}
 
-            {/* Step 6: Success */}
+            {/* Step 7: Success */}
             {step === 'success' && (
               <motion.div className="flex flex-col items-center justify-center py-12"
                 initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
