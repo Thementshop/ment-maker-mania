@@ -41,7 +41,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const lastLoadedAtRef = useRef<number>(0);
+  
 
   // Fetch user profile
   const fetchProfile = async (userId: string) => {
@@ -91,29 +91,24 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
     };
 
-    // Load game state only once per session
+    // Load game state - no debounce, just track to avoid duplicate concurrent calls
     const loadUserGameState = async (userId: string, token?: string) => {
-      const now = Date.now();
-      if (lastLoadedAtRef.current && (now - lastLoadedAtRef.current) < 2000) {
-        const currentJar = useGameStore.getState().jarCount;
-        if (currentJar !== 25) return;
-        console.log('[MINT DEBUG] Jar still at default 25, forcing reload');
-      }
-      lastLoadedAtRef.current = now;
+      console.log('[MINT DEBUG] loadUserGameState ENTERED', { userId, hasToken: !!token });
       
       try {
+        console.log('[MINT DEBUG] Calling loadGameState...');
         await useGameStore.getState().loadGameState(userId, token);
         useGameStore.getState().subscribeToWorldCounter();
         console.log('[MINT DEBUG] After loadGameState, jarCount:', useGameStore.getState().jarCount);
       } catch (error) {
-        console.error('Failed to load game state:', error);
-        lastLoadedAtRef.current = 0;
+        console.error('[MINT DEBUG] Failed to load game state:', error);
       }
     };
 
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
+        console.log('[MINT DEBUG] onAuthStateChange fired', { event, hasUser: !!newSession?.user });
         if (!isSubscribed) return;
         
         setSession(newSession);
@@ -124,10 +119,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         clearTimeout(authTimeout);
         
         if (newSession?.user) {
-          // Reset debounce if switching users
-          if (lastLoadedAtRef.current) {
-            lastLoadedAtRef.current = 0;
-          }
+          console.log('[MINT DEBUG] Auth user found, calling loadUserGameState from onAuthStateChange');
           // Set immediate fallback profile from user metadata
           const meta = newSession.user.user_metadata;
           if (isSubscribed) {
@@ -144,8 +136,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           claimChains(newSession.user.id);
           loadUserGameState(newSession.user.id, newSession.access_token);
         } else {
+          console.log('[MINT DEBUG] No user in session, resetting state');
           setProfile(null);
-          lastLoadedAtRef.current = 0;
           useGameStore.getState().resetState();
           useGameStore.getState().unsubscribeFromWorldCounter();
         }
@@ -154,14 +146,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     // Initial session check
     supabase.auth.getSession().then(async ({ data: { session: existingSession } }) => {
+      console.log('[MINT DEBUG] getSession returned', { hasUser: !!existingSession?.user });
       if (!isSubscribed) return;
       
       setSession(existingSession);
       setUser(existingSession?.user ?? null);
-      setIsLoading(false);  // Auth check complete immediately
+      setIsLoading(false);
       clearTimeout(authTimeout);
       
       if (existingSession?.user) {
+        console.log('[MINT DEBUG] Existing session found, calling loadUserGameState from getSession');
         // Immediate fallback profile from metadata
         const meta = existingSession.user.user_metadata;
         if (isSubscribed) {
