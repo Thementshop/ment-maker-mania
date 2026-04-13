@@ -21,7 +21,7 @@ export interface GameState {
   userId: string | null;
   
   // Actions
-  loadGameState: (userId: string) => Promise<void>;
+  loadGameState: (userId: string, token?: string) => Promise<void>;
   sendMent: (mentData: { category: string; complimentText: string; recipientType: string; recipientValue?: string }) => Promise<{ leveledUp: boolean; bonusMints: number }>;
   addPendingMent: (ment: Omit<PendingMent, 'id' | 'expiresAt' | 'status'>) => Promise<void>;
   passMent: (id: string) => Promise<void>;
