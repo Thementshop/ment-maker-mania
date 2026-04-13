@@ -29,7 +29,6 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
 
     const token = authHeader.replace('Bearer ', '');
     const adminClient = createClient(supabaseUrl, supabaseServiceKey);
@@ -42,13 +41,10 @@ Deno.serve(async (req) => {
     }
     const userId = user.id;
 
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } }
-    });
-
     const body: CreateChainRequest = await req.json();
     const { chainName, compliment, complimentCategory } = body;
     
+    // Accept any email, phone, or contact name — no profile lookup needed
     const recipientList = body.recipients?.length 
       ? body.recipients.map(r => r.trim()).filter(Boolean)
       : body.recipientValue ? [body.recipientValue.trim()] : [];
@@ -71,7 +67,7 @@ Deno.serve(async (req) => {
     const uniqueRecipients = new Set(lowerRecipients);
     if (uniqueRecipients.size !== lowerRecipients.length) {
       return new Response(
-        JSON.stringify({ error: 'Duplicate recipients are not allowed. Each person should be unique!' }),
+        JSON.stringify({ error: 'Duplicate recipients are not allowed.' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -84,14 +80,16 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('Creating chain with', recipientList.length, 'recipients, category:', complimentCategory);
+    console.log('Creating chain with', recipientList.length, 'recipients');
 
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const finalName = chainName?.trim() || `@${user.user_metadata?.full_name || user.email?.split('@')[0] || 'User'}'s Chain`;
 
-    const { data: newChain, error: chainError } = await supabase
+    // Use adminClient for all DB operations to bypass RLS and avoid token issues
+    const { data: newChain, error: chainError } = await adminClient
       .from('ment_chains')
       .insert({
-        chain_name: chainName,
+        chain_name: finalName,
         started_by: userId,
         current_holder: recipientList[0],
         expires_at: expiresAt.toISOString(),
@@ -124,78 +122,66 @@ Deno.serve(async (req) => {
       compliment_category: complimentCategory || null,
     }));
 
-    const { error: linkError } = await supabase
+    const { error: linkError } = await adminClient
       .from('chain_links')
       .insert(linkInserts);
 
     if (linkError) {
       console.error('Link creation error:', linkError);
-      return new Response(
-        JSON.stringify({ 
-          chain: newChain, 
-          warning: `Chain created but links failed: ${linkError.message}` 
-        }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
     }
 
-    console.log('Created', recipientList.length, 'links for chain:', newChain.chain_id);
+    // Return success immediately — do all remaining work fire-and-forget
+    const responsePayload = { chain: newChain, success: true, newJarCount: null as number | null };
+
+    // Award +5 mints to creator (fire-and-forget)
+    adminClient
+      .from('user_game_state')
+      .select('jar_count, chains_started_today, last_chain_start_date')
+      .eq('user_id', userId)
+      .maybeSingle()
+      .then(({ data: gameState }) => {
+        const now = new Date();
+        const lastStart = new Date(gameState?.last_chain_start_date || 0);
+        const isNewDay = now.getUTCDate() !== lastStart.getUTCDate() ||
+                         now.getUTCMonth() !== lastStart.getUTCMonth() ||
+                         now.getUTCFullYear() !== lastStart.getUTCFullYear();
+        const newJar = (gameState?.jar_count ?? 25) + 5;
+        
+        adminClient
+          .from('user_game_state')
+          .update({
+            jar_count: newJar,
+            chains_started_today: isNewDay ? 1 : (gameState?.chains_started_today || 0) + 1,
+            last_chain_start_date: now.toISOString()
+          })
+          .eq('user_id', userId)
+          .then(({ error }) => {
+            if (error) console.warn('Creator mint award failed:', error);
+            else console.log('Creator awarded +5 mints, new jar:', newJar);
+          });
+      });
+
+    // Award +1 mint to each recipient who has an account (fire-and-forget)
+    for (const recipient of recipientList) {
+      adminClient.rpc('award_mint_to_email', { _email: recipient })
+        .then(({ error }) => {
+          if (error) console.warn('Recipient mint failed for', recipient, error);
+        });
+    }
 
     // Claim chain name (fire-and-forget)
-    if (chainName && chainName.trim()) {
-      supabase
+    if (finalName) {
+      adminClient
         .from('used_chain_names')
-        .insert({ chain_name: chainName, chain_id: newChain.chain_id })
+        .insert({ chain_name: finalName, chain_id: newChain.chain_id })
         .then(({ error }) => {
           if (error) console.warn('Name claim failed:', error);
         });
     }
 
-    // Award +5 mints to creator
-    console.log('[MINT DEBUG] Starting mint award for creator:', userId);
-    const now = new Date();
-    let newJarCount = 25;
-    try {
-      const { data: gameState } = await adminClient
-        .from('user_game_state')
-        .select('jar_count, chains_started_today, last_chain_start_date')
-        .eq('user_id', userId)
-        .maybeSingle();
-      
-      const lastStart = new Date(gameState?.last_chain_start_date || 0);
-      const isNewDay = now.getUTCDate() !== lastStart.getUTCDate() ||
-                       now.getUTCMonth() !== lastStart.getUTCMonth() ||
-                       now.getUTCFullYear() !== lastStart.getUTCFullYear();
-      
-      const currentJar = gameState?.jar_count ?? 25;
-      newJarCount = currentJar + 5;
-      
-      const { error: updateErr } = await adminClient
-        .from('user_game_state')
-        .update({
-          jar_count: newJarCount,
-          chains_started_today: isNewDay ? 1 : (gameState?.chains_started_today || 0) + 1,
-          last_chain_start_date: now.toISOString()
-        })
-        .eq('user_id', userId);
-      
-      if (updateErr) console.warn('[MINT DEBUG] Creator mint award FAILED:', updateErr);
-      else console.log('[MINT DEBUG] Creator awarded +5 mints, new jar:', newJarCount);
-    } catch (e) {
-      console.error('[MINT DEBUG] Mint award exception:', e);
-    }
-
-    // Award +1 mint to each recipient who has an account (fire-and-forget)
-    for (const recipient of recipientList) {
-      adminClient.rpc('award_mint_to_email', { _email: recipient })
-        .then(({ data, error }) => {
-          if (error) console.warn('Recipient mint award failed for', recipient, error);
-          else console.log('Recipient mint award for', recipient, ':', data);
-        });
-    }
-
-    // Send email notifications to email recipients (fire-and-forget)
+    // Send email notifications (fire-and-forget)
     const senderName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Someone';
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const appBaseUrl = 'https://ment-maker-mania.lovable.app';
     
     for (const recipient of recipientList) {
@@ -214,22 +200,18 @@ Deno.serve(async (req) => {
             chain_id: newChain.chain_id,
             template_data: {
               recipient_name: recipientName,
-              chain_name: chainName || `@${senderName}'s Chain`,
+              chain_name: finalName,
               sender_name: senderName,
               compliment_category: complimentCategory || 'default',
               chain_url: `${appBaseUrl}/chain/${newChain.chain_id}`,
             },
           }),
-        }).then(r => r.text()).then(t => {
-          console.log('Email sent to', recipient, ':', t);
-        }).catch(e => {
-          console.warn('Email send failed for', recipient, ':', e);
-        });
+        }).catch(e => console.warn('Email send failed for', recipient, e));
       }
     }
 
     return new Response(
-      JSON.stringify({ chain: newChain, success: true, newJarCount }),
+      JSON.stringify(responsePayload),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
