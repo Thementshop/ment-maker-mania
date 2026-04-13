@@ -1,8 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { getCurrentTier, getNextTier, getTierProgress, getMintsToNextTier } from '@/utils/jarTiers';
+import { getCurrentTier, getNextTier, getMintsToNextTier } from '@/utils/jarTiers';
 import { getCurrentLevel, getLevelProgress, getMentsToNextLevel } from '@/store/gameStore';
 import { Progress } from '@/components/ui/progress';
-import { Sparkles } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 
@@ -26,7 +25,6 @@ const getJarWithMintsImage = (count: number, emptyImage: string): string => {
 const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
   const currentTier = getCurrentTier(jarCount);
   const nextTier = getNextTier(jarCount);
-  const tierProgress = getTierProgress(jarCount);
   const mintsToNext = getMintsToNextTier(jarCount);
   const currentLevel = getCurrentLevel(jarCount);
   const levelProgress = getLevelProgress(jarCount);
@@ -54,19 +52,10 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
   const jarImage = getJarWithMintsImage(jarCount, currentTier.image);
 
   return (
-    <div className="flex flex-col items-center gap-3 w-full">
-      <h2 className="font-display text-xl font-bold text-foreground flex items-center gap-2">
-        <Sparkles className="h-5 w-5 text-primary" />
-        Kindness Jar
-        <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold">
-          Level {currentLevel.level}
-        </span>
-      </h2>
-
-      {/* Jar Display */}
-      <div className="relative w-full h-64 flex items-center justify-center rounded-2xl" style={{ backgroundColor: '#ffffff' }}>
-        <div className="relative w-56 h-64 rounded-2xl" style={{ backgroundColor: '#ffffff' }}>
-          {/* White fill behind glass so mints don't show checkerboard */}
+    <div className="flex flex-col items-center w-full">
+      {/* Jar Display - Hero visual */}
+      <div className="relative w-full flex items-center justify-center rounded-2xl py-2" style={{ backgroundColor: '#ffffff' }}>
+        <div className="relative w-56 h-56 rounded-2xl" style={{ backgroundColor: '#ffffff' }}>
           <div aria-hidden="true" style={{ position: 'absolute', left: '20%', top: '18%', width: '60%', height: '62%', backgroundColor: '#ffffff', borderRadius: '12px', zIndex: 1 }} />
           <motion.img
             key={jarImage}
@@ -78,76 +67,46 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: 'spring', stiffness: 200 }}
           />
-
-          <motion.div
-            className="absolute top-2 right-2 z-20 bg-gradient-to-br from-amber-400 to-amber-600 text-white px-2.5 py-0.5 rounded-full text-xs font-bold shadow-lg"
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: 'spring', delay: 0.3 }}
-          >
-            {currentTier.name}
-          </motion.div>
         </div>
       </div>
 
-      {/* Mint count */}
-      <div className="text-center">
-        <motion.span
-          key={jarCount}
-          className="font-display text-5xl font-bold text-primary"
-          initial={{ scale: 1.2 }}
-          animate={{ scale: 1 }}
-          transition={{ type: 'spring', stiffness: 300 }}
-        >
-          {jarCount}
-        </motion.span>
-        <p className="text-sm text-muted-foreground mt-1">Total Mints Collected</p>
-      </div>
+      {/* Level name with personality */}
+      <p className="text-sm font-bold text-foreground text-center mt-2">
+        Level {currentLevel.level}: {currentLevel.name}
+      </p>
 
-      {/* Level Info */}
-      <div className="w-full max-w-xs">
-        <div className="flex items-center justify-center gap-2 mb-2">
-          <span className="text-sm font-semibold text-foreground">
-            Level {currentLevel.level}: {currentLevel.name}
-          </span>
-        </div>
-        {currentLevel.level < 25 && (
-          <div className="space-y-1">
-            <Progress value={levelProgress} className="h-3" />
-            <p className="text-xs text-muted-foreground text-center">
-              {mentsToNextLevel} ments to Level {currentLevel.level + 1}
-            </p>
-          </div>
-        )}
-        {currentLevel.level >= 25 && (
-          <p className="text-xs text-primary text-center font-semibold">
-            🎉 Max Level Reached!
-          </p>
-        )}
-      </div>
+      {/* Mint count - simple */}
+      <motion.p
+        key={jarCount}
+        className="text-2xl font-bold text-primary text-center"
+        initial={{ scale: 1.2 }}
+        animate={{ scale: 1 }}
+        transition={{ type: 'spring', stiffness: 300 }}
+      >
+        {jarCount} mints
+      </motion.p>
 
-      {/* Tier Progress */}
-      {nextTier && (
-        <div className="w-full max-w-xs mt-1">
-          <div className="flex justify-between text-xs text-muted-foreground mb-1">
-            <span>{currentTier.name} Jar</span>
-            <span>{nextTier.name} Jar</span>
-          </div>
-          <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
-            <motion.div
-              className="h-full rounded-full bg-gradient-to-r from-amber-400 to-amber-600"
-              initial={{ width: 0 }}
-              animate={{ width: `${Math.min(tierProgress, 100)}%` }}
-              transition={{ duration: 0.5, ease: 'easeOut' }}
-            />
-          </div>
-          <p className="text-xs text-muted-foreground text-center mt-1">
-            {mintsToNext} mints until <strong>{nextTier.name}</strong> jar
+      {/* Level progress bar */}
+      {currentLevel.level < 25 ? (
+        <div className="w-full max-w-xs mt-2 space-y-1">
+          <Progress value={levelProgress} className="h-2.5" />
+          <p className="text-xs text-muted-foreground text-center">
+            {mentsToNextLevel} more to Level {currentLevel.level + 1}
           </p>
         </div>
+      ) : (
+        <p className="text-xs text-primary text-center font-semibold mt-2">
+          🎉 Max Level Reached!
+        </p>
       )}
-      {!nextTier && (
-        <p className="text-xs text-primary text-center font-semibold">
+
+      {/* Next tier goal */}
+      {nextTier ? (
+        <p className="text-xs text-muted-foreground text-center mt-1.5">
+          {mintsToNext} mints until {nextTier.name} Jar 🏆
+        </p>
+      ) : (
+        <p className="text-xs text-primary text-center font-semibold mt-1.5">
           🏆 Max Tier Reached!
         </p>
       )}
