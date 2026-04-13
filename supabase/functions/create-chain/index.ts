@@ -130,38 +130,44 @@ Deno.serve(async (req) => {
       console.error('Link creation error:', linkError);
     }
 
-    // Return success immediately — do all remaining work fire-and-forget
-    const responsePayload = { chain: newChain, success: true, newJarCount: null as number | null };
+    // Persist creator reward before responding so the client can show the real updated jar count
+    let newJarCount: number | null = null;
+    let newTotalSent: number | null = null;
 
-    // Award +5 mints to creator (fire-and-forget)
-    adminClient
+    const { data: gameState } = await adminClient
       .from('user_game_state')
-      .select('jar_count, chains_started_today, last_chain_start_date')
+      .select('jar_count, total_sent, chains_started_today, last_chain_start_date')
       .eq('user_id', userId)
-      .maybeSingle()
-      .then(({ data: gameState }) => {
-        const now = new Date();
-        const lastStart = new Date(gameState?.last_chain_start_date || 0);
-        const isNewDay = now.getUTCDate() !== lastStart.getUTCDate() ||
-                         now.getUTCMonth() !== lastStart.getUTCMonth() ||
-                         now.getUTCFullYear() !== lastStart.getUTCFullYear();
-        const newJar = (gameState?.jar_count ?? 25) + 5;
-        const newTotalSent = (gameState?.total_sent ?? 0) + 1;
-        
-        adminClient
-          .from('user_game_state')
-          .update({
-            jar_count: newJar,
-            total_sent: newTotalSent,
-            chains_started_today: isNewDay ? 1 : (gameState?.chains_started_today || 0) + 1,
-            last_chain_start_date: now.toISOString()
-          })
-          .eq('user_id', userId)
-          .then(({ error }) => {
-            if (error) console.warn('Creator mint award failed:', error);
-            else console.log('Creator awarded +5 mints, new jar:', newJar, 'total_sent:', newTotalSent);
-          });
-      });
+      .maybeSingle();
+
+    const now = new Date();
+    const lastStart = new Date(gameState?.last_chain_start_date || 0);
+    const isNewDay = now.getUTCDate() !== lastStart.getUTCDate() ||
+                     now.getUTCMonth() !== lastStart.getUTCMonth() ||
+                     now.getUTCFullYear() !== lastStart.getUTCFullYear();
+
+    newJarCount = (gameState?.jar_count ?? 25) + 5;
+    newTotalSent = (gameState?.total_sent ?? 0) + 1;
+
+    const { error: creatorRewardError } = await adminClient
+      .from('user_game_state')
+      .update({
+        jar_count: newJarCount,
+        total_sent: newTotalSent,
+        chains_started_today: isNewDay ? 1 : (gameState?.chains_started_today || 0) + 1,
+        last_chain_start_date: now.toISOString()
+      })
+      .eq('user_id', userId);
+
+    if (creatorRewardError) {
+      console.warn('Creator mint award failed:', creatorRewardError);
+      newJarCount = null;
+      newTotalSent = null;
+    } else {
+      console.log('Creator awarded +5 mints, new jar:', newJarCount, 'total_sent:', newTotalSent);
+    }
+
+    const responsePayload = { chain: newChain, success: true, newJarCount, newTotalSent };
 
     // Award +1 mint to each recipient who has an account (fire-and-forget)
     for (const recipient of recipientList) {
