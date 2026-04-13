@@ -122,51 +122,54 @@ export const useGameStore = create<GameState>()((set, get) => ({
 
     try {
       const gameStatePromise = queryWithTimeout(
-        supabase
-          .from('user_game_state')
-          .select('jar_count, total_sent, current_level')
-          .eq('user_id', userId)
-          .maybeSingle(),
+        (async () => {
+          return await supabase
+            .from('user_game_state')
+            .select('jar_count, total_sent, current_level')
+            .eq('user_id', userId)
+            .maybeSingle();
+        })(),
         'game state'
-      )
-        .then(({ data: gameState, error: gameError }) => {
-          if (gameError) {
-            console.error('Error loading game state:', gameError);
-            return;
-          }
-
-          console.log('[MINT DEBUG] loadGameState setting jar_count:', gameState?.jar_count ?? 25, 'total_sent:', gameState?.total_sent ?? 0);
-          set({
-            jarCount: gameState?.jar_count ?? 25,
-            totalSent: gameState?.total_sent ?? 0,
-            currentLevel: gameState?.current_level ?? 1,
-          });
-          console.log('[MINT DEBUG] loadGameState applied primary state, store jarCount now:', get().jarCount);
-        })
-        .catch((error) => {
-          console.error('Error loading game state:', error);
-        });
+      );
 
       const pendingMentsPromise = queryWithTimeout(
-        supabase
-          .from('pending_ments')
-          .select('*')
-          .eq('user_id', userId)
-          .eq('status', 'pending'),
+        (async () => {
+          return await supabase
+            .from('pending_ments')
+            .select('*')
+            .eq('user_id', userId)
+            .eq('status', 'pending');
+        })(),
         'pending ments'
       );
 
       const worldCounterPromise = queryWithTimeout(
-        supabase
-          .from('world_kindness_counter')
-          .select('count')
-          .eq('id', 1)
-          .maybeSingle(),
+        (async () => {
+          return await supabase
+            .from('world_kindness_counter')
+            .select('count')
+            .eq('id', 1)
+            .maybeSingle();
+        })(),
         'world counter'
       );
 
-      const [, pendingMentsResult, worldCounterResult] = await Promise.allSettled([
-        gameStatePromise,
+      const gameStateResult = await gameStatePromise;
+      const { data: gameState, error: gameError } = gameStateResult;
+
+      if (gameError) {
+        console.error('Error loading game state:', gameError);
+      } else {
+        console.log('[MINT DEBUG] loadGameState setting jar_count:', gameState?.jar_count ?? 25, 'total_sent:', gameState?.total_sent ?? 0);
+        set({
+          jarCount: gameState?.jar_count ?? 25,
+          totalSent: gameState?.total_sent ?? 0,
+          currentLevel: gameState?.current_level ?? 1,
+        });
+        console.log('[MINT DEBUG] loadGameState applied primary state, store jarCount now:', get().jarCount);
+      }
+
+      const [pendingMentsResult, worldCounterResult] = await Promise.allSettled([
         pendingMentsPromise,
         worldCounterPromise,
       ]);
