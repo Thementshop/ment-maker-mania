@@ -142,7 +142,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           if (isSubscribed && userProfile) setProfile(userProfile);
           // Claim chains and load game state in background
           claimChains(newSession.user.id);
-          loadUserGameState(newSession.user.id);
+          loadUserGameState(newSession.user.id, newSession.access_token);
         } else {
           setProfile(null);
           lastLoadedAtRef.current = 0;
@@ -174,7 +174,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         const userProfile = await fetchProfile(existingSession.user.id);
         if (isSubscribed && userProfile) setProfile(userProfile);
         claimChains(existingSession.user.id);
-        loadUserGameState(existingSession.user.id);
+        loadUserGameState(existingSession.user.id, existingSession.access_token);
       }
     });
 
