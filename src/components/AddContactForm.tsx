@@ -1,0 +1,126 @@
+import { useState } from 'react';
+import { Input } from '@/components/ui/input';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { UserPlus, Phone, Mail } from 'lucide-react';
+import type { UserContact } from '@/components/ContactSelector';
+
+interface AddContactFormProps {
+  onSaved: (contact: UserContact) => void;
+  onBack: () => void;
+  initialName?: string;
+}
+
+const AddContactForm = ({ onSaved, onBack, initialName = '' }: AddContactFormProps) => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [name, setName] = useState(initialName);
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const validate = (): boolean => {
+    const errs: Record<string, string> = {};
+    if (!name.trim()) errs.name = 'Name is required';
+    if (!phone.trim() && !email.trim()) errs.contact = 'Phone or email is required';
+    if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email = 'Invalid email';
+    if (email.trim() && email.toLowerCase() === user?.email?.toLowerCase()) errs.email = "Can't add yourself";
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  const handleSave = async () => {
+    if (!validate() || !user) return;
+    setSaving(true);
+
+    const deliveryPref = phone.trim() ? 'text' : 'email';
+
+    const { data, error } = await supabase
+      .from('user_contacts')
+      .insert({
+        user_id: user.id,
+        contact_name: name.trim(),
+        phone: phone.trim() || null,
+        email: email.trim() || null,
+        delivery_preference: deliveryPref,
+      })
+      .select()
+      .single();
+
+    setSaving(false);
+
+    if (error) {
+      toast({ title: 'Could not save contact', description: error.message, variant: 'destructive' });
+      return;
+    }
+
+    onSaved(data as UserContact);
+  };
+
+  return (
+    <div className="space-y-5">
+      <div className="text-center">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-3">
+          <UserPlus className="h-8 w-8 text-primary" />
+        </div>
+        <h2 className="font-display text-2xl font-bold text-foreground">Add New Contact</h2>
+        <p className="mt-1 text-sm text-muted-foreground">Save them for quick sending next time</p>
+      </div>
+
+      <div className="space-y-4">
+        {/* Name */}
+        <div className="space-y-1">
+          <label className="text-sm font-medium text-foreground">Name *</label>
+          <Input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Sarah, Mom, Coach Mike..."
+          />
+          {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
+        </div>
+
+        {/* Phone - primary */}
+        <div className="space-y-1">
+          <label className="text-sm font-medium text-foreground flex items-center gap-1">
+            <Phone className="h-3.5 w-3.5" /> Phone
+          </label>
+          <Input
+            type="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="(555) 123-4567"
+          />
+        </div>
+
+        {/* Email - secondary */}
+        <div className="space-y-1">
+          <label className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+            <Mail className="h-3.5 w-3.5" /> or email instead
+          </label>
+          <Input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="friend@example.com"
+          />
+          {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
+        </div>
+
+        {errors.contact && <p className="text-xs text-destructive text-center">{errors.contact}</p>}
+      </div>
+
+      <button
+        onClick={handleSave}
+        disabled={saving}
+        className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-semibold disabled:opacity-50 hover:bg-primary/90 transition-colors"
+      >
+        {saving ? 'Saving...' : 'Save & Continue'}
+      </button>
+      <button onClick={onBack} className="w-full text-sm text-muted-foreground hover:text-foreground">← Back</button>
+    </div>
+  );
+};
+
+export default AddContactForm;
