@@ -97,115 +97,95 @@ const initialState = {
   userId: null,
 };
 
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+const restFetch = async (table: string, params: string, token: string): Promise<any> => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
+  try {
+    const resp = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params}`, {
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    if (!resp.ok) throw new Error(`REST ${table} failed: ${resp.status}`);
+    return await resp.json();
+  } catch (e) {
+    clearTimeout(timeoutId);
+    throw e;
+  }
+};
+
 export const useGameStore = create<GameState>()((set, get) => ({
   ...initialState,
   
   loadGameState: async (userId: string) => {
     set({ isLoading: true, userId });
 
-    const queryWithTimeout = async <T>(query: Promise<T>, label: string, timeoutMs = 10000): Promise<T> => {
-      let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
-
-      try {
-        return await Promise.race([
-          query,
-          new Promise<never>((_, reject) => {
-            timeoutHandle = setTimeout(() => reject(new Error(`${label} load timeout after ${timeoutMs}ms`)), timeoutMs);
-          }),
-        ]);
-      } finally {
-        if (timeoutHandle) {
-          clearTimeout(timeoutHandle);
-        }
-      }
-    };
-
     try {
-      const gameStatePromise = queryWithTimeout(
-        (async () => {
-          return await supabase
-            .from('user_game_state')
-            .select('jar_count, total_sent, current_level')
-            .eq('user_id', userId)
-            .maybeSingle();
-        })(),
-        'game state'
-      );
-
-      const pendingMentsPromise = queryWithTimeout(
-        (async () => {
-          return await supabase
-            .from('pending_ments')
-            .select('*')
-            .eq('user_id', userId)
-            .eq('status', 'pending');
-        })(),
-        'pending ments'
-      );
-
-      const worldCounterPromise = queryWithTimeout(
-        (async () => {
-          return await supabase
-            .from('world_kindness_counter')
-            .select('count')
-            .eq('id', 1)
-            .maybeSingle();
-        })(),
-        'world counter'
-      );
-
-      const gameStateResult = await gameStatePromise;
-      const { data: gameState, error: gameError } = gameStateResult;
-
-      if (gameError) {
-        console.error('Error loading game state:', gameError);
-      } else {
-        console.log('[MINT DEBUG] loadGameState setting jar_count:', gameState?.jar_count ?? 25, 'total_sent:', gameState?.total_sent ?? 0);
-        set({
-          jarCount: gameState?.jar_count ?? 25,
-          totalSent: gameState?.total_sent ?? 0,
-          currentLevel: gameState?.current_level ?? 1,
-        });
-        console.log('[MINT DEBUG] loadGameState applied primary state, store jarCount now:', get().jarCount);
+      // Get token from Supabase session
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) {
+        console.warn('[MINT DEBUG] No auth token, skipping loadGameState');
+        set({ isLoading: false });
+        return;
       }
 
-      const [pendingMentsResult, worldCounterResult] = await Promise.allSettled([
-        pendingMentsPromise,
-        worldCounterPromise,
-      ]);
+      // Use direct REST to avoid Supabase JS client auth token lock contention
+      const gameStatePromise = restFetch(
+        'user_game_state',
+        `select=jar_count,total_sent,current_level&user_id=eq.${userId}`,
+        token
+      ).catch(e => { console.error('Error loading game state:', e); return null; });
 
-      if (pendingMentsResult.status === 'fulfilled') {
-        const { data: pendingMentsData, error: pendingError } = pendingMentsResult.value;
+      const pendingMentsPromise = restFetch(
+        'pending_ments',
+        `select=*&user_id=eq.${userId}&status=eq.pending`,
+        token
+      ).catch(e => { console.error('Error loading pending ments:', e); return null; });
 
-        if (pendingError) {
-          console.error('Error loading pending ments:', pendingError);
-        } else {
-          const pendingMents: PendingMent[] = (pendingMentsData || []).map(m => ({
-            id: m.id,
-            category: m.category,
-            complimentText: m.compliment_text,
-            expiresAt: new Date(m.expires_at),
-            status: m.status as 'pending' | 'passed' | 'expired',
-            recipientType: m.recipient_type,
-            recipientValue: m.recipient_value || undefined,
-          }));
+      const worldCounterPromise = restFetch(
+        'world_kindness_counter',
+        `select=count&id=eq.1`,
+        token
+      ).catch(e => { console.error('Error loading world counter:', e); return null; });
 
-          set({ pendingMents });
-        }
-      } else {
-        console.error('Error loading pending ments:', pendingMentsResult.reason);
+      // Await game state first so jar updates ASAP
+      const gameStateRows = await gameStatePromise;
+      const gameState = gameStateRows?.[0] ?? null;
+
+      console.log('[MINT DEBUG] loadGameState setting jar_count:', gameState?.jar_count ?? 25, 'total_sent:', gameState?.total_sent ?? 0);
+      set({
+        jarCount: gameState?.jar_count ?? 25,
+        totalSent: gameState?.total_sent ?? 0,
+        currentLevel: gameState?.current_level ?? 1,
+      });
+      console.log('[MINT DEBUG] loadGameState applied, store jarCount now:', get().jarCount);
+
+      // Then settle secondary queries
+      const [pendingMentsRows, worldCounterRows] = await Promise.all([pendingMentsPromise, worldCounterPromise]);
+
+      if (pendingMentsRows) {
+        const pendingMents: PendingMent[] = pendingMentsRows.map((m: any) => ({
+          id: m.id,
+          category: m.category,
+          complimentText: m.compliment_text,
+          expiresAt: new Date(m.expires_at),
+          status: m.status as 'pending' | 'passed' | 'expired',
+          recipientType: m.recipient_type,
+          recipientValue: m.recipient_value || undefined,
+        }));
+        set({ pendingMents });
       }
 
-      if (worldCounterResult.status === 'fulfilled') {
-        const { data: worldCounter, error: worldError } = worldCounterResult.value;
-
-        if (worldError) {
-          console.error('Error loading world counter:', worldError);
-        } else {
-          set({ worldKindnessCount: worldCounter?.count ?? 0 });
-        }
-      } else {
-        console.error('Error loading world counter:', worldCounterResult.reason);
+      if (worldCounterRows?.[0]) {
+        set({ worldKindnessCount: worldCounterRows[0].count ?? 0 });
       }
     } catch (error) {
       console.error('Error loading game state:', error);
