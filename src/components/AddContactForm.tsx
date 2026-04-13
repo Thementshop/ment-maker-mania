@@ -48,8 +48,9 @@ const AddContactForm = ({ onSaved, onBack, initialName = '' }: AddContactFormPro
         throw new Error('App configuration is missing. Please refresh and try again.');
       }
 
-      if (!session?.access_token) {
-        toast({ title: 'Not logged in', description: 'Please log in and try again.', variant: 'destructive' });
+      const freshToken = await getFreshAccessToken();
+      if (!freshToken) {
+        toast({ title: 'Session expired', description: 'Please sign in again.', variant: 'destructive' });
         setSaving(false);
         return;
       }
@@ -70,7 +71,7 @@ const AddContactForm = ({ onSaved, onBack, initialName = '' }: AddContactFormPro
         headers: {
           'Content-Type': 'application/json',
           'apikey': supabaseKey,
-          'Authorization': `Bearer ${session.access_token}`,
+          'Authorization': `Bearer ${freshToken}`,
           'Prefer': 'return=representation',
         },
         signal: controller.signal,
@@ -78,6 +79,12 @@ const AddContactForm = ({ onSaved, onBack, initialName = '' }: AddContactFormPro
       });
 
       window.clearTimeout(timeoutId);
+
+      if (res.status === 401 || res.status === 403) {
+        toast({ title: 'Session expired', description: 'Please sign in again.', variant: 'destructive' });
+        setSaving(false);
+        return;
+      }
 
       const result = await res.json();
 
