@@ -17,14 +17,15 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 
 const Index = () => {
   useChainNotifications();
-  const { profile } = useAuth();
+  const { profile, user, session } = useAuth();
   const {
     jarCount,
     totalSent,
     pendingMents,
     worldKindnessCount,
     isLoading,
-    sendMent
+    sendMent,
+    loadGameState,
   } = useGameStore();
   
   const [isSendAMentOpen, setIsSendAMentOpen] = useState(false);
@@ -39,6 +40,29 @@ const Index = () => {
       setShowOnboarding(true);
     }
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+
+    console.log('[MINT DEBUG][Index] Forcing home-page game state hydration', {
+      userId: user.id,
+      hasToken: !!session?.access_token,
+      currentJarBefore: useGameStore.getState().jarCount,
+    });
+
+    loadGameState(user.id, session?.access_token)
+      .then(() => {
+        const state = useGameStore.getState();
+        console.log('[MINT DEBUG][Index] Home-page hydration complete', {
+          jarCount: state.jarCount,
+          totalSent: state.totalSent,
+          currentLevel: state.currentLevel,
+        });
+      })
+      .catch((error) => {
+        console.error('[MINT DEBUG][Index] Home-page hydration failed', error);
+      });
+  }, [user?.id, session?.access_token, loadGameState]);
 
   return (
     <div className="min-h-screen bg-gradient-mint flex flex-col">
