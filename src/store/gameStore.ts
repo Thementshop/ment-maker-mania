@@ -124,13 +124,23 @@ const restFetch = async (table: string, params: string, token: string): Promise<
 export const useGameStore = create<GameState>()((set, get) => ({
   ...initialState,
   
-  loadGameState: async (userId: string) => {
+  loadGameState: async (userId: string, passedToken?: string) => {
     set({ isLoading: true, userId });
 
     try {
-      // Get token from Supabase session
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
+      // Use passed token to avoid Supabase JS client auth token lock contention
+      let token = passedToken;
+      if (!token) {
+        // Fallback: try to get from localStorage directly
+        const storageKey = `sb-cjnukzmjenfvuopooumb-auth-token`;
+        try {
+          const stored = localStorage.getItem(storageKey);
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            token = parsed?.access_token;
+          }
+        } catch {}
+      }
       if (!token) {
         console.warn('[MINT DEBUG] No auth token, skipping loadGameState');
         set({ isLoading: false });
