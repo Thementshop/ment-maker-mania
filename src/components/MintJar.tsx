@@ -78,7 +78,7 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
       {/* Mint count - simple */}
       <motion.p
         key={jarCount}
-        className="font-bold text-primary text-center text-3xl shadow-mint opacity-100 rounded-none"
+        className="font-bold text-primary text-center text-3xl opacity-100 rounded-none border-0 border-none shadow-none"
         initial={{ scale: 1.2 }}
         animate={{ scale: 1 }}
         transition={{ type: 'spring', stiffness: 300 }}
