@@ -268,10 +268,10 @@ function buildMentReceivedEmail(data: TemplateData): string {
     <h2 style="color:${BRAND_DARK};margin:32px 0 14px;font-size:28px;font-weight:800;line-height:1.25;letter-spacing:-0.6px;">
       ${escapeHtml(sender)} thought of you and wrapped something kind just for you.
     </h2>
-    <p style="color:#4b5563;font-size:15px;line-height:1.6;margin:0 0 32px;">
-      Take a quiet moment. Open it when you're ready.
-    </p>
     ${primaryCTA(revealUrl, 'Unwrap Your Ment', 'No account needed. This was made just for you.')}
+    <p style="color:${BRAND_DARK};font-size:14px;line-height:1.6;margin:0 0 32px;text-align:center;">
+      Enjoy your moment — then pass one along or send one back to <strong>${escapeHtml(sender)}</strong> anytime 💚
+    </p>
   `;
   return shell('Something Was Made For You', inner);
 }
