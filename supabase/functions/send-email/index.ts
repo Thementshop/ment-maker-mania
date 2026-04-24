@@ -54,46 +54,50 @@ function escapeHtml(str: string): string {
     .replace(/'/g, '&#039;');
 }
 
-// ─── Category-based subjects ───
-const categorySubjects: Record<string, string> = {
-  love: "❤️ Someone loves you!",
-  encouragement: "💪 Someone believes in you!",
-  sympathy: "💙 Someone is thinking of you",
-  'special-occasions': "🎉 Someone's celebrating you!",
-  'funny-slang': "😄 Someone made you smile!",
-  affirmation: "✨ Someone sees your light!",
-  default: "💚 Someone sent you a compliment!",
-};
-
+// ─── Subjects ───
 function getSubject(emailType: string, data: TemplateData): string {
   switch (emailType) {
     case 'chain_received':
-      return `⏰ You have 24 hours to keep the ${escapeHtml(data.chain_name)} chain alive`;
+      return `⏰ You have 24 hours to keep the ${data.chain_name} chain alive`;
     case 'ment_received':
-      return categorySubjects[data.compliment_category || 'default'] || "💚 Someone sent you a compliment!";
+      return `${data.sender_name || 'Someone'} thought of you — open this when you're ready`;
     case '1hr_warning':
       if (data.other_chains && data.other_chains.length > 0) {
-        return `⏰ You have ${(data.other_chains.length + 1)} chains expiring soon!`;
+        return `⏰ ${(data.other_chains.length + 1)} of your chains are about to break`;
       }
-      return "⏰ Quick reminder – Chain timer running!";
+      return `⏰ 1 hour left — don't let the ${data.chain_name} chain break`;
     case 'milestone':
-      return `🎉 Your "${escapeHtml(data.chain_name)}" chain hit ${data.milestone} shares!`;
+      return `🏆 Your ${data.chain_name} chain just hit ${data.milestone} shares`;
     case 'completed':
-      return `Your "${escapeHtml(data.chain_name)}" chain completed! 💚`;
+      return `Your ${data.chain_name} chain reached ${data.total_shares || 0} people`;
     default:
-      return "💚 You received a kindness chain!";
+      return "You've received something special from Ment Shop";
   }
+}
+
+// ─── Shared brand assets ───
+const MINT_IMG = 'https://ment-maker-mania.lovable.app/images/mint-candy.png';
+const BRAND_DARK = '#0a1a0a';
+const BRAND_GREEN = '#58fc59';
+
+// ─── Premium dark header (shared) ───
+function brandHeader(eyebrow: string): string {
+  return `
+  <tr><td style="background-color:${BRAND_DARK};padding:36px 30px;text-align:center;border-bottom:3px solid ${BRAND_GREEN};">
+    <img src="${MINT_IMG}" width="64" height="64" alt="" style="display:block;margin:0 auto 14px;width:64px;height:64px;">
+    <h1 style="color:#ffffff;margin:0;font-size:26px;font-weight:800;letter-spacing:-0.5px;">MENT SHOP</h1>
+    <p style="color:${BRAND_GREEN};margin:6px 0 0;font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;">${escapeHtml(eyebrow)}</p>
+  </td></tr>`;
 }
 
 // ─── FOOTER ───
 const footer = `
-<tr><td style="background-color:#f9fafb;padding:20px 30px;text-align:center;">
-  <p style="color:#6b7280;font-size:12px;line-height:1.5;margin:0 0 8px;">
-    💡 Tip: Add info@mentshop.com to your contacts so our emails always reach your inbox!
+<tr><td style="background-color:${BRAND_DARK};padding:24px 30px;text-align:center;border-top:1px solid #1f2f1f;">
+  <p style="color:#9ca3af;font-size:11px;line-height:1.6;margin:0 0 6px;letter-spacing:0.5px;">
+    MENT SHOP &nbsp;·&nbsp; A chain of kindness, passed person to person.
   </p>
-  <p style="color:#9ca3af;font-size:12px;margin:0;">
-    Ment Shop – Spreading Kindness, One Compliment at a Time<br>
-    Questions? Email <a href="mailto:info@mentshop.com" style="color:#58fc59;">info@mentshop.com</a>
+  <p style="color:#6b7280;font-size:11px;margin:0;">
+    Questions? <a href="mailto:info@mentshop.com" style="color:${BRAND_GREEN};text-decoration:none;">info@mentshop.com</a>
   </p>
 </td></tr>`;
 
