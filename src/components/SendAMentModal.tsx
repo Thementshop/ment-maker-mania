@@ -192,11 +192,13 @@ const SendAMentModal = ({ isOpen, onClose }: SendAMentModalProps) => {
         })
         .eq('id', selectedContact.id);
 
+      window.clearTimeout(timeoutId);
       setStep('success');
       confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#58fc59', '#FF6B9D', '#4FC3F7', '#FFD740', '#B39DDB'] });
       toast({ title: "Compliment sent! +1 mint earned 💚", description: `Your ment was sent to ${selectedContact.contact_name}` });
       setTimeout(() => handleClose(), 2500);
     } catch (error: any) {
+      window.clearTimeout(timeoutId);
       toast({ title: "Couldn't send ment", description: error.message || 'Please try again', variant: "destructive" });
       setStep('contact');
     }
