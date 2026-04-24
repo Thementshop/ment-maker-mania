@@ -89,20 +89,22 @@ const AddContactForm = ({ onSaved, onBack, initialName = '' }: AddContactFormPro
       const result = await res.json();
 
       if (!res.ok) {
-        const msg = Array.isArray(result) ? result[0]?.message : result?.message || 'Unknown error';
-        console.error('[AddContact] Save failed:', result);
+        const msg = Array.isArray(result) ? result[0]?.message : (result?.message || result?.hint || result?.details || `Save failed (HTTP ${res.status})`);
+        console.error('[AddContact] Save failed:', { status: res.status, result });
         toast({ title: 'Could not save contact', description: msg, variant: 'destructive' });
         setSaving(false);
         return;
       }
 
       const saved = Array.isArray(result) ? result[0] : result;
+      console.log('[AddContact] Saved successfully:', saved);
+      toast({ title: 'Contact saved!', description: `${name.trim()} has been added to your contacts.` });
       setSaving(false);
       onSaved(saved as UserContact);
     } catch (err: any) {
       const message = err?.name === 'AbortError'
-        ? 'Saving timed out. Please try again.'
-        : err?.message || 'Something went wrong';
+        ? 'Saving timed out. Please check your connection and try again.'
+        : err?.message || 'Unknown error occurred';
 
       console.error('[AddContact] Exception:', err);
       toast({ title: 'Error saving contact', description: message, variant: 'destructive' });
