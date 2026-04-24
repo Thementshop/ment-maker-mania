@@ -77,36 +77,39 @@ function getSubject(emailType: string, data: TemplateData): string {
 
 // ─── Shared brand assets ───
 const MINT_IMG = 'https://ment-maker-mania.lovable.app/images/mint-candy.png';
-const BRAND_DARK = '#0a1a0a';
-const BRAND_GREEN = '#58fc59';
+const BRAND_DARK = '#1a1a1a';        // body text
+const BRAND_HEADER = '#0d3d18';      // deep candy green header band
+const BRAND_GREEN = '#58fc59';       // Screamin' Green accent
+const PAGE_BG = '#f9fff9';           // soft minty page background
+const CARD_BG = '#ffffff';
 
-// ─── Premium dark header (shared) ───
+// ─── Header (deep green band with mint logo) ───
 function brandHeader(eyebrow: string): string {
   return `
-  <tr><td style="background-color:${BRAND_DARK};padding:36px 30px;text-align:center;border-bottom:3px solid ${BRAND_GREEN};">
-    <img src="${MINT_IMG}" width="64" height="64" alt="" style="display:block;margin:0 auto 14px;width:64px;height:64px;">
+  <tr><td style="background-color:${BRAND_HEADER};padding:32px 30px;text-align:center;border-bottom:4px solid ${BRAND_GREEN};">
+    <img src="${MINT_IMG}" width="64" height="64" alt="" style="display:block;margin:0 auto 12px;width:64px;height:64px;">
     <h1 style="color:#ffffff;margin:0;font-size:26px;font-weight:800;letter-spacing:-0.5px;">MENT SHOP</h1>
     <p style="color:${BRAND_GREEN};margin:6px 0 0;font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;">${escapeHtml(eyebrow)}</p>
   </td></tr>`;
 }
 
-// ─── FOOTER ───
+// ─── FOOTER (light) ───
 const footer = `
-<tr><td style="background-color:${BRAND_DARK};padding:24px 30px;text-align:center;border-top:1px solid #1f2f1f;">
-  <p style="color:#9ca3af;font-size:11px;line-height:1.6;margin:0 0 6px;letter-spacing:0.5px;">
+<tr><td style="background-color:#f3faf3;padding:24px 30px;text-align:center;border-top:1px solid #e5f3e5;">
+  <p style="color:#4b5563;font-size:11px;line-height:1.6;margin:0 0 6px;letter-spacing:0.5px;">
     MENT SHOP &nbsp;·&nbsp; A chain of kindness, passed person to person.
   </p>
   <p style="color:#6b7280;font-size:11px;margin:0;">
-    Questions? <a href="mailto:info@mentshop.com" style="color:${BRAND_GREEN};text-decoration:none;">info@mentshop.com</a>
+    Questions? <a href="mailto:info@mentshop.com" style="color:${BRAND_HEADER};text-decoration:none;font-weight:600;">info@mentshop.com</a>
   </p>
 </td></tr>`;
 
 // ─── Shared shell ───
 function shell(eyebrow: string, innerHtml: string): string {
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background-color:${BRAND_DARK};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background-color:${BRAND_DARK};padding:40px 20px;"><tr><td align="center">
-<table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.4);">
+<body style="margin:0;padding:0;background-color:${PAGE_BG};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:${PAGE_BG};padding:40px 20px;"><tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background-color:${CARD_BG};border-radius:16px;overflow:hidden;box-shadow:0 10px 40px rgba(13,61,24,0.12);">
   ${brandHeader(eyebrow)}
   <tr><td style="padding:0 30px;">${innerHtml}</td></tr>
   ${footer}
@@ -126,10 +129,10 @@ function urgencyBanner(eyebrow: string, message: string): string {
 function primaryCTA(href: string, label: string, subtext?: string): string {
   return `
     <div style="text-align:center;margin:0 0 32px;">
-      <a href="${escapeHtml(href)}" style="display:inline-block;background-color:${BRAND_DARK};color:${BRAND_GREEN};text-decoration:none;padding:18px 44px;border-radius:10px;font-size:17px;font-weight:800;letter-spacing:0.5px;border:2px solid ${BRAND_GREEN};box-shadow:0 8px 24px rgba(88,252,89,0.25);">
+      <a href="${escapeHtml(href)}" style="display:inline-block;background-color:${BRAND_GREEN};color:${BRAND_HEADER};text-decoration:none;padding:18px 44px;border-radius:999px;font-size:17px;font-weight:800;letter-spacing:0.3px;border:2px solid ${BRAND_HEADER};box-shadow:0 6px 18px rgba(88,252,89,0.35);">
         ${escapeHtml(label)} →
       </a>
-      ${subtext ? `<p style="color:#9ca3af;font-size:12px;margin:14px 0 0;letter-spacing:0.5px;">${escapeHtml(subtext)}</p>` : ''}
+      ${subtext ? `<p style="color:#4b5563;font-size:13px;margin:14px 0 0;line-height:1.5;">${subtext}</p>` : ''}
     </div>`;
 }
 
@@ -175,9 +178,9 @@ function build1hrWarningSingleEmail(data: TemplateData): string {
 // ─── TEMPLATE 2b: 1hr Warning (Batched) ───
 function build1hrWarningBatchedEmail(data: TemplateData): string {
   const otherChainsHtml = (data.other_chains || []).map(c => `
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #1f2f1f;">
-      <p style="color:#ffffff;font-size:14px;font-weight:600;margin:0;">${escapeHtml(c.chain_name)}</p>
-      <p style="color:${BRAND_GREEN};font-size:13px;margin:0;font-weight:700;">${escapeHtml(c.time_left)}</p>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #e5f3e5;">
+      <p style="color:${BRAND_DARK};font-size:14px;font-weight:600;margin:0;">${escapeHtml(c.chain_name)}</p>
+      <p style="color:${BRAND_HEADER};font-size:13px;margin:0;font-weight:700;">${escapeHtml(c.time_left)}</p>
     </div>
   `).join('');
 
@@ -187,15 +190,15 @@ function build1hrWarningBatchedEmail(data: TemplateData): string {
     <h2 style="color:${BRAND_DARK};margin:0 0 20px;font-size:26px;font-weight:800;letter-spacing:-0.5px;">
       Most urgent
     </h2>
-    <div style="background-color:${BRAND_DARK};border-radius:12px;padding:22px;margin:0 0 20px;">
-      <p style="color:#ffffff;font-size:18px;font-weight:700;margin:0 0 6px;">${escapeHtml(data.urgent_chain_name || data.chain_name)}</p>
-      <p style="color:${BRAND_GREEN};font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin:0 0 16px;">${escapeHtml(data.urgent_time_left || '< 1 hour')} left</p>
-      <a href="${escapeHtml(data.urgent_chain_url || data.chain_url)}" style="display:inline-block;background-color:${BRAND_GREEN};color:${BRAND_DARK};text-decoration:none;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:800;letter-spacing:0.5px;">
+    <div style="background-color:#f3faf3;border:2px solid ${BRAND_GREEN};border-radius:12px;padding:22px;margin:0 0 20px;">
+      <p style="color:${BRAND_DARK};font-size:18px;font-weight:700;margin:0 0 6px;">${escapeHtml(data.urgent_chain_name || data.chain_name)}</p>
+      <p style="color:${BRAND_HEADER};font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin:0 0 16px;">${escapeHtml(data.urgent_time_left || '< 1 hour')} left</p>
+      <a href="${escapeHtml(data.urgent_chain_url || data.chain_url)}" style="display:inline-block;background-color:${BRAND_GREEN};color:${BRAND_HEADER};text-decoration:none;padding:12px 28px;border-radius:999px;font-size:14px;font-weight:800;letter-spacing:0.3px;border:2px solid ${BRAND_HEADER};">
         Pass This Chain →
       </a>
     </div>
     <p style="color:${BRAND_DARK};font-size:13px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;margin:24px 0 12px;">Also expiring soon</p>
-    <div style="background-color:${BRAND_DARK};border-radius:12px;padding:8px 22px;margin:0 0 28px;">
+    <div style="background-color:#f9fff9;border:1px solid #e5f3e5;border-radius:12px;padding:8px 22px;margin:0 0 28px;">
       ${otherChainsHtml}
     </div>
     ${primaryCTA(appUrl, 'View All Your Chains')}
@@ -265,10 +268,10 @@ function buildMentReceivedEmail(data: TemplateData): string {
     <h2 style="color:${BRAND_DARK};margin:32px 0 14px;font-size:28px;font-weight:800;line-height:1.25;letter-spacing:-0.6px;">
       ${escapeHtml(sender)} thought of you and wrapped something kind just for you.
     </h2>
-    <p style="color:#4b5563;font-size:15px;line-height:1.6;margin:0 0 32px;">
-      Take a quiet moment. Open it when you're ready.
-    </p>
     ${primaryCTA(revealUrl, 'Unwrap Your Ment', 'No account needed. This was made just for you.')}
+    <p style="color:${BRAND_DARK};font-size:14px;line-height:1.6;margin:0 0 32px;text-align:center;">
+      Enjoy your moment — then pass one along or send one back to <strong>${escapeHtml(sender)}</strong> anytime 💚
+    </p>
   `;
   return shell('Something Was Made For You', inner);
 }
