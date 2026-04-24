@@ -350,7 +350,7 @@ const RevealView = ({
                     Create Free Account to Pass It Forward
                   </Button>
                   <button
-                    onClick={() => onNavigate(`/auth?returnTo=/chain/${chainId}`)}
+                    onClick={() => onNavigate(`/auth?mode=login&returnTo=/chain/${chainId}`)}
                     className="text-sm text-primary hover:underline"
                   >
                     Already have an account? Sign In
