@@ -68,7 +68,7 @@ const categorySubjects: Record<string, string> = {
 function getSubject(emailType: string, data: TemplateData): string {
   switch (emailType) {
     case 'chain_received':
-      return categorySubjects[data.compliment_category || 'default'] || categorySubjects.default;
+      return `⏰ You have 24 hours to keep the ${escapeHtml(data.chain_name)} chain alive`;
     case 'ment_received':
       return categorySubjects[data.compliment_category || 'default'] || "💚 Someone sent you a compliment!";
     case '1hr_warning':
@@ -97,39 +97,54 @@ const footer = `
   </p>
 </td></tr>`;
 
-// ─── TEMPLATE 1: Chain Received (Teaser) ───
+// ─── TEMPLATE 1: Chain Received (Premium / Urgent) ───
 function buildChainReceivedEmail(data: TemplateData): string {
+  const chainName = escapeHtml(data.chain_name);
+  const mintImg = 'https://ment-maker-mania.lovable.app/images/mint-candy.png';
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background-color:#f0fdf4;font-family:Arial,Helvetica,sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f0fdf4;padding:40px 20px;"><tr><td align="center">
-<table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.1);">
-  <tr><td style="background-color:#58fc59;padding:30px;text-align:center;">
-    <h1 style="color:#ffffff;margin:0;font-size:28px;">💚 Ment Shop</h1>
-    <p style="color:#dcfce7;margin:8px 0 0;font-size:14px;">Spreading Kindness, One Compliment at a Time</p>
+<body style="margin:0;padding:0;background-color:#0a1a0a;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#0a1a0a;padding:40px 20px;"><tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.4);">
+
+  <!-- Premium dark header with mint accent -->
+  <tr><td style="background-color:#0a1a0a;padding:36px 30px;text-align:center;border-bottom:3px solid #58fc59;">
+    <img src="${mintImg}" width="64" height="64" alt="" style="display:block;margin:0 auto 14px;width:64px;height:64px;">
+    <h1 style="color:#ffffff;margin:0;font-size:26px;font-weight:800;letter-spacing:-0.5px;">MENT SHOP</h1>
+    <p style="color:#58fc59;margin:6px 0 0;font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;">A Chain Just Reached You</p>
   </td></tr>
-  <tr><td style="padding:40px 30px;">
-    <h2 style="color:#166534;margin:0 0 20px;font-size:22px;">Hey ${escapeHtml(data.recipient_name)}! 💚</h2>
-    <p style="color:#374151;font-size:16px;line-height:1.6;margin:0 0 20px;">
-      Someone just sent you a kindness compliment in the "${escapeHtml(data.chain_name)}" chain!
-    </p>
-    <div style="text-align:center;margin:0 0 24px;">
-      <div style="display:inline-block;background-color:#f0fdf4;border-radius:12px;padding:24px 32px;">
-        <p style="font-size:40px;margin:0;">🎁</p>
-        <p style="color:#166534;font-size:18px;font-weight:bold;margin:8px 0 0;">Your compliment is waiting...</p>
-      </div>
+
+  <tr><td style="padding:0 30px;">
+
+    <!-- URGENT alert banner at top -->
+    <div style="background:linear-gradient(135deg,#dc2626,#ea580c);border-radius:12px;padding:18px 22px;margin:28px 0 24px;text-align:center;box-shadow:0 6px 20px rgba(220,38,38,0.25);">
+      <p style="color:#ffffff;font-size:13px;font-weight:800;letter-spacing:2px;text-transform:uppercase;margin:0 0 6px;">⏰ 24-Hour Window</p>
+      <p style="color:#ffffff;font-size:15px;font-weight:600;margin:0;line-height:1.4;">
+        Pass it forward within 24 hours or the chain breaks.
+      </p>
     </div>
-    <div style="text-align:center;margin:0 0 24px;">
-      <a href="${escapeHtml(data.chain_url)}" style="display:inline-block;background-color:#58fc59;color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:16px;font-weight:bold;">
+
+    <h2 style="color:#0a1a0a;margin:0 0 12px;font-size:30px;font-weight:800;line-height:1.15;letter-spacing:-0.8px;">
+      ⚡ ${chainName} Chain
+    </h2>
+    <p style="color:#0a1a0a;font-size:18px;line-height:1.5;margin:0 0 8px;font-weight:600;">
+      Hey ${escapeHtml(data.recipient_name)} — you're the next link.
+    </p>
+    <p style="color:#4b5563;font-size:15px;line-height:1.6;margin:0 0 28px;">
+      Someone hand-picked you to receive this kindness. The chain is alive in your hands now. Keep it going.
+    </p>
+
+    <!-- Reveal CTA below urgency -->
+    <div style="text-align:center;margin:0 0 32px;">
+      <a href="${escapeHtml(data.chain_url)}" style="display:inline-block;background-color:#0a1a0a;color:#58fc59;text-decoration:none;padding:18px 44px;border-radius:10px;font-size:17px;font-weight:800;letter-spacing:0.5px;border:2px solid #58fc59;box-shadow:0 8px 24px rgba(88,252,89,0.25);">
         Reveal Your Compliment →
       </a>
+      <p style="color:#9ca3af;font-size:12px;margin:14px 0 0;letter-spacing:0.5px;">Tap to open your message</p>
     </div>
-    <div style="background-color:#fef3c7;border-radius:8px;padding:12px 16px;margin:0 0 24px;text-align:center;">
-      <p style="color:#92400e;font-size:14px;margin:0;">⏰ You have <strong>24 hours</strong> to pass it forward!</p>
-    </div>
-    <div style="border-top:1px solid #e5e7eb;padding-top:20px;">
-      <p style="color:#6b7280;font-size:14px;font-weight:bold;margin:0 0 4px;">What is Ment Shop?</p>
-      <p style="color:#6b7280;font-size:13px;line-height:1.5;margin:0;">
-        It's a game where kindness spreads from person to person. Join the chain! 🔗
+
+    <div style="border-top:1px solid #e5e7eb;padding:22px 0 28px;">
+      <p style="color:#0a1a0a;font-size:13px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;margin:0 0 8px;">What is Ment Shop?</p>
+      <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0;">
+        A chain of kindness, passed person to person. You were chosen — now choose someone else.
       </p>
     </div>
   </td></tr>
@@ -137,6 +152,7 @@ function buildChainReceivedEmail(data: TemplateData): string {
 </table>
 </td></tr></table></body></html>`;
 }
+
 
 // ─── TEMPLATE 2a: 1hr Warning (Single) ───
 function build1hrWarningSingleEmail(data: TemplateData): string {
