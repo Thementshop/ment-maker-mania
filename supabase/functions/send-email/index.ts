@@ -68,7 +68,7 @@ const categorySubjects: Record<string, string> = {
 function getSubject(emailType: string, data: TemplateData): string {
   switch (emailType) {
     case 'chain_received':
-      return categorySubjects[data.compliment_category || 'default'] || categorySubjects.default;
+      return `⏰ You have 24 hours to keep the ${escapeHtml(data.chain_name)} chain alive`;
     case 'ment_received':
       return categorySubjects[data.compliment_category || 'default'] || "💚 Someone sent you a compliment!";
     case '1hr_warning':
