@@ -89,8 +89,8 @@ const AddContactForm = ({ onSaved, onBack, initialName = '' }: AddContactFormPro
       const result = await res.json();
 
       if (!res.ok) {
-        const msg = Array.isArray(result) ? result[0]?.message : result?.message || 'Unknown error';
-        console.error('[AddContact] Save failed:', result);
+        const msg = Array.isArray(result) ? result[0]?.message : (result?.message || result?.hint || result?.details || `Save failed (HTTP ${res.status})`);
+        console.error('[AddContact] Save failed:', { status: res.status, result });
         toast({ title: 'Could not save contact', description: msg, variant: 'destructive' });
         setSaving(false);
         return;
