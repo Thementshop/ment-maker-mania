@@ -69,11 +69,38 @@ const SendAMentModal = ({ isOpen, onClose }: SendAMentModalProps) => {
   const handleSend = async (compliment?: string) => {
     if (!user || !selectedContact) return;
     const complimentToSend = compliment || selectedCompliment;
+
+    // Pre-flight: SMS is not live yet. If user picked text but contact has no email
+    // for fallback, fail fast with a clear error instead of hanging.
+    if (deliveryMethod === 'text' && !selectedContact.email) {
+      toast({
+        title: "Can't send to this contact yet",
+        description: "This contact doesn't have an email address. Please add an email to send them a Ment, or add your phone number to enable SMS.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (deliveryMethod === 'email' && !selectedContact.email) {
+      toast({
+        title: "No email on file",
+        description: "This contact doesn't have an email address. Please add one to send them a Ment.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setStep('sending');
+
+    // Safety timeout — never let the spinner run forever
+    const timeoutId = window.setTimeout(() => {
+      toast({ title: "Something went wrong. Please try again.", variant: "destructive" });
+      setStep('contact');
+    }, 15000);
 
     try {
       const accessToken = await getFreshAccessToken();
       if (!accessToken) {
+        window.clearTimeout(timeoutId);
         toast({ title: "Session expired", description: "Please sign in again.", variant: "destructive" });
         setStep('contact');
         return;
@@ -165,11 +192,13 @@ const SendAMentModal = ({ isOpen, onClose }: SendAMentModalProps) => {
         })
         .eq('id', selectedContact.id);
 
+      window.clearTimeout(timeoutId);
       setStep('success');
       confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#58fc59', '#FF6B9D', '#4FC3F7', '#FFD740', '#B39DDB'] });
       toast({ title: "Compliment sent! +1 mint earned 💚", description: `Your ment was sent to ${selectedContact.contact_name}` });
       setTimeout(() => handleClose(), 2500);
     } catch (error: any) {
+      window.clearTimeout(timeoutId);
       toast({ title: "Couldn't send ment", description: error.message || 'Please try again', variant: "destructive" });
       setStep('contact');
     }
