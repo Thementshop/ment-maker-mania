@@ -13,17 +13,17 @@ const Auth = () => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSettingUp, setIsSettingUp] = useState(false);
-  const [isLoginMode, setIsLoginMode] = useState(false);
-  
+  // Read URL params
+  const searchParams = new URLSearchParams(window.location.search);
+  const returnTo = searchParams.get('returnTo') || '/';
+  const initialMode = searchParams.get('mode') === 'login';
+  const [isLoginMode, setIsLoginMode] = useState(initialMode);
+
   // Form state
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-
-  // Read returnTo from URL params
-  const searchParams = new URLSearchParams(window.location.search);
-  const returnTo = searchParams.get('returnTo') || '/';
 
   // Redirect if already logged in
   if (!isLoading && user) {
