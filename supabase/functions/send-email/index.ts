@@ -183,20 +183,20 @@ function build1hrWarningBatchedEmail(data: TemplateData): string {
   const otherChainsHtml = (data.other_chains || []).map(c => `
     <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #e5f3e5;">
       <p style="color:${BRAND_DARK};font-size:14px;font-weight:600;margin:0;">${escapeHtml(c.chain_name)}</p>
-      <p style="color:${BRAND_HEADER};font-size:13px;margin:0;font-weight:700;">${escapeHtml(c.time_left)}</p>
+      <p style="color:${BRAND_GREEN_DARK};font-size:13px;margin:0;font-weight:700;">${escapeHtml(c.time_left)}</p>
     </div>
   `).join('');
 
   const appUrl = data.app_url || 'https://ment-maker-mania.lovable.app';
   const inner = `
-    ${urgencyBanner('⚡ Multiple Chains Expiring', `${(data.other_chains?.length || 0) + 1} chains need your attention right now.`)}
+    ${urgencyBanner('Multiple Chains Expiring', `${(data.other_chains?.length || 0) + 1} chains need your attention right now.`)}
     <h2 style="color:${BRAND_DARK};margin:0 0 20px;font-size:26px;font-weight:800;letter-spacing:-0.5px;">
       Most urgent
     </h2>
     <div style="background-color:#f3faf3;border:2px solid ${BRAND_GREEN};border-radius:12px;padding:22px;margin:0 0 20px;">
       <p style="color:${BRAND_DARK};font-size:18px;font-weight:700;margin:0 0 6px;">${escapeHtml(data.urgent_chain_name || data.chain_name)}</p>
-      <p style="color:${BRAND_HEADER};font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin:0 0 16px;">${escapeHtml(data.urgent_time_left || '< 1 hour')} left</p>
-      <a href="${escapeHtml(data.urgent_chain_url || data.chain_url)}" style="display:inline-block;background-color:${BRAND_GREEN};color:${BRAND_HEADER};text-decoration:none;padding:12px 28px;border-radius:999px;font-size:14px;font-weight:800;letter-spacing:0.3px;border:2px solid ${BRAND_HEADER};">
+      <p style="color:${BRAND_GREEN_DARK};font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin:0 0 16px;">${escapeHtml(data.urgent_time_left || '< 1 hour')} left</p>
+      <a href="${escapeHtml(data.urgent_chain_url || data.chain_url)}" style="display:inline-block;background-color:${BRAND_GREEN};color:${BRAND_DARK};text-decoration:none;padding:12px 28px;border-radius:999px;font-size:14px;font-weight:800;letter-spacing:0.3px;">
         Pass This Chain →
       </a>
     </div>
