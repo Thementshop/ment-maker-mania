@@ -91,11 +91,14 @@ const SendAMentModal = ({ isOpen, onClose }: SendAMentModalProps) => {
 
     setStep('sending');
 
-    // Safety timeout — never let the spinner run forever
+    // Safety timeout — never let the spinner run forever.
+    // Generous (30s) to cover edge function cold starts + Resend latency.
+    let timedOut = false;
     const timeoutId = window.setTimeout(() => {
+      timedOut = true;
       toast({ title: "Something went wrong. Please try again.", variant: "destructive" });
       setStep('contact');
-    }, 15000);
+    }, 30000);
 
     try {
       const accessToken = await getFreshAccessToken();
