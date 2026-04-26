@@ -126,32 +126,15 @@ const Header = ({ worldCount }: HeaderProps) => {
             </motion.button>
           </div>
 
-          {/* Row 2: How it works + Store + World tracker */}
+          {/* Row 2: How it works + World tracker */}
           <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1 min-w-0">
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setIsHowItWorksOpen(true)}
-                className="font-display text-xs font-semibold text-foreground px-2.5 py-1.5 rounded-full hover:bg-primary/10"
-              >
-                How it works
-              </motion.button>
-
-              <Link to="/store">
-                <motion.div
-                  whileTap={{ scale: 0.95 }}
-                  className="relative flex items-center gap-1 font-display text-xs font-semibold text-foreground px-2.5 py-1.5 rounded-full hover:bg-primary/10"
-                >
-                  <Ticket className="h-3.5 w-3.5" />
-                  <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full">
-                    {pauseTokens}
-                  </span>
-                  {canClaimFreeToken && (
-                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-primary rounded-full animate-pulse" />
-                  )}
-                </motion.div>
-              </Link>
-            </div>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setIsHowItWorksOpen(true)}
+              className="font-display text-xs font-semibold text-foreground px-3 py-1.5 rounded-full hover:bg-primary/10 shrink-0"
+            >
+              How it works
+            </motion.button>
 
             <motion.div
               whileTap={{ scale: 0.98 }}
