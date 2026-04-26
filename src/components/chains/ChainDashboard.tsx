@@ -33,7 +33,7 @@ function transformChainToCardData(chain: MentChain): ChainData {
     current_holder: chain.current_holder,
     current_holder_display_name: chain.current_holder_display_name,
     status: chain.status === 'ended' ? 'broken' : chain.status as 'active' | 'broken',
-    is_queued: chain.is_queued || false,
+    is_queued: false,
     received_compliment: chain.received_compliment,
   };
 }
