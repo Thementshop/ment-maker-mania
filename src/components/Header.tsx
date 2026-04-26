@@ -34,7 +34,8 @@ const Header = ({ worldCount }: HeaderProps) => {
   return (
     <>
       <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-md">
-        <div className="container flex h-16 items-center justify-between">
+        {/* Desktop layout (md and up) — unchanged */}
+        <div className="container hidden md:flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
             <Link to="/" className="flex items-center gap-2">
               <img src={unwrappedMint} alt="Mint" className="h-10 w-10 object-contain" />
@@ -43,7 +44,7 @@ const Header = ({ worldCount }: HeaderProps) => {
               </span>
             </Link>
           </div>
-          
+
           {/* Center Nav */}
           <nav className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2">
             <motion.button
@@ -54,7 +55,7 @@ const Header = ({ worldCount }: HeaderProps) => {
             >
               How it works
             </motion.button>
-            
+
             <Link to="/store">
               <TooltipProvider>
                 <Tooltip>
@@ -81,9 +82,8 @@ const Header = ({ worldCount }: HeaderProps) => {
               </TooltipProvider>
             </Link>
           </nav>
-          
+
           <div className="flex items-center gap-4">
-            {/* World Counter */}
             <motion.div
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -106,7 +106,6 @@ const Header = ({ worldCount }: HeaderProps) => {
               </motion.span>
             </motion.div>
 
-            {/* User Avatar - Clickable for Settings */}
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -115,11 +114,10 @@ const Header = ({ worldCount }: HeaderProps) => {
             >
               <Avatar className="h-9 w-9 border-2 border-mint transition-colors group-hover:border-primary">
                 <AvatarImage src={profile?.avatar_url || undefined} />
-              <AvatarFallback className="bg-mint text-primary-foreground font-display">
+                <AvatarFallback className="bg-mint text-primary-foreground font-display">
                   {getInitials(resolvedName)}
                 </AvatarFallback>
               </Avatar>
-              {/* Settings icon overlay on hover */}
               <motion.div
                 initial={{ opacity: 0 }}
                 whileHover={{ opacity: 1 }}
@@ -128,6 +126,81 @@ const Header = ({ worldCount }: HeaderProps) => {
                 <Settings className="h-4 w-4 text-primary" />
               </motion.div>
             </motion.button>
+          </div>
+        </div>
+
+        {/* Mobile layout (below md) — two-row stack */}
+        <div className="container md:hidden flex flex-col gap-2 py-2">
+          {/* Row 1: logo + avatar */}
+          <div className="flex items-center justify-between">
+            <Link to="/" className="flex items-center gap-2 min-w-0">
+              <img src={unwrappedMint} alt="Mint" className="h-8 w-8 object-contain shrink-0" />
+              <span className="font-display text-base font-bold text-ring truncate">
+                The Ment Shop
+              </span>
+            </Link>
+
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setIsSettingsOpen(true)}
+              className="relative flex items-center gap-2 group shrink-0"
+            >
+              <Avatar className="h-9 w-9 border-2 border-mint">
+                <AvatarImage src={profile?.avatar_url || undefined} />
+                <AvatarFallback className="bg-mint text-primary-foreground font-display">
+                  {getInitials(resolvedName)}
+                </AvatarFallback>
+              </Avatar>
+            </motion.button>
+          </div>
+
+          {/* Row 2: How it works + Store + World tracker */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1 min-w-0">
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setIsHowItWorksOpen(true)}
+                className="font-display text-xs font-semibold text-foreground px-2.5 py-1.5 rounded-full hover:bg-primary/10"
+              >
+                How it works
+              </motion.button>
+
+              <Link to="/store">
+                <motion.div
+                  whileTap={{ scale: 0.95 }}
+                  className="relative flex items-center gap-1 font-display text-xs font-semibold text-foreground px-2.5 py-1.5 rounded-full hover:bg-primary/10"
+                >
+                  <Ticket className="h-3.5 w-3.5" />
+                  <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full">
+                    {pauseTokens}
+                  </span>
+                  {canClaimFreeToken && (
+                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-primary rounded-full animate-pulse" />
+                  )}
+                </motion.div>
+              </Link>
+            </div>
+
+            <motion.div
+              whileTap={{ scale: 0.98 }}
+              className="world-tracker flex items-center gap-1.5 rounded-full px-3 py-1.5 text-mint-light shrink-0"
+            >
+              <motion.span
+                className="text-lg leading-none"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+              >
+                🌍
+              </motion.span>
+              <motion.span
+                key={worldCount}
+                initial={{ scale: 1.2, color: '#FFD740' }}
+                animate={{ scale: 1, color: '#FFFFFF' }}
+                className="font-display font-bold text-sm"
+              >
+                {formattedCount}
+              </motion.span>
+            </motion.div>
           </div>
         </div>
       </header>
