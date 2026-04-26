@@ -115,7 +115,7 @@ const Index = () => {
                   <YourChainsCard onStartChain={() => setIsStartChainOpen(true)} />
                 </div>
               </TooltipTrigger>
-              <TooltipContent><p>View your active chains and start new ones! 🔗</p></TooltipContent>
+              <TooltipContent><p>Spread kindness in a BIG WAY 🔗</p></TooltipContent>
             </Tooltip>
           </div>
         </TooltipProvider>
