@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { usePauseTokens } from '@/hooks/usePauseTokens';
+
 import unwrappedMint from '@/assets/unwrapped-mint.png';
 import HowItWorksModal from './HowItWorksModal';
 import AccountSettingsModal from './AccountSettingsModal';
