@@ -82,17 +82,15 @@ const ChainDashboard = () => {
     return chains.map(transformChainToCardData);
   }, [chains]);
 
-  // Smart default tab selection
+  // Smart default tab selection — always lead with positive/active states
   const defaultTab = useMemo(() => {
     const hasYourTurn = chainData.some(c => isCurrentHolder(c.current_holder) && c.status === 'active' && !c.is_queued);
     const hasActive = chainData.some(c => c.status === 'active' && !c.is_queued);
     const hasQueued = chainData.some(c => c.is_queued);
-    const hasEnded = chainData.some(c => c.status === 'broken');
 
     if (hasYourTurn) return 'yourTurn';
     if (hasActive) return 'active';
     if (hasQueued) return 'queued';
-    if (hasEnded) return 'ended';
     return 'active';
   }, [chainData, currentUserId]);
 
