@@ -1,53 +1,30 @@
+## Rewrite "How The Ment Shop Works" Modal
 
-What “JWT expired” means:
+Update the steps array in `src/components/HowItWorksModal.tsx` to reflect accurate app mechanics. Seven steps total.
 
-- A JWT is the temporary login token the app sends with your request to prove you’re signed in.
-- “JWT expired” means the token attached to the “save contact” request was too old, so the backend rejected it.
-- In plain English: the app tried to save your contact using an expired login session.
+### New Step Content
 
-What I can already tell from the logs:
+**1. Collect Ments** (icon: unwrapped mint image)
+- "Start your journey with 25 mints in your jar. Earn 1 extra mint every time you send a compli-ment to brighten someone's day."
 
-- This is not a phone-format problem.
-- This is not the contact form validation blocking the save.
-- The request is reaching the backend, but it comes with an expired Bearer token, so it gets a 401 error before insert/RLS logic can succeed.
-- The specific failing request is the POST to `user_contacts`, and the response is `PGRST303: JWT expired`.
+**2. Send a Compli-Ment** (icon: Send)
+- "Pick from our library of uplifting compliments — or write your own — and send it to anyone via email or text. Each send adds a mint to your jar."
 
-Most likely root cause in this codebase:
+**3. Start a Chain** (icon: wrapped mint image, replacing "Watch Them Unwrap")
+- "Send one compliment to up to 3 people and challenge them to pass it forward within 24 hours. Watch your kindness ripple across the world — every link earns mints for everyone involved."
 
-- `AddContactForm` is using `session.access_token` from `AuthContext`.
-- That session value appears to be stale at the moment the direct REST `fetch()` runs.
-- Because this project intentionally bypasses some client SDK flows to avoid auth lock issues, it likely also needs a manual “get fresh token before REST call” step.
+**4. Receiving a Ment** (NEW — icon: Heart from lucide-react)
+- "When someone sends you a ment, you'll get an email or text with a link to unwrap it. Savor your moment — then send one back or pass it along to keep the kindness flowing."
 
-Plan to fix:
+**5. Pause Tokens** (NEW — icon: Clock or Pause from lucide-react, mint color)
+- "Running low on time? Use a Pause Token to reset a chain's 24-hour timer and keep the kindness alive. You start with 3 tokens — earn or buy more in the store."
 
-1. Add a small shared helper to safely get a fresh access token before any direct REST request.
-   - If the current token is still valid, use it.
-   - If expired or near expiry, refresh it first.
-   - If refresh fails, show a clear “Your session expired, please sign in again” message.
+**6. Level Up** (Trophy icon — unchanged copy)
 
-2. Update `AddContactForm` to use that fresh-token helper instead of directly trusting `session.access_token`.
+**7. Join the Movement** (Globe icon — unchanged copy)
 
-3. Improve error handling for 401s.
-   - Detect `JWT expired` specifically.
-   - Stop the spinner immediately.
-   - Show a user-friendly toast explaining they need a refreshed session or re-login.
+### Technical Notes
 
-4. Check other direct REST calls in the app for the same pattern.
-   - Contact loading
-   - Chain/game state fetches
-   - Any inserts/updates done with manual `fetch()`
-   This bug may repeat elsewhere if they also rely on stale tokens.
-
-5. Keep the current timeout safeguard, but make auth-expiry failures fail fast instead of looking like a hanging save.
-
-Technical notes:
-
-- The backend table itself appears to exist, because the request reaches it.
-- The failure happens before a successful insert, so RLS may still be fine; auth is the immediate blocker.
-- The console ref warnings from Framer Motion/Input are separate UI warnings and are not causing the save failure.
-
-Expected result after fix:
-
-- Saving a contact will either:
-  - succeed normally with a refreshed token, or
-  - immediately show “Your session expired. Please sign in again.” instead of hanging on “Saving...”
+- Single-file change: `src/components/HowItWorksModal.tsx`
+- Update only the `steps` array; modal layout, animations, header, footer untouched
+- Add `Heart` (already imported) and `Pause` to lucide-react imports as needed

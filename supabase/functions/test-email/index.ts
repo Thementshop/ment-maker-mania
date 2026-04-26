@@ -99,7 +99,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('[TEST-EMAIL] Error:', error);
     return new Response(
-      JSON.stringify({ error: error.message || 'Test failed' }),
+      JSON.stringify({ error: (error as Error).message || 'Test failed' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
