@@ -166,7 +166,7 @@ function buildChainReceivedEmail(data: TemplateData): string {
 // ─── TEMPLATE 2a: 1hr Warning (Single) ───
 function build1hrWarningSingleEmail(data: TemplateData): string {
   const inner = `
-    ${urgencyBanner('⏰ 1 Hour Remaining', `The ${data.chain_name} chain breaks if it isn't passed forward.`)}
+    ${urgencyBanner('1 Hour Remaining', `The ${data.chain_name} chain breaks if it isn't passed forward.`)}
     <h2 style="color:${BRAND_DARK};margin:0 0 12px;font-size:28px;font-weight:800;line-height:1.15;letter-spacing:-0.6px;">
       Don't let it break, ${escapeHtml(data.recipient_name)}.
     </h2>
