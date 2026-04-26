@@ -214,7 +214,7 @@ const ChainCardNew = ({
         {/* Current Status */}
         <div className="text-center mt-2 px-4 pb-2">
           {chain.status === 'broken' ? (
-            <span className="text-sm text-destructive font-medium">💔 Chain Broken</span>
+            <span className="text-sm text-primary font-medium">💚 Chain Completed</span>
           ) : isYourTurn ? null : (
             <div className="space-y-2">
               <span className="text-sm text-muted-foreground block">
