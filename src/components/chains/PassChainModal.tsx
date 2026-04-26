@@ -200,40 +200,7 @@ const PassChainModal = ({
     setSelectedCompliment(compliment);
   };
 
-  // Promote next queued chain (REST API)
-  const promoteNextQueuedChain = async (userId: string, token: string) => {
-    try {
-      const { data: yourTurnChains } = await restApi(
-        'GET', 'ment_chains',
-        `select=chain_id&current_holder=eq.${userId}&status=eq.active&is_queued=eq.false`,
-        token
-      );
-
-      if (yourTurnChains && yourTurnChains.length < 3) {
-        const { data: queuedChains } = await restApi(
-          'GET', 'ment_chains',
-          `select=*&current_holder=eq.${userId}&is_queued=eq.true&order=created_at.asc&limit=1`,
-          token
-        );
-
-        if (queuedChains && queuedChains.length > 0) {
-          await restApi(
-            'PATCH', 'ment_chains',
-            `chain_id=eq.${queuedChains[0].chain_id}`,
-            token,
-            { is_queued: false }
-          );
-
-          toast({
-            title: "Queue Update 🔗",
-            description: "A queued chain is now active!"
-          });
-        }
-      }
-    } catch (err) {
-      console.error('Error promoting queued chain:', err);
-    }
-  };
+  // (Queued chain logic removed — all recipients are notified immediately.)
 
   // Legendary celebration
   const triggerLegendaryCelebration = () => {
@@ -381,7 +348,7 @@ const PassChainModal = ({
       // 3. Check recipient capacity (max 3 "Your Turn" chains)
       const { data: recipientChains } = await restApi(
         'GET', 'ment_chains',
-        `select=chain_id&current_holder=eq.${encodeURIComponent(recipient.trim())}&status=eq.active&is_queued=eq.false`,
+        `select=chain_id&current_holder=eq.${encodeURIComponent(recipient.trim())}&status=eq.active`,
         token
       );
 
@@ -493,8 +460,7 @@ const PassChainModal = ({
         });
       }
 
-      // 8. Auto-promote queued chain
-      await promoteNextQueuedChain(user.id, token);
+      // (Queued chain promotion removed.)
 
       // 9. Success!
       console.log('[PassChain] ✅ Chain passed successfully!');

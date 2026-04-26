@@ -102,7 +102,7 @@ const ChainCardNew = ({
   }, [chain.chain_id, chain.share_count, chain.started_by, currentUserId]);
 
   const handlePassForward = () => {
-    if (isYourTurn && chain.status === 'active' && !chain.is_queued) {
+    if (isYourTurn && chain.status === 'active') {
       setShowPassModal(true);
     } else {
       onShare?.(chain.chain_id);
@@ -162,7 +162,7 @@ const ChainCardNew = ({
         transition={{ duration: 0.2 }}
       >
         {/* YOUR TURN header banner */}
-        {isYourTurn && !chain.is_queued && chain.status === 'active' && (
+        {isYourTurn && chain.status === 'active' && (
           <div className="w-full px-4 pt-3 flex items-center justify-between gap-2 z-10">
             <span className="text-lg font-extrabold text-destructive tracking-tight">🎯 YOUR TURN!</span>
             <span className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-semibold ${timerColorClass}`}>
@@ -248,7 +248,7 @@ const ChainCardNew = ({
 
         {/* Action Buttons */}
         <div className="px-4 pb-4 space-y-2">
-          {isYourTurn && !chain.is_queued && chain.status === 'active' ? (
+          {isYourTurn && chain.status === 'active' ? (
             <>
               <Button 
                 className={`w-full rounded-full ${
@@ -291,10 +291,6 @@ const ChainCardNew = ({
                 </Button>
               ) : null}
             </>
-          ) : chain.is_queued ? (
-            <div className="w-full py-2 rounded-full bg-muted text-center text-muted-foreground font-medium">
-              ⏸️ Queued
-            </div>
           ) : (
             <>
               <Button 

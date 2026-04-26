@@ -14,7 +14,6 @@ import { useBrokenChainNotification } from '@/hooks/useBrokenChainNotification';
 const tabs = [
   { id: 'yourTurn', label: 'Your Turn', icon: '🎯' },
   { id: 'active', label: 'Active', icon: '🔥' },
-  { id: 'queued', label: 'Queued', icon: '⏸️' },
   { id: 'ended', label: 'Chain Memories', icon: '💚' },
   { id: 'leaderboard', label: 'Leaderboard', icon: '🏆' }
 ];
@@ -34,7 +33,7 @@ function transformChainToCardData(chain: MentChain): ChainData {
     current_holder: chain.current_holder,
     current_holder_display_name: chain.current_holder_display_name,
     status: chain.status === 'ended' ? 'broken' : chain.status as 'active' | 'broken',
-    is_queued: chain.is_queued || false,
+    is_queued: false,
     received_compliment: chain.received_compliment,
   };
 }
@@ -84,13 +83,11 @@ const ChainDashboard = () => {
 
   // Smart default tab selection — always lead with positive/active states
   const defaultTab = useMemo(() => {
-    const hasYourTurn = chainData.some(c => isCurrentHolder(c.current_holder) && c.status === 'active' && !c.is_queued);
-    const hasActive = chainData.some(c => c.status === 'active' && !c.is_queued);
-    const hasQueued = chainData.some(c => c.is_queued);
+    const hasYourTurn = chainData.some(c => isCurrentHolder(c.current_holder) && c.status === 'active');
+    const hasActive = chainData.some(c => c.status === 'active');
 
     if (hasYourTurn) return 'yourTurn';
     if (hasActive) return 'active';
-    if (hasQueued) return 'queued';
     return 'active';
   }, [chainData, currentUserId]);
 
@@ -120,13 +117,10 @@ const ChainDashboard = () => {
     let result: ChainData[];
     switch (activeTab) {
       case 'active':
-        result = chainData.filter(c => c.status === 'active' && !c.is_queued);
+        result = chainData.filter(c => c.status === 'active');
         break;
       case 'yourTurn':
-        result = chainData.filter(c => isCurrentHolder(c.current_holder) && c.status === 'active' && !c.is_queued);
-        break;
-      case 'queued':
-        result = chainData.filter(c => c.is_queued);
+        result = chainData.filter(c => isCurrentHolder(c.current_holder) && c.status === 'active');
         break;
       case 'ended':
         result = chainData
@@ -144,7 +138,7 @@ const ChainDashboard = () => {
       result.map(c => c.chain_name));
     
     if (activeTab === 'yourTurn') {
-      console.log('[MentChainsDebug][Dashboard] YourTurn filter detail:', chainData.filter(c => c.status === 'active' && !c.is_queued).map(c => ({
+      console.log('[MentChainsDebug][Dashboard] YourTurn filter detail:', chainData.filter(c => c.status === 'active').map(c => ({
         name: c.chain_name,
         holder: c.current_holder,
         matchesUserId: c.current_holder === currentUserId,

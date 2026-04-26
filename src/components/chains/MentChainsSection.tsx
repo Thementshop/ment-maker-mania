@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link2, Clock, Inbox, History, Plus } from 'lucide-react';
+import { Link2, Clock, History, Plus } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -19,20 +19,16 @@ const MentChainsSection = ({ onStartNewChain }: MentChainsSectionProps) => {
 
   // Filter chains by status and ownership
   const categorizedChains = useMemo(() => {
-    const now = new Date();
-    
     const active = chains.filter(c => c.status === 'active' && c.started_by === user?.id);
     const yourTurn = chains.filter(c => c.status === 'active' && c.current_holder === user?.id);
-    const queued = chains.filter(c => c.status === 'active' && c.started_by !== user?.id && c.current_holder !== user?.id);
     const ended = chains.filter(c => c.status === 'broken' || c.status === 'ended');
 
-    return { active, yourTurn, queued, ended };
+    return { active, yourTurn, ended };
   }, [chains, user?.id]);
 
   const tabCounts = {
     active: categorizedChains.active.length,
     yourTurn: categorizedChains.yourTurn.length,
-    queued: categorizedChains.queued.length,
     ended: categorizedChains.ended.length,
   };
 
@@ -64,7 +60,6 @@ const MentChainsSection = ({ onStartNewChain }: MentChainsSectionProps) => {
       const emptyStates = {
         active: { icon: Link2, title: 'No Active Chains', description: 'Start a new chain to spread kindness!' },
         yourTurn: { icon: Clock, title: 'No Chains Waiting', description: "You're all caught up! No chains need your attention." },
-        queued: { icon: Inbox, title: 'No Queued Chains', description: 'Chains you participate in will appear here.' },
         ended: { icon: History, title: 'No Chain Memories Yet', description: 'Completed chains will live here.' },
       };
       const state = emptyStates[activeTab as keyof typeof emptyStates] || emptyStates.active;
@@ -115,15 +110,7 @@ const MentChainsSection = ({ onStartNewChain }: MentChainsSectionProps) => {
   return (
     <div className="w-full">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="w-full grid grid-cols-4 mb-4">
-          <TabsTrigger value="active" className="relative text-xs sm:text-sm">
-            Active
-            {tabCounts.active > 0 && (
-              <span className="ml-1 px-1.5 py-0.5 text-[10px] bg-primary/20 text-primary rounded-full">
-                {tabCounts.active}
-              </span>
-            )}
-          </TabsTrigger>
+        <TabsList className="w-full grid grid-cols-3 mb-4">
           <TabsTrigger value="yourTurn" className="relative text-xs sm:text-sm">
             Your Turn
             {tabCounts.yourTurn > 0 && (
@@ -132,11 +119,11 @@ const MentChainsSection = ({ onStartNewChain }: MentChainsSectionProps) => {
               </span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="queued" className="text-xs sm:text-sm">
-            Queued
-            {tabCounts.queued > 0 && (
-              <span className="ml-1 px-1.5 py-0.5 text-[10px] bg-muted text-muted-foreground rounded-full">
-                {tabCounts.queued}
+          <TabsTrigger value="active" className="relative text-xs sm:text-sm">
+            Active
+            {tabCounts.active > 0 && (
+              <span className="ml-1 px-1.5 py-0.5 text-[10px] bg-primary/20 text-primary rounded-full">
+                {tabCounts.active}
               </span>
             )}
           </TabsTrigger>
@@ -151,18 +138,14 @@ const MentChainsSection = ({ onStartNewChain }: MentChainsSectionProps) => {
         </TabsList>
 
         <ScrollArea className="h-[400px] pr-2">
-          <TabsContent value="active" className="mt-0">
-            <ChainList chains={categorizedChains.active} />
-          </TabsContent>
-          
           <TabsContent value="yourTurn" className="mt-0">
             <ChainList chains={categorizedChains.yourTurn} />
           </TabsContent>
-          
-          <TabsContent value="queued" className="mt-0">
-            <ChainList chains={categorizedChains.queued} />
+
+          <TabsContent value="active" className="mt-0">
+            <ChainList chains={categorizedChains.active} />
           </TabsContent>
-          
+
           <TabsContent value="ended" className="mt-0">
             <ChainList chains={categorizedChains.ended} />
           </TabsContent>
