@@ -31,9 +31,9 @@ const Header = ({ worldCount }: HeaderProps) => {
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-md">
+      <header className="site-header sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-md">
         {/* Desktop layout (md and up) — unchanged */}
-        <div className="container hidden md:flex h-16 items-center justify-between">
+        <div className="header-desktop-layout container hidden h-16 items-center justify-between md:flex">
           <div className="flex items-center gap-2">
             <Link to="/" className="flex items-center gap-2">
               <img src={unwrappedMint} alt="Mint" className="h-10 w-10 object-contain" />
@@ -102,46 +102,44 @@ const Header = ({ worldCount }: HeaderProps) => {
         </div>
 
         {/* Mobile layout (below md) — rigid two-row stack for narrow iPhones */}
-        <div className="container md:hidden flex flex-col gap-2 py-2">
-          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-            <Link to="/" className="flex min-w-0 items-center gap-2 pr-2">
-              <img src={unwrappedMint} alt="Mint" className="h-8 w-8 shrink-0 object-contain" />
-              <span className="truncate whitespace-nowrap font-display text-[15px] font-bold leading-tight text-ring">
-                The Ment Shop
-              </span>
+        <div className="header-mobile-layout container md:hidden">
+          <div className="header-mobile-row header-mobile-row-top">
+            <Link to="/" className="header-mobile-brand" aria-label="The Ment Shop home">
+              <img src={unwrappedMint} alt="Mint" className="header-mobile-logo" />
+              <span className="header-mobile-title">The Ment Shop</span>
             </Link>
 
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={() => setIsSettingsOpen(true)}
-              className="relative shrink-0"
+              className="header-mobile-avatar-button"
               aria-label="Open account settings"
             >
-              <Avatar className="h-9 w-9 border-2 border-mint">
+              <Avatar className="header-mobile-avatar border-2 border-mint">
                 <AvatarImage src={profile?.avatar_url || undefined} />
-                <AvatarFallback className="bg-mint text-primary-foreground font-display">
+                <AvatarFallback className="bg-mint font-display text-primary-foreground">
                   {getInitials(resolvedName)}
                 </AvatarFallback>
               </Avatar>
             </motion.button>
           </div>
 
-          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+          <div className="header-mobile-row header-mobile-row-bottom">
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={() => setIsHowItWorksOpen(true)}
-              className="justify-self-start rounded-full px-2.5 py-1.5 font-display text-[11px] font-semibold leading-none text-foreground transition-colors hover:bg-primary/10"
+              className="header-mobile-link"
             >
               How it works
             </motion.button>
 
             <motion.div
               whileTap={{ scale: 0.98 }}
-              className="world-tracker inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-mint-light"
+              className="header-mobile-tracker world-tracker"
               aria-label={`World Kindness Tracker ${formattedCount}`}
             >
               <motion.span
-                className="text-base leading-none"
+                className="header-mobile-tracker-globe"
                 animate={{ rotate: 360 }}
                 transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
               >
@@ -151,7 +149,7 @@ const Header = ({ worldCount }: HeaderProps) => {
                 key={worldCount}
                 initial={{ scale: 1.2, color: '#FFD740' }}
                 animate={{ scale: 1, color: '#FFFFFF' }}
-                className="font-display text-xs font-bold leading-none tabular-nums sm:text-sm"
+                className="header-mobile-tracker-value font-display font-bold tabular-nums"
               >
                 {formattedCount}
               </motion.span>
