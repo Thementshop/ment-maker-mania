@@ -22,17 +22,17 @@ const steps = [
   {
     icon: <img src={wrappedMint} alt="Wrapped Mint" className="w-16 h-16 object-contain" />,
     title: "Start a Chain",
-    description: "Send one compliment to up to 3 people and challenge them to pass it forward within 24 hours. Watch your kindness ripple across the world — every link earns mints for everyone involved."
+    description: "Send a compliment to up to 3 people and challenge them to pass it forward within 24 hours. Starting a chain rewards YOU with 5 mints instantly — and each recipient earns 1 mint too, but only if they keep the kindness moving within 24 hours!"
   },
   {
     icon: <Heart className="w-12 h-12 text-candy-pink fill-candy-pink" />,
     title: "Receiving a Ment",
-    description: "When someone sends you a ment, you'll get an email or text with a link to unwrap it. Savor your moment — then send one back or pass it along to keep the kindness flowing."
+    description: "When someone sends you a Ment, you'll get an email or text with a link to unwrap it. Savor your moment 💚 — then send one back or pass one forward within 24 hours to add this mint permanently to your jar. Wait longer and the mint fades away — so keep the kindness flowing!"
   },
   {
     icon: <Pause className="w-12 h-12 text-mint" />,
     title: "Pause Tokens",
-    description: "Running low on time? Use a Pause Token to reset a chain's 24-hour timer and keep the kindness alive. You start with 3 tokens — earn or buy more in the store."
+    description: "Running low on time? Use a Pause Token to reset a chain's 24-hour timer and keep the kindness alive. Every new account starts with 5 free Pause Tokens — and you earn 1 more automatically every week. Get more time with Pause Tokens anytime in the store."
   },
   {
     icon: <Trophy className="w-12 h-12 text-candy-yellow" />,
