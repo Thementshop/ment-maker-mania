@@ -248,7 +248,7 @@ const ChainCardNew = ({
 
         {/* Action Buttons */}
         <div className="px-4 pb-4 space-y-2">
-          {isYourTurn && !chain.is_queued && chain.status === 'active' ? (
+          {isYourTurn && chain.status === 'active' ? (
             <>
               <Button 
                 className={`w-full rounded-full ${
@@ -291,10 +291,6 @@ const ChainCardNew = ({
                 </Button>
               ) : null}
             </>
-          ) : chain.is_queued ? (
-            <div className="w-full py-2 rounded-full bg-muted text-center text-muted-foreground font-medium">
-              ⏸️ Queued
-            </div>
           ) : (
             <>
               <Button 
