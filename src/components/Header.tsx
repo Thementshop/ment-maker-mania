@@ -7,8 +7,7 @@ import unwrappedMint from '@/assets/unwrapped-mint.png';
 import HowItWorksModal from './HowItWorksModal';
 import AccountSettingsModal from './AccountSettingsModal';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Settings, Ticket } from 'lucide-react';
+import { Settings } from 'lucide-react';
 
 interface HeaderProps {
   worldCount: number;
@@ -18,7 +17,6 @@ const Header = ({ worldCount }: HeaderProps) => {
   const [isHowItWorksOpen, setIsHowItWorksOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { profile, user } = useAuth();
-  const { pauseTokens, canClaimFreeToken } = usePauseTokens();
   const formattedCount = worldCount.toLocaleString();
 
   // Resilient display name: profile → user metadata → email local part → "U"
@@ -55,32 +53,6 @@ const Header = ({ worldCount }: HeaderProps) => {
             >
               How it works
             </motion.button>
-
-            <Link to="/store">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <motion.div
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="relative flex items-center gap-1.5 font-display text-sm font-semibold text-foreground hover:text-primary transition-colors px-4 py-2 rounded-full hover:bg-primary/10"
-                    >
-                      <Ticket className="h-4 w-4" />
-                      <span className="hidden sm:inline">Store</span>
-                      <span className="text-xs bg-primary/20 text-primary px-1.5 py-0.5 rounded-full">
-                        {pauseTokens}
-                      </span>
-                      {canClaimFreeToken && (
-                        <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-primary rounded-full animate-pulse" />
-                      )}
-                    </motion.div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Use tokens to extend your chain timer ⏸️</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </Link>
           </nav>
 
           <div className="flex items-center gap-4">
