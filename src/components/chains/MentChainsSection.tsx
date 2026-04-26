@@ -65,7 +65,7 @@ const MentChainsSection = ({ onStartNewChain }: MentChainsSectionProps) => {
         active: { icon: Link2, title: 'No Active Chains', description: 'Start a new chain to spread kindness!' },
         yourTurn: { icon: Clock, title: 'No Chains Waiting', description: "You're all caught up! No chains need your attention." },
         queued: { icon: Inbox, title: 'No Queued Chains', description: 'Chains you participate in will appear here.' },
-        ended: { icon: History, title: 'No Ended Chains', description: 'Completed and broken chains will appear here.' },
+        ended: { icon: History, title: 'No Chain Memories Yet', description: 'Completed chains will live here.' },
       };
       const state = emptyStates[activeTab as keyof typeof emptyStates] || emptyStates.active;
       return <EmptyState {...state} />;
@@ -141,7 +141,7 @@ const MentChainsSection = ({ onStartNewChain }: MentChainsSectionProps) => {
             )}
           </TabsTrigger>
           <TabsTrigger value="ended" className="text-xs sm:text-sm">
-            Ended
+            Chain Memories
             {tabCounts.ended > 0 && (
               <span className="ml-1 px-1.5 py-0.5 text-[10px] bg-muted text-muted-foreground rounded-full">
                 {tabCounts.ended}
