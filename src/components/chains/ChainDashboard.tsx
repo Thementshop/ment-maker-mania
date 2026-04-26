@@ -12,8 +12,8 @@ import { useMentChains, MentChain } from '@/hooks/useMentChains';
 import { useBrokenChainNotification } from '@/hooks/useBrokenChainNotification';
 
 const tabs = [
-  { id: 'active', label: 'Active', icon: '🔥' },
   { id: 'yourTurn', label: 'Your Turn', icon: '🎯' },
+  { id: 'active', label: 'Active', icon: '🔥' },
   { id: 'queued', label: 'Queued', icon: '⏸️' },
   { id: 'ended', label: 'Chain Memories', icon: '💚' },
   { id: 'leaderboard', label: 'Leaderboard', icon: '🏆' }
