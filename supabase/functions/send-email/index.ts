@@ -139,24 +139,27 @@ function primaryCTA(href: string, label: string, subtext?: string): string {
 // ─── TEMPLATE 1: Chain Received (Premium / Urgent) ───
 function buildChainReceivedEmail(data: TemplateData): string {
   const chainName = escapeHtml(data.chain_name);
+  const senderName = data.sender_name && data.sender_name.trim().length > 0
+    ? escapeHtml(data.sender_name)
+    : 'someone';
   const inner = `
-    ${urgencyBanner('⏰ 24-Hour Window', 'Pass it forward within 24 hours or the chain breaks.')}
+    ${urgencyBanner('24-Hour Window', 'Pass it forward within 24 hours or the chain breaks.')}
     <h2 style="color:${BRAND_DARK};margin:0 0 12px;font-size:30px;font-weight:800;line-height:1.15;letter-spacing:-0.8px;">
-      ⚡ ${chainName} Chain
+      ${chainName} Chain
     </h2>
     <p style="color:${BRAND_DARK};font-size:18px;line-height:1.5;margin:0 0 8px;font-weight:600;">
       Hey ${escapeHtml(data.recipient_name)} — you're the next link.
     </p>
     <p style="color:#4b5563;font-size:15px;line-height:1.6;margin:0 0 28px;">
-      Someone hand-picked you to receive this kindness. The chain is alive in your hands now. Keep it going.
+      Someone hand-picked you to receive this kindness. The chain is alive in your hands now.
     </p>
-    ${primaryCTA(data.chain_url, 'Reveal Your Compliment', 'Tap to open your message')}
-    <div style="border-top:1px solid #e5e7eb;padding:22px 0 28px;">
-      <p style="color:${BRAND_DARK};font-size:13px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;margin:0 0 8px;">A chain of kindness</p>
-      <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0;">
-        Passed person to person. You were chosen — now choose someone else.
-      </p>
-    </div>`;
+    ${primaryCTA(data.chain_url, 'Reveal Your Compliment', 'No account needed to view.')}
+    <p style="color:${BRAND_DARK};font-size:15px;line-height:1.6;margin:0 0 8px;text-align:center;font-weight:600;">
+      Savor your moment 💚
+    </p>
+    <p style="color:#4b5563;font-size:14px;line-height:1.6;margin:0 0 32px;text-align:center;">
+      If you want to add this mint to your jar, just send one back to <strong>${senderName}</strong> or choose someone else's day to brighten within 24 hours and it's yours to keep!
+    </p>`;
   return shell('A Chain Just Reached You', inner);
 }
 
