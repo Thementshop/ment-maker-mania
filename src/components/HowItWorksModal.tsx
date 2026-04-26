@@ -145,7 +145,7 @@ const HowItWorksModal = ({ isOpen, onClose }: HowItWorksModalProps) => {
                 className="w-full py-3 px-6 bg-gradient-to-r from-mint to-mint-dark rounded-full 
                            font-display font-bold text-white shadow-mint hover:shadow-lg transition-shadow"
               >
-                Start Spreading Kindness! 🍬
+                Start Spreading Kindness! 💚
               </motion.button>
             </div>
           </motion.div>

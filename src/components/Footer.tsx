@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Heart, Mail, Megaphone, Info } from 'lucide-react';
 import unwrappedMint from '@/assets/unwrapped-mint.png';
+import brandMint from '@/assets/brand-mint.png';
 
 const Footer = () => {
   return (
@@ -18,10 +19,11 @@ const Footer = () => {
               <Info className="w-5 h-5 text-primary" />
               <h3 className="font-display font-bold text-lg text-foreground">About</h3>
             </div>
-            <p className="text-sm text-muted-foreground leading-relaxed">
+            <p className="text-sm text-muted-foreground leading-relaxed flex flex-wrap items-center gap-1">
               The Ment Shop is the candy store of compliments! We're on a mission to spread kindness 
               across the world, one sweet ment at a time. Every compliment you send adds to our 
-              global kindness counter and makes someone's day a little brighter. 🍬
+              global kindness counter and makes someone's day a little brighter.
+              <img src={brandMint} alt="" className="inline-block h-4 w-4 object-contain align-middle" />
             </p>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span>Made with</span>

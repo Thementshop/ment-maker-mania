@@ -4,6 +4,7 @@ import { complimentCategories } from '@/data/compliments';
 import { motion, AnimatePresence } from 'framer-motion';
 import wrappedMint from '@/assets/wrapped-mint.png';
 import unwrappedMint from '@/assets/unwrapped-mint.png';
+import brandMint from '@/assets/brand-mint.png';
 import confetti from 'canvas-confetti';
 
 interface MentData {
@@ -119,7 +120,7 @@ const MentPage = () => {
   if (error) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center" style={{ background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 50%, #f0fdf4 100%)' }}>
-        <p className="text-5xl mb-4">🍬</p>
+        <img src={brandMint} alt="Ment" className="h-20 w-20 object-contain mb-4" />
         <h1 className="font-display text-2xl font-bold mb-2" style={{ color: '#166534' }}>
           Oops!
         </h1>
@@ -174,7 +175,7 @@ const MentPage = () => {
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
               >
-                🍬 Tap to Unwrap
+                💚 Tap to Unwrap
               </motion.button>
             </motion.div>
           ) : (
@@ -244,7 +245,7 @@ const MentPage = () => {
                   className="block w-full rounded-xl px-6 py-3 font-semibold text-center transition-all hover:scale-[1.02] border-2"
                   style={{ borderColor: '#58fc59', color: '#166534' }}
                 >
-                  Join The Ment Shop 🍬
+                  Join The Ment Shop 💚
                 </Link>
               </motion.div>
             </motion.div>

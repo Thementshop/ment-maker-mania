@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { getCurrentLevel } from '@/store/gameStore';
 import confetti from 'canvas-confetti';
 import { useEffect } from 'react';
+import brandMint from '@/assets/brand-mint.png';
 
 interface LevelUpModalProps {
   isOpen: boolean;
@@ -128,8 +129,9 @@ const LevelUpModal = ({ isOpen, onClose, totalSent, bonusMints }: LevelUpModalPr
               transition={{ delay: 0.6 }}
             >
               <p className="text-sm opacity-80">Bonus Reward</p>
-              <p className="font-display text-3xl font-bold">
-                +{bonusMints} mints! 🍬
+              <p className="font-display text-3xl font-bold flex items-center justify-center gap-2">
+                +{bonusMints} mints!
+                <img src={brandMint} alt="" className="h-8 w-8 object-contain" />
               </p>
             </motion.div>
             
@@ -142,7 +144,7 @@ const LevelUpModal = ({ isOpen, onClose, totalSent, bonusMints }: LevelUpModalPr
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              Sweet! 🍬
+              Sweet! 💚
             </motion.button>
           </motion.div>
         </motion.div>

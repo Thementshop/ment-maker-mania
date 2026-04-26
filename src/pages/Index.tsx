@@ -13,6 +13,7 @@ import YourChainsCard from '@/components/home/YourChainsCard';
 import ChainDashboard from '@/components/chains/ChainDashboard';
 import StartChainModal from '@/components/chains/StartChainModal';
 import tmsBanner from '@/assets/TMS_banner.png';
+import brandMint from '@/assets/brand-mint.png';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const Index = () => {
@@ -86,7 +87,12 @@ const Index = () => {
                   <KindnessJarSection jarCount={jarCount} totalSent={totalSent} />
                 </div>
               </TooltipTrigger>
-              <TooltipContent><p>Collect mints by sending kindness! 🍬</p></TooltipContent>
+              <TooltipContent>
+                <p className="flex items-center gap-1.5">
+                  Collect mints by sending kindness!
+                  <img src={brandMint} alt="" className="h-4 w-4 object-contain" />
+                </p>
+              </TooltipContent>
             </Tooltip>
             
             {/* Center: Send A Ment (graphic button) */}
