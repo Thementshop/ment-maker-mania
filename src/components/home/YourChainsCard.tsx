@@ -47,10 +47,14 @@ const YourChainsCard = ({ onStartChain }: YourChainsCardProps) => {
       animate={{ opacity: 1, scale: 1 }}
       transition={{ delay: 0.3, type: 'spring' }}
     >
-      <div className="w-full flex justify-center mb-4 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg p-4">
+      <div
+        className="w-full flex justify-center mb-4 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg p-4"
+        title="Spread kindness in a BIG WAY"
+      >
         <img 
           src="/images/ment-chain.png" 
-          alt="Ment Chain" 
+          alt="Spread kindness in a BIG WAY" 
+          title="Spread kindness in a BIG WAY"
           className="h-40 object-contain drop-shadow-md"
         />
       </div>
