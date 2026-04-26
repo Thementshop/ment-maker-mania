@@ -2,13 +2,12 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { usePauseTokens } from '@/hooks/usePauseTokens';
+
 import unwrappedMint from '@/assets/unwrapped-mint.png';
 import HowItWorksModal from './HowItWorksModal';
 import AccountSettingsModal from './AccountSettingsModal';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Settings, Ticket } from 'lucide-react';
+import { Settings } from 'lucide-react';
 
 interface HeaderProps {
   worldCount: number;
@@ -18,7 +17,6 @@ const Header = ({ worldCount }: HeaderProps) => {
   const [isHowItWorksOpen, setIsHowItWorksOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { profile, user } = useAuth();
-  const { pauseTokens, canClaimFreeToken } = usePauseTokens();
   const formattedCount = worldCount.toLocaleString();
 
   // Resilient display name: profile → user metadata → email local part → "U"
@@ -55,32 +53,6 @@ const Header = ({ worldCount }: HeaderProps) => {
             >
               How it works
             </motion.button>
-
-            <Link to="/store">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <motion.div
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="relative flex items-center gap-1.5 font-display text-sm font-semibold text-foreground hover:text-primary transition-colors px-4 py-2 rounded-full hover:bg-primary/10"
-                    >
-                      <Ticket className="h-4 w-4" />
-                      <span className="hidden sm:inline">Store</span>
-                      <span className="text-xs bg-primary/20 text-primary px-1.5 py-0.5 rounded-full">
-                        {pauseTokens}
-                      </span>
-                      {canClaimFreeToken && (
-                        <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-primary rounded-full animate-pulse" />
-                      )}
-                    </motion.div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Use tokens to extend your chain timer ⏸️</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </Link>
           </nav>
 
           <div className="flex items-center gap-4">
@@ -154,32 +126,15 @@ const Header = ({ worldCount }: HeaderProps) => {
             </motion.button>
           </div>
 
-          {/* Row 2: How it works + Store + World tracker */}
+          {/* Row 2: How it works + World tracker */}
           <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1 min-w-0">
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setIsHowItWorksOpen(true)}
-                className="font-display text-xs font-semibold text-foreground px-2.5 py-1.5 rounded-full hover:bg-primary/10"
-              >
-                How it works
-              </motion.button>
-
-              <Link to="/store">
-                <motion.div
-                  whileTap={{ scale: 0.95 }}
-                  className="relative flex items-center gap-1 font-display text-xs font-semibold text-foreground px-2.5 py-1.5 rounded-full hover:bg-primary/10"
-                >
-                  <Ticket className="h-3.5 w-3.5" />
-                  <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full">
-                    {pauseTokens}
-                  </span>
-                  {canClaimFreeToken && (
-                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-primary rounded-full animate-pulse" />
-                  )}
-                </motion.div>
-              </Link>
-            </div>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setIsHowItWorksOpen(true)}
+              className="font-display text-xs font-semibold text-foreground px-3 py-1.5 rounded-full hover:bg-primary/10 shrink-0"
+            >
+              How it works
+            </motion.button>
 
             <motion.div
               whileTap={{ scale: 0.98 }}
