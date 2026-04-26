@@ -162,7 +162,7 @@ const ChainCardNew = ({
         transition={{ duration: 0.2 }}
       >
         {/* YOUR TURN header banner */}
-        {isYourTurn && !chain.is_queued && chain.status === 'active' && (
+        {isYourTurn && chain.status === 'active' && (
           <div className="w-full px-4 pt-3 flex items-center justify-between gap-2 z-10">
             <span className="text-lg font-extrabold text-destructive tracking-tight">🎯 YOUR TURN!</span>
             <span className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-semibold ${timerColorClass}`}>
