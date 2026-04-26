@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Heart, Send, Trophy, Globe } from 'lucide-react';
+import { X, Heart, Send, Trophy, Globe, Pause } from 'lucide-react';
 import unwrappedMint from '@/assets/unwrapped-mint.png';
 import wrappedMint from '@/assets/wrapped-mint.png';
 
@@ -12,17 +12,27 @@ const steps = [
   {
     icon: <img src={unwrappedMint} alt="Mint" className="w-16 h-16 object-contain" />,
     title: "Collect Ments",
-    description: "Start with mints in your jar. Each mint represents a compliment waiting to be shared with someone special."
+    description: "Start your journey with 25 mints in your jar. Earn 1 extra mint every time you send a compli-ment to brighten someone's day."
   },
   {
     icon: <Send className="w-12 h-12 text-primary" />,
     title: "Send a Compli-Ment",
-    description: "Click the mint button to send a kind message. Choose from uplifting compliments or write your own!"
+    description: "Pick from our library of uplifting compliments — or write your own — and send it to anyone via email or text. Each send adds a mint to your jar."
   },
   {
     icon: <img src={wrappedMint} alt="Wrapped Mint" className="w-16 h-16 object-contain" />,
-    title: "Watch Them Unwrap",
-    description: "Sent ments appear wrapped in your jar. After 24 hours, they unwrap and return as fresh mints!"
+    title: "Start a Chain",
+    description: "Send one compliment to up to 3 people and challenge them to pass it forward within 24 hours. Watch your kindness ripple across the world — every link earns mints for everyone involved."
+  },
+  {
+    icon: <Heart className="w-12 h-12 text-candy-pink fill-candy-pink" />,
+    title: "Receiving a Ment",
+    description: "When someone sends you a ment, you'll get an email or text with a link to unwrap it. Savor your moment — then send one back or pass it along to keep the kindness flowing."
+  },
+  {
+    icon: <Pause className="w-12 h-12 text-mint" />,
+    title: "Pause Tokens",
+    description: "Running low on time? Use a Pause Token to reset a chain's 24-hour timer and keep the kindness alive. You start with 3 tokens — earn or buy more in the store."
   },
   {
     icon: <Trophy className="w-12 h-12 text-candy-yellow" />,
