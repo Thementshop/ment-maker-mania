@@ -129,7 +129,9 @@ const ChainDashboard = () => {
         result = chainData.filter(c => c.is_queued);
         break;
       case 'ended':
-        result = chainData.filter(c => c.status === 'broken');
+        result = chainData
+          .filter(c => c.status === 'broken')
+          .sort((a, b) => new Date(b.expires_at).getTime() - new Date(a.expires_at).getTime());
         break;
       case 'leaderboard':
         result = [...chainData].sort((a, b) => b.share_count - a.share_count).slice(0, 10);
