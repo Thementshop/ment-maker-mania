@@ -213,7 +213,7 @@ function build1hrWarningBatchedEmail(data: TemplateData): string {
 function buildMilestoneEmail(data: TemplateData): string {
   const inner = `
     <div style="background:linear-gradient(135deg,${BRAND_GREEN},#22c55e);border-radius:12px;padding:24px 22px;margin:28px 0 24px;text-align:center;">
-      <p style="color:${BRAND_DARK};font-size:12px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;margin:0 0 8px;">🏆 Milestone Reached</p>
+      <p style="color:${BRAND_DARK};font-size:12px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;margin:0 0 8px;">Milestone Reached 💚</p>
       <p style="color:${BRAND_DARK};font-size:48px;font-weight:900;margin:0;line-height:1;letter-spacing:-2px;">${data.milestone}</p>
       <p style="color:${BRAND_DARK};font-size:13px;font-weight:700;margin:8px 0 0;">people reached</p>
     </div>
