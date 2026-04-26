@@ -107,6 +107,14 @@
   * {
     @apply border-border;
   }
+
+  #root {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    text-align: left;
+  }
   
   body {
     @apply bg-background text-foreground font-body antialiased;
@@ -119,6 +127,10 @@
 }
 
 @layer components {
+  .header-mobile-layout {
+    display: none;
+  }
+
   /* Glass Jar Effect */
   .glass-jar {
     background: linear-gradient(
@@ -183,6 +195,124 @@
   /* Sparkle */
   .sparkle {
     animation: sparkle 1.5s ease-in-out infinite;
+  }
+
+  @media (max-width: 768px) {
+    .site-header {
+      overflow-x: clip;
+    }
+
+    .header-desktop-layout {
+      display: none;
+    }
+
+    .header-mobile-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      row-gap: 0.5rem;
+      padding-top: 0.625rem;
+      padding-bottom: 0.625rem;
+    }
+
+    .header-mobile-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      column-gap: 0.75rem;
+      min-width: 0;
+      width: 100%;
+    }
+
+    .header-mobile-brand {
+      display: grid;
+      grid-template-columns: 2rem minmax(0, 1fr);
+      align-items: center;
+      column-gap: 0.5rem;
+      min-width: 0;
+      max-width: calc(100vw - 5.5rem);
+      text-decoration: none;
+    }
+
+    .header-mobile-logo {
+      width: 2rem;
+      height: 2rem;
+      min-width: 2rem;
+      object-fit: contain;
+    }
+
+    .header-mobile-title {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 14px;
+      line-height: 1.1;
+      font-weight: 700;
+      color: hsl(var(--ring));
+    }
+
+    .header-mobile-avatar-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.5rem;
+      min-width: 2.5rem;
+      height: 2.5rem;
+      position: static;
+    }
+
+    .header-mobile-avatar {
+      width: 2.25rem;
+      height: 2.25rem;
+      min-width: 2.25rem;
+    }
+
+    .header-mobile-link {
+      display: inline-flex;
+      align-items: center;
+      justify-self: start;
+      min-width: 0;
+      max-width: 100%;
+      padding: 0.375rem 0.625rem;
+      border-radius: 9999px;
+      font-size: 14px;
+      line-height: 1;
+      font-weight: 600;
+      color: hsl(var(--foreground));
+      background: transparent;
+    }
+
+    .header-mobile-tracker {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.375rem;
+      min-width: 0;
+      max-width: 9rem;
+      padding: 0.375rem 0.625rem;
+      border-radius: 9999px;
+      justify-self: end;
+      color: hsl(var(--mint-light));
+    }
+
+    .header-mobile-tracker-globe {
+      font-size: 14px;
+      line-height: 1;
+      flex: 0 0 auto;
+    }
+
+    .header-mobile-tracker-value {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 14px;
+      line-height: 1;
+    }
+
+    .site-header .absolute {
+      position: static;
+    }
   }
 }
 
