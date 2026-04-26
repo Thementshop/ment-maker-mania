@@ -138,7 +138,7 @@ const ChainDashboard = () => {
       result.map(c => c.chain_name));
     
     if (activeTab === 'yourTurn') {
-      console.log('[MentChainsDebug][Dashboard] YourTurn filter detail:', chainData.filter(c => c.status === 'active' && !c.is_queued).map(c => ({
+      console.log('[MentChainsDebug][Dashboard] YourTurn filter detail:', chainData.filter(c => c.status === 'active').map(c => ({
         name: c.chain_name,
         holder: c.current_holder,
         matchesUserId: c.current_holder === currentUserId,
