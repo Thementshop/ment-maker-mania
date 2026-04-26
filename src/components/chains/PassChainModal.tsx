@@ -348,7 +348,7 @@ const PassChainModal = ({
       // 3. Check recipient capacity (max 3 "Your Turn" chains)
       const { data: recipientChains } = await restApi(
         'GET', 'ment_chains',
-        `select=chain_id&current_holder=eq.${encodeURIComponent(recipient.trim())}&status=eq.active&is_queued=eq.false`,
+        `select=chain_id&current_holder=eq.${encodeURIComponent(recipient.trim())}&status=eq.active`,
         token
       );
 
