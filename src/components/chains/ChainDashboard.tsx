@@ -260,6 +260,51 @@ const ChainDashboard = () => {
       {/* Leaderboard Tab Content */}
       {activeTab === 'leaderboard' ? (
         <Leaderboard />
+      ) : activeTab === 'ended' ? (
+        /* Chain Memories — compact summary rows */
+        sortedChains.length > 0 ? (
+          <motion.div
+            className="space-y-2"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            {(showAllMemories ? sortedChains : sortedChains.slice(0, MEMORIES_PREVIEW_COUNT)).map(chain => (
+              <button
+                key={chain.chain_id}
+                onClick={() => handleViewDetails(chain.chain_id)}
+                className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-muted/40 hover:bg-muted/70 transition-colors text-left"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="text-lg shrink-0" aria-hidden>💚</span>
+                  <span className="font-semibold text-foreground truncate">{chain.chain_name}</span>
+                </div>
+                <span className="text-sm text-muted-foreground shrink-0">
+                  reached {chain.share_count} {chain.share_count === 1 ? 'person' : 'people'}
+                </span>
+              </button>
+            ))}
+
+            {sortedChains.length > MEMORIES_PREVIEW_COUNT && (
+              <div className="pt-2 text-center">
+                <button
+                  onClick={() => setShowAllMemories(v => !v)}
+                  className="text-sm text-primary hover:underline font-medium"
+                >
+                  {showAllMemories
+                    ? 'Show fewer chain memories'
+                    : `See all your chain memories →`}
+                </button>
+              </div>
+            )}
+          </motion.div>
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-5xl mb-4">💚</p>
+            <p className="text-lg font-semibold text-foreground mb-2">No chain memories yet</p>
+            <p className="text-muted-foreground">Completed chains will live here.</p>
+          </div>
+        )
       ) : (
         /* Chain Cards Grid */
         sortedChains.length > 0 ? (
