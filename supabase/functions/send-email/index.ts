@@ -58,16 +58,16 @@ function escapeHtml(str: string): string {
 function getSubject(emailType: string, data: TemplateData): string {
   switch (emailType) {
     case 'chain_received':
-      return `⏰ You have 24 hours to keep the ${data.chain_name} chain alive`;
+      return `You have 24 hours to keep the ${data.chain_name} chain alive`;
     case 'ment_received':
-      return `${data.sender_name || 'Someone'} thought of you — open this when you're ready`;
+      return `${data.sender_name || 'Someone'} thought of you — open this when you're ready 💚`;
     case '1hr_warning':
       if (data.other_chains && data.other_chains.length > 0) {
-        return `⏰ ${(data.other_chains.length + 1)} of your chains are about to break`;
+        return `${(data.other_chains.length + 1)} of your chains are about to break`;
       }
-      return `⏰ 1 hour left — don't let the ${data.chain_name} chain break`;
+      return `1 hour left — don't let the ${data.chain_name} chain break`;
     case 'milestone':
-      return `🏆 Your ${data.chain_name} chain just hit ${data.milestone} shares`;
+      return `Your ${data.chain_name} chain just hit ${data.milestone} shares 💚`;
     case 'completed':
       return `Your ${data.chain_name} chain reached ${data.total_shares || 0} people`;
     default:
