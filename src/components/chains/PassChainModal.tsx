@@ -460,8 +460,7 @@ const PassChainModal = ({
         });
       }
 
-      // 8. Auto-promote queued chain
-      await promoteNextQueuedChain(user.id, token);
+      // (Queued chain promotion removed.)
 
       // 9. Success!
       console.log('[PassChain] ✅ Chain passed successfully!');
