@@ -19,20 +19,16 @@ const MentChainsSection = ({ onStartNewChain }: MentChainsSectionProps) => {
 
   // Filter chains by status and ownership
   const categorizedChains = useMemo(() => {
-    const now = new Date();
-    
     const active = chains.filter(c => c.status === 'active' && c.started_by === user?.id);
     const yourTurn = chains.filter(c => c.status === 'active' && c.current_holder === user?.id);
-    const queued = chains.filter(c => c.status === 'active' && c.started_by !== user?.id && c.current_holder !== user?.id);
     const ended = chains.filter(c => c.status === 'broken' || c.status === 'ended');
 
-    return { active, yourTurn, queued, ended };
+    return { active, yourTurn, ended };
   }, [chains, user?.id]);
 
   const tabCounts = {
     active: categorizedChains.active.length,
     yourTurn: categorizedChains.yourTurn.length,
-    queued: categorizedChains.queued.length,
     ended: categorizedChains.ended.length,
   };
 
