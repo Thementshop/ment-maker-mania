@@ -58,16 +58,16 @@ function escapeHtml(str: string): string {
 function getSubject(emailType: string, data: TemplateData): string {
   switch (emailType) {
     case 'chain_received':
-      return `⏰ You have 24 hours to keep the ${data.chain_name} chain alive`;
+      return `You have 24 hours to keep the ${data.chain_name} chain alive`;
     case 'ment_received':
-      return `${data.sender_name || 'Someone'} thought of you — open this when you're ready`;
+      return `${data.sender_name || 'Someone'} thought of you — open this when you're ready 💚`;
     case '1hr_warning':
       if (data.other_chains && data.other_chains.length > 0) {
-        return `⏰ ${(data.other_chains.length + 1)} of your chains are about to break`;
+        return `${(data.other_chains.length + 1)} of your chains are about to break`;
       }
-      return `⏰ 1 hour left — don't let the ${data.chain_name} chain break`;
+      return `1 hour left — don't let the ${data.chain_name} chain break`;
     case 'milestone':
-      return `🏆 Your ${data.chain_name} chain just hit ${data.milestone} shares`;
+      return `Your ${data.chain_name} chain just hit ${data.milestone} shares 💚`;
     case 'completed':
       return `Your ${data.chain_name} chain reached ${data.total_shares || 0} people`;
     default:
@@ -78,29 +78,29 @@ function getSubject(emailType: string, data: TemplateData): string {
 // ─── Shared brand assets ───
 const MINT_IMG = 'https://ment-maker-mania.lovable.app/images/mint-candy.png';
 const BRAND_DARK = '#1a1a1a';        // body text
-const BRAND_HEADER = '#0d3d18';      // deep candy green header band
 const BRAND_GREEN = '#58fc59';       // Screamin' Green accent
-const PAGE_BG = '#f9fff9';           // soft minty page background
+const BRAND_GREEN_DARK = '#2d8a2e';  // darker green for text on white
+const PAGE_BG = '#ffffff';           // clean white page background
 const CARD_BG = '#ffffff';
 
-// ─── Header (deep green band with mint logo) ───
+// ─── Header (white with hero mint image) ───
 function brandHeader(eyebrow: string): string {
   return `
-  <tr><td style="background-color:${BRAND_HEADER};padding:32px 30px;text-align:center;border-bottom:4px solid ${BRAND_GREEN};">
-    <img src="${MINT_IMG}" width="64" height="64" alt="" style="display:block;margin:0 auto 12px;width:64px;height:64px;">
-    <h1 style="color:#ffffff;margin:0;font-size:26px;font-weight:800;letter-spacing:-0.5px;">MENT SHOP</h1>
-    <p style="color:${BRAND_GREEN};margin:6px 0 0;font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;">${escapeHtml(eyebrow)}</p>
+  <tr><td style="background-color:${CARD_BG};padding:40px 30px 24px;text-align:center;border-bottom:3px solid ${BRAND_GREEN};">
+    <img src="${MINT_IMG}" width="120" height="120" alt="The Ment Shop" style="display:block;margin:0 auto 18px;width:120px;height:120px;">
+    <h1 style="color:${BRAND_DARK};margin:0;font-size:24px;font-weight:800;letter-spacing:-0.3px;">THE MENT SHOP</h1>
+    <p style="color:${BRAND_GREEN_DARK};margin:8px 0 0;font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;">${escapeHtml(eyebrow)}</p>
   </td></tr>`;
 }
 
-// ─── FOOTER (light) ───
+// ─── FOOTER (clean white) ───
 const footer = `
-<tr><td style="background-color:#f3faf3;padding:24px 30px;text-align:center;border-top:1px solid #e5f3e5;">
-  <p style="color:#4b5563;font-size:11px;line-height:1.6;margin:0 0 6px;letter-spacing:0.5px;">
-    MENT SHOP &nbsp;·&nbsp; A chain of kindness, passed person to person.
+<tr><td style="background-color:${CARD_BG};padding:24px 30px 32px;text-align:center;border-top:1px solid #eaeaea;">
+  <p style="color:#6b7280;font-size:11px;line-height:1.6;margin:0 0 6px;letter-spacing:0.5px;">
+    THE MENT SHOP &nbsp;·&nbsp; A chain of kindness, passed person to person.
   </p>
-  <p style="color:#6b7280;font-size:11px;margin:0;">
-    Questions? <a href="mailto:info@mentshop.com" style="color:${BRAND_HEADER};text-decoration:none;font-weight:600;">info@mentshop.com</a>
+  <p style="color:#9ca3af;font-size:11px;margin:0;">
+    Questions? <a href="mailto:info@mentshop.com" style="color:${BRAND_GREEN_DARK};text-decoration:none;font-weight:600;">info@mentshop.com</a>
   </p>
 </td></tr>`;
 
@@ -109,7 +109,7 @@ function shell(eyebrow: string, innerHtml: string): string {
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
 <body style="margin:0;padding:0;background-color:${PAGE_BG};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0" style="background-color:${PAGE_BG};padding:40px 20px;"><tr><td align="center">
-<table width="600" cellpadding="0" cellspacing="0" style="background-color:${CARD_BG};border-radius:16px;overflow:hidden;box-shadow:0 10px 40px rgba(13,61,24,0.12);">
+<table width="600" cellpadding="0" cellspacing="0" style="background-color:${CARD_BG};border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.06);border:1px solid #eaeaea;">
   ${brandHeader(eyebrow)}
   <tr><td style="padding:0 30px;">${innerHtml}</td></tr>
   ${footer}
@@ -128,42 +128,45 @@ function urgencyBanner(eyebrow: string, message: string): string {
 
 function primaryCTA(href: string, label: string, subtext?: string): string {
   return `
-    <div style="text-align:center;margin:0 0 32px;">
-      <a href="${escapeHtml(href)}" style="display:inline-block;background-color:${BRAND_GREEN};color:${BRAND_HEADER};text-decoration:none;padding:18px 44px;border-radius:999px;font-size:17px;font-weight:800;letter-spacing:0.3px;border:2px solid ${BRAND_HEADER};box-shadow:0 6px 18px rgba(88,252,89,0.35);">
+    <div style="text-align:center;margin:0 0 24px;">
+      <a href="${escapeHtml(href)}" style="display:inline-block;background-color:${BRAND_GREEN};color:${BRAND_DARK};text-decoration:none;padding:18px 44px;border-radius:999px;font-size:17px;font-weight:800;letter-spacing:0.3px;box-shadow:0 6px 18px rgba(88,252,89,0.35);">
         ${escapeHtml(label)} →
       </a>
-      ${subtext ? `<p style="color:#4b5563;font-size:13px;margin:14px 0 0;line-height:1.5;">${subtext}</p>` : ''}
+      ${subtext ? `<p style="color:#6b7280;font-size:13px;margin:14px 0 0;line-height:1.5;">${subtext}</p>` : ''}
     </div>`;
 }
 
 // ─── TEMPLATE 1: Chain Received (Premium / Urgent) ───
 function buildChainReceivedEmail(data: TemplateData): string {
   const chainName = escapeHtml(data.chain_name);
+  const senderName = data.sender_name && data.sender_name.trim().length > 0
+    ? escapeHtml(data.sender_name)
+    : 'someone';
   const inner = `
-    ${urgencyBanner('⏰ 24-Hour Window', 'Pass it forward within 24 hours or the chain breaks.')}
+    ${urgencyBanner('24-Hour Window', 'Pass it forward within 24 hours or the chain breaks.')}
     <h2 style="color:${BRAND_DARK};margin:0 0 12px;font-size:30px;font-weight:800;line-height:1.15;letter-spacing:-0.8px;">
-      ⚡ ${chainName} Chain
+      ${chainName} Chain
     </h2>
     <p style="color:${BRAND_DARK};font-size:18px;line-height:1.5;margin:0 0 8px;font-weight:600;">
       Hey ${escapeHtml(data.recipient_name)} — you're the next link.
     </p>
     <p style="color:#4b5563;font-size:15px;line-height:1.6;margin:0 0 28px;">
-      Someone hand-picked you to receive this kindness. The chain is alive in your hands now. Keep it going.
+      Someone hand-picked you to receive this kindness. The chain is alive in your hands now.
     </p>
-    ${primaryCTA(data.chain_url, 'Reveal Your Compliment', 'Tap to open your message')}
-    <div style="border-top:1px solid #e5e7eb;padding:22px 0 28px;">
-      <p style="color:${BRAND_DARK};font-size:13px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;margin:0 0 8px;">A chain of kindness</p>
-      <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0;">
-        Passed person to person. You were chosen — now choose someone else.
-      </p>
-    </div>`;
+    ${primaryCTA(data.chain_url, 'Reveal Your Compliment', 'No account needed to view.')}
+    <p style="color:${BRAND_DARK};font-size:15px;line-height:1.6;margin:0 0 8px;text-align:center;font-weight:600;">
+      Savor your moment 💚
+    </p>
+    <p style="color:#4b5563;font-size:14px;line-height:1.6;margin:0 0 32px;text-align:center;">
+      If you want to add this mint to your jar, just send one back to <strong>${senderName}</strong> or choose someone else's day to brighten within 24 hours and it's yours to keep!
+    </p>`;
   return shell('A Chain Just Reached You', inner);
 }
 
 // ─── TEMPLATE 2a: 1hr Warning (Single) ───
 function build1hrWarningSingleEmail(data: TemplateData): string {
   const inner = `
-    ${urgencyBanner('⏰ 1 Hour Remaining', `The ${data.chain_name} chain breaks if it isn't passed forward.`)}
+    ${urgencyBanner('1 Hour Remaining', `The ${data.chain_name} chain breaks if it isn't passed forward.`)}
     <h2 style="color:${BRAND_DARK};margin:0 0 12px;font-size:28px;font-weight:800;line-height:1.15;letter-spacing:-0.6px;">
       Don't let it break, ${escapeHtml(data.recipient_name)}.
     </h2>
@@ -180,20 +183,20 @@ function build1hrWarningBatchedEmail(data: TemplateData): string {
   const otherChainsHtml = (data.other_chains || []).map(c => `
     <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #e5f3e5;">
       <p style="color:${BRAND_DARK};font-size:14px;font-weight:600;margin:0;">${escapeHtml(c.chain_name)}</p>
-      <p style="color:${BRAND_HEADER};font-size:13px;margin:0;font-weight:700;">${escapeHtml(c.time_left)}</p>
+      <p style="color:${BRAND_GREEN_DARK};font-size:13px;margin:0;font-weight:700;">${escapeHtml(c.time_left)}</p>
     </div>
   `).join('');
 
   const appUrl = data.app_url || 'https://ment-maker-mania.lovable.app';
   const inner = `
-    ${urgencyBanner('⚡ Multiple Chains Expiring', `${(data.other_chains?.length || 0) + 1} chains need your attention right now.`)}
+    ${urgencyBanner('Multiple Chains Expiring', `${(data.other_chains?.length || 0) + 1} chains need your attention right now.`)}
     <h2 style="color:${BRAND_DARK};margin:0 0 20px;font-size:26px;font-weight:800;letter-spacing:-0.5px;">
       Most urgent
     </h2>
     <div style="background-color:#f3faf3;border:2px solid ${BRAND_GREEN};border-radius:12px;padding:22px;margin:0 0 20px;">
       <p style="color:${BRAND_DARK};font-size:18px;font-weight:700;margin:0 0 6px;">${escapeHtml(data.urgent_chain_name || data.chain_name)}</p>
-      <p style="color:${BRAND_HEADER};font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin:0 0 16px;">${escapeHtml(data.urgent_time_left || '< 1 hour')} left</p>
-      <a href="${escapeHtml(data.urgent_chain_url || data.chain_url)}" style="display:inline-block;background-color:${BRAND_GREEN};color:${BRAND_HEADER};text-decoration:none;padding:12px 28px;border-radius:999px;font-size:14px;font-weight:800;letter-spacing:0.3px;border:2px solid ${BRAND_HEADER};">
+      <p style="color:${BRAND_GREEN_DARK};font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin:0 0 16px;">${escapeHtml(data.urgent_time_left || '< 1 hour')} left</p>
+      <a href="${escapeHtml(data.urgent_chain_url || data.chain_url)}" style="display:inline-block;background-color:${BRAND_GREEN};color:${BRAND_DARK};text-decoration:none;padding:12px 28px;border-radius:999px;font-size:14px;font-weight:800;letter-spacing:0.3px;">
         Pass This Chain →
       </a>
     </div>
@@ -210,7 +213,7 @@ function build1hrWarningBatchedEmail(data: TemplateData): string {
 function buildMilestoneEmail(data: TemplateData): string {
   const inner = `
     <div style="background:linear-gradient(135deg,${BRAND_GREEN},#22c55e);border-radius:12px;padding:24px 22px;margin:28px 0 24px;text-align:center;">
-      <p style="color:${BRAND_DARK};font-size:12px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;margin:0 0 8px;">🏆 Milestone Reached</p>
+      <p style="color:${BRAND_DARK};font-size:12px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;margin:0 0 8px;">Milestone Reached 💚</p>
       <p style="color:${BRAND_DARK};font-size:48px;font-weight:900;margin:0;line-height:1;letter-spacing:-2px;">${data.milestone}</p>
       <p style="color:${BRAND_DARK};font-size:13px;font-weight:700;margin:8px 0 0;">people reached</p>
     </div>
@@ -268,9 +271,12 @@ function buildMentReceivedEmail(data: TemplateData): string {
     <h2 style="color:${BRAND_DARK};margin:32px 0 14px;font-size:28px;font-weight:800;line-height:1.25;letter-spacing:-0.6px;">
       ${escapeHtml(sender)} thought of you and wrapped something kind just for you.
     </h2>
-    ${primaryCTA(revealUrl, 'Unwrap Your Ment', 'No account needed. This was made just for you.')}
-    <p style="color:${BRAND_DARK};font-size:14px;line-height:1.6;margin:0 0 32px;text-align:center;">
-      Enjoy your moment — then pass one along or send one back to <strong>${escapeHtml(sender)}</strong> anytime 💚
+    ${primaryCTA(revealUrl, 'Unwrap Your Ment', 'No account needed to view.')}
+    <p style="color:${BRAND_DARK};font-size:16px;line-height:1.6;margin:0 0 10px;text-align:center;font-weight:600;">
+      Savor your moment 💚
+    </p>
+    <p style="color:#4b5563;font-size:14px;line-height:1.6;margin:0 0 32px;text-align:center;">
+      If you want to add this mint to your jar, just send one back to <strong>${escapeHtml(sender)}</strong> or choose someone else's day to brighten within 24 hours and it's yours to keep!
     </p>
   `;
   return shell('Something Was Made For You', inner);
