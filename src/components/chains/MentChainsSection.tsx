@@ -141,7 +141,7 @@ const MentChainsSection = ({ onStartNewChain }: MentChainsSectionProps) => {
             )}
           </TabsTrigger>
           <TabsTrigger value="ended" className="text-xs sm:text-sm">
-            Ended
+            Chain Memories
             {tabCounts.ended > 0 && (
               <span className="ml-1 px-1.5 py-0.5 text-[10px] bg-muted text-muted-foreground rounded-full">
                 {tabCounts.ended}
