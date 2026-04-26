@@ -86,7 +86,12 @@ const Index = () => {
                   <KindnessJarSection jarCount={jarCount} totalSent={totalSent} />
                 </div>
               </TooltipTrigger>
-              <TooltipContent><p>Collect mints by sending kindness! 🍬</p></TooltipContent>
+              <TooltipContent>
+                <p className="flex items-center gap-1.5">
+                  Collect mints by sending kindness!
+                  <img src={brandMint} alt="" className="h-4 w-4 object-contain" />
+                </p>
+              </TooltipContent>
             </Tooltip>
             
             {/* Center: Send A Ment (graphic button) */}
