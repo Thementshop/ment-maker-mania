@@ -62,6 +62,7 @@ const ChainDashboard = () => {
   const [activeTab, setActiveTab] = useState('active');
   const [showStartModal, setShowStartModal] = useState(false);
   const [hasAutoSelected, setHasAutoSelected] = useState(false);
+  const [showAllMemories, setShowAllMemories] = useState(false);
   const [selectedChainForDetails, setSelectedChainForDetails] = useState<ChainData | null>(null);
   const currentUserId = user?.id || '';
   const currentUserEmail = user?.email || '';
