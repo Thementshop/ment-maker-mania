@@ -128,11 +128,11 @@ function urgencyBanner(eyebrow: string, message: string): string {
 
 function primaryCTA(href: string, label: string, subtext?: string): string {
   return `
-    <div style="text-align:center;margin:0 0 32px;">
-      <a href="${escapeHtml(href)}" style="display:inline-block;background-color:${BRAND_GREEN};color:${BRAND_HEADER};text-decoration:none;padding:18px 44px;border-radius:999px;font-size:17px;font-weight:800;letter-spacing:0.3px;border:2px solid ${BRAND_HEADER};box-shadow:0 6px 18px rgba(88,252,89,0.35);">
+    <div style="text-align:center;margin:0 0 24px;">
+      <a href="${escapeHtml(href)}" style="display:inline-block;background-color:${BRAND_GREEN};color:${BRAND_DARK};text-decoration:none;padding:18px 44px;border-radius:999px;font-size:17px;font-weight:800;letter-spacing:0.3px;box-shadow:0 6px 18px rgba(88,252,89,0.35);">
         ${escapeHtml(label)} →
       </a>
-      ${subtext ? `<p style="color:#4b5563;font-size:13px;margin:14px 0 0;line-height:1.5;">${subtext}</p>` : ''}
+      ${subtext ? `<p style="color:#6b7280;font-size:13px;margin:14px 0 0;line-height:1.5;">${subtext}</p>` : ''}
     </div>`;
 }
 
