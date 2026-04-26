@@ -78,29 +78,29 @@ function getSubject(emailType: string, data: TemplateData): string {
 // ─── Shared brand assets ───
 const MINT_IMG = 'https://ment-maker-mania.lovable.app/images/mint-candy.png';
 const BRAND_DARK = '#1a1a1a';        // body text
-const BRAND_HEADER = '#0d3d18';      // deep candy green header band
 const BRAND_GREEN = '#58fc59';       // Screamin' Green accent
-const PAGE_BG = '#f9fff9';           // soft minty page background
+const BRAND_GREEN_DARK = '#2d8a2e';  // darker green for text on white
+const PAGE_BG = '#ffffff';           // clean white page background
 const CARD_BG = '#ffffff';
 
-// ─── Header (deep green band with mint logo) ───
+// ─── Header (white with hero mint image) ───
 function brandHeader(eyebrow: string): string {
   return `
-  <tr><td style="background-color:${BRAND_HEADER};padding:32px 30px;text-align:center;border-bottom:4px solid ${BRAND_GREEN};">
-    <img src="${MINT_IMG}" width="64" height="64" alt="" style="display:block;margin:0 auto 12px;width:64px;height:64px;">
-    <h1 style="color:#ffffff;margin:0;font-size:26px;font-weight:800;letter-spacing:-0.5px;">MENT SHOP</h1>
-    <p style="color:${BRAND_GREEN};margin:6px 0 0;font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;">${escapeHtml(eyebrow)}</p>
+  <tr><td style="background-color:${CARD_BG};padding:40px 30px 24px;text-align:center;border-bottom:3px solid ${BRAND_GREEN};">
+    <img src="${MINT_IMG}" width="120" height="120" alt="The Ment Shop" style="display:block;margin:0 auto 18px;width:120px;height:120px;">
+    <h1 style="color:${BRAND_DARK};margin:0;font-size:24px;font-weight:800;letter-spacing:-0.3px;">THE MENT SHOP</h1>
+    <p style="color:${BRAND_GREEN_DARK};margin:8px 0 0;font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;">${escapeHtml(eyebrow)}</p>
   </td></tr>`;
 }
 
-// ─── FOOTER (light) ───
+// ─── FOOTER (clean white) ───
 const footer = `
-<tr><td style="background-color:#f3faf3;padding:24px 30px;text-align:center;border-top:1px solid #e5f3e5;">
-  <p style="color:#4b5563;font-size:11px;line-height:1.6;margin:0 0 6px;letter-spacing:0.5px;">
-    MENT SHOP &nbsp;·&nbsp; A chain of kindness, passed person to person.
+<tr><td style="background-color:${CARD_BG};padding:24px 30px 32px;text-align:center;border-top:1px solid #eaeaea;">
+  <p style="color:#6b7280;font-size:11px;line-height:1.6;margin:0 0 6px;letter-spacing:0.5px;">
+    THE MENT SHOP &nbsp;·&nbsp; A chain of kindness, passed person to person.
   </p>
-  <p style="color:#6b7280;font-size:11px;margin:0;">
-    Questions? <a href="mailto:info@mentshop.com" style="color:${BRAND_HEADER};text-decoration:none;font-weight:600;">info@mentshop.com</a>
+  <p style="color:#9ca3af;font-size:11px;margin:0;">
+    Questions? <a href="mailto:info@mentshop.com" style="color:${BRAND_GREEN_DARK};text-decoration:none;font-weight:600;">info@mentshop.com</a>
   </p>
 </td></tr>`;
 
@@ -109,7 +109,7 @@ function shell(eyebrow: string, innerHtml: string): string {
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
 <body style="margin:0;padding:0;background-color:${PAGE_BG};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0" style="background-color:${PAGE_BG};padding:40px 20px;"><tr><td align="center">
-<table width="600" cellpadding="0" cellspacing="0" style="background-color:${CARD_BG};border-radius:16px;overflow:hidden;box-shadow:0 10px 40px rgba(13,61,24,0.12);">
+<table width="600" cellpadding="0" cellspacing="0" style="background-color:${CARD_BG};border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.06);border:1px solid #eaeaea;">
   ${brandHeader(eyebrow)}
   <tr><td style="padding:0 30px;">${innerHtml}</td></tr>
   ${footer}
