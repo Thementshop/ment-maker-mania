@@ -279,7 +279,7 @@ function buildMentReceivedEmail(data: TemplateData): string {
       If you want to add this mint to your jar, just send one back to <strong>${escapeHtml(sender)}</strong> or choose someone else's day to brighten within 24 hours and it's yours to keep!
     </p>
   `;
-  return shell('Something Was Made For You', inner);
+  return shell('THE CANDY SHOP OF COMPLIMENTS', inner);
 }
 
 
