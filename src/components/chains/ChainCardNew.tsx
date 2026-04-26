@@ -102,7 +102,7 @@ const ChainCardNew = ({
   }, [chain.chain_id, chain.share_count, chain.started_by, currentUserId]);
 
   const handlePassForward = () => {
-    if (isYourTurn && chain.status === 'active' && !chain.is_queued) {
+    if (isYourTurn && chain.status === 'active') {
       setShowPassModal(true);
     } else {
       onShare?.(chain.chain_id);
