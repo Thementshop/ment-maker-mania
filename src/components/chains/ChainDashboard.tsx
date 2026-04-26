@@ -15,9 +15,11 @@ const tabs = [
   { id: 'active', label: 'Active', icon: '🔥' },
   { id: 'yourTurn', label: 'Your Turn', icon: '🎯' },
   { id: 'queued', label: 'Queued', icon: '⏸️' },
-  { id: 'ended', label: 'Ended', icon: '💔' },
+  { id: 'ended', label: 'Chain Memories', icon: '💚' },
   { id: 'leaderboard', label: 'Leaderboard', icon: '🏆' }
 ];
+
+const MEMORIES_PREVIEW_COUNT = 3;
 
 // Transform MentChain from hook to ChainData expected by ChainCardNew
 function transformChainToCardData(chain: MentChain): ChainData {
