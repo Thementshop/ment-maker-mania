@@ -153,9 +153,8 @@ const SendAMentModal = ({ isOpen, onClose }: SendAMentModalProps) => {
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || 'Failed to send SMS');
 
-        // Still award mint via existing send-a-ment for SMS (uses email as fallback identifier)
-        // For now, SMS is a placeholder - mint awarding happens when Twilio is integrated
-        toast({ title: "📱 SMS coming soon!", description: "Text delivery isn't live yet — we sent via email instead." });
+        // SMS is a placeholder until Twilio is wired up — silently fall back to email below.
+        // (No toast here; the success toast at the end covers delivery confirmation.)
 
         // Fallback: send via email if available
         if (selectedContact.email) {
