@@ -37,7 +37,7 @@ const screens = [
     color: 'from-pink-500/20 to-pink-500/10',
   },
   {
-    emoji: '🍬',
+    emoji: '💚',
     title: 'Earn Mints & Level Up!',
     description: 'Collect mints for every compliment sent. Level up your jar from "Ment Maker" all the way to "Ment Legend"!',
     icon: <img src={unwrappedMint} alt="Mint" className="h-12 w-12 object-contain" />,
@@ -167,7 +167,7 @@ const OnboardingModal = ({ isOpen, onClose }: OnboardingModalProps) => {
                 )}
                 <Button onClick={handleNext} className="flex-1">
                   {currentScreen === screens.length - 1 ? (
-                    'Get Started! 🍬'
+                    'Get Started! 💚'
                   ) : (
                     <>
                       Next

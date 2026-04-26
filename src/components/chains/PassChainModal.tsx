@@ -466,7 +466,7 @@ const PassChainModal = ({
       console.log('[PassChain] ✅ Chain passed successfully!');
       toast({
         title: "Chain passed! 🔗 +1 mint! 📤",
-        description: "1 mint added to your jar for passing it forward 🍬"
+        description: "1 mint added to your jar for passing it forward 💚"
       });
 
       onSuccess();
