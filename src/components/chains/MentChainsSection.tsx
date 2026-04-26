@@ -110,15 +110,7 @@ const MentChainsSection = ({ onStartNewChain }: MentChainsSectionProps) => {
   return (
     <div className="w-full">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="w-full grid grid-cols-4 mb-4">
-          <TabsTrigger value="active" className="relative text-xs sm:text-sm">
-            Active
-            {tabCounts.active > 0 && (
-              <span className="ml-1 px-1.5 py-0.5 text-[10px] bg-primary/20 text-primary rounded-full">
-                {tabCounts.active}
-              </span>
-            )}
-          </TabsTrigger>
+        <TabsList className="w-full grid grid-cols-3 mb-4">
           <TabsTrigger value="yourTurn" className="relative text-xs sm:text-sm">
             Your Turn
             {tabCounts.yourTurn > 0 && (
@@ -127,11 +119,11 @@ const MentChainsSection = ({ onStartNewChain }: MentChainsSectionProps) => {
               </span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="queued" className="text-xs sm:text-sm">
-            Queued
-            {tabCounts.queued > 0 && (
-              <span className="ml-1 px-1.5 py-0.5 text-[10px] bg-muted text-muted-foreground rounded-full">
-                {tabCounts.queued}
+          <TabsTrigger value="active" className="relative text-xs sm:text-sm">
+            Active
+            {tabCounts.active > 0 && (
+              <span className="ml-1 px-1.5 py-0.5 text-[10px] bg-primary/20 text-primary rounded-full">
+                {tabCounts.active}
               </span>
             )}
           </TabsTrigger>
@@ -146,18 +138,14 @@ const MentChainsSection = ({ onStartNewChain }: MentChainsSectionProps) => {
         </TabsList>
 
         <ScrollArea className="h-[400px] pr-2">
-          <TabsContent value="active" className="mt-0">
-            <ChainList chains={categorizedChains.active} />
-          </TabsContent>
-          
           <TabsContent value="yourTurn" className="mt-0">
             <ChainList chains={categorizedChains.yourTurn} />
           </TabsContent>
-          
-          <TabsContent value="queued" className="mt-0">
-            <ChainList chains={categorizedChains.queued} />
+
+          <TabsContent value="active" className="mt-0">
+            <ChainList chains={categorizedChains.active} />
           </TabsContent>
-          
+
           <TabsContent value="ended" className="mt-0">
             <ChainList chains={categorizedChains.ended} />
           </TabsContent>
