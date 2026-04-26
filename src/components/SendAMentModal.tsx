@@ -185,22 +185,27 @@ const SendAMentModal = ({ isOpen, onClose }: SendAMentModalProps) => {
         }
       }
 
-      // Update contact stats
-      await supabase
+      // Clear the safety timeout as soon as the send itself returned successfully.
+      window.clearTimeout(timeoutId);
+      if (timedOut) return; // Timeout already fired and reset UI — bail out.
+
+      // Fire-and-forget: contact stats update should NOT block the success UI.
+      supabase
         .from('user_contacts')
         .update({
           total_ments_sent: (selectedContact.total_ments_sent || 0) + 1,
           last_sent_at: new Date().toISOString(),
         })
-        .eq('id', selectedContact.id);
+        .eq('id', selectedContact.id)
+        .then(({ error }) => { if (error) console.error('[SendAMent] contact stats update failed:', error); });
 
-      window.clearTimeout(timeoutId);
       setStep('success');
       confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#58fc59', '#FF6B9D', '#4FC3F7', '#FFD740', '#B39DDB'] });
       toast({ title: "Compliment sent! +1 mint earned 💚", description: `Your ment was sent to ${selectedContact.contact_name}` });
       setTimeout(() => handleClose(), 2500);
     } catch (error: any) {
       window.clearTimeout(timeoutId);
+      if (timedOut) return;
       toast({ title: "Couldn't send ment", description: error.message || 'Please try again', variant: "destructive" });
       setStep('contact');
     }
