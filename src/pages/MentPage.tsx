@@ -34,6 +34,9 @@ const MentPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [unwrapped, setUnwrapped] = useState(false);
+  // After unwrap, logged-in private-link users get a one-tap choice:
+  // resend the same compliment, or pick something new.
+  const [showSendBackChoice, setShowSendBackChoice] = useState(false);
 
   // ─── Step 1: Silent auto-login from ?token=… (private delivery links only) ───
   useEffect(() => {
