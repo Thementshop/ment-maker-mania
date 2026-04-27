@@ -15,11 +15,20 @@ import unwrappedMint from '@/assets/unwrapped-mint.png';
 interface SendAMentModalProps {
   isOpen: boolean;
   onClose: () => void;
+  prefilledCompliment?: string | null;
+  prefilledCategory?: string | null;
+  prefilledSenderName?: string | null;
 }
 
 type Step = 'contact' | 'addContact' | 'delivery' | 'category' | 'compliment' | 'sending' | 'success';
 
-const SendAMentModal = ({ isOpen, onClose }: SendAMentModalProps) => {
+const SendAMentModal = ({
+  isOpen,
+  onClose,
+  prefilledCompliment,
+  prefilledCategory,
+  prefilledSenderName,
+}: SendAMentModalProps) => {
   const { user, session } = useAuth();
   const { toast } = useToast();
   const [step, setStep] = useState<Step>('contact');
@@ -28,12 +37,28 @@ const SendAMentModal = ({ isOpen, onClose }: SendAMentModalProps) => {
   const [selectedCategory, setSelectedCategory] = useState<ComplimentCategory | null>(null);
   const [selectedCompliment, setSelectedCompliment] = useState('');
 
+  const isPrefilled = !!prefilledCompliment;
+
+  // When the modal opens with a prefilled compliment, lock it in immediately.
+  // Skips the category + compliment selection steps entirely.
+  useState(() => {
+    if (prefilledCompliment) {
+      setSelectedCompliment(prefilledCompliment);
+      if (prefilledCategory) {
+        const cat = complimentCategories.find(c => c.id === prefilledCategory) || null;
+        setSelectedCategory(cat);
+      }
+    }
+  });
+
   const resetModal = () => {
     setStep('contact');
     setSelectedContact(null);
     setDeliveryMethod('text');
-    setSelectedCategory(null);
-    setSelectedCompliment('');
+    if (!isPrefilled) {
+      setSelectedCategory(null);
+      setSelectedCompliment('');
+    }
   };
 
   const handleClose = () => { resetModal(); onClose(); };
