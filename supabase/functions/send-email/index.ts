@@ -276,7 +276,7 @@ function buildMentReceivedEmail(data: TemplateData): string {
   const sender = data.sender_name && data.sender_name.trim().length > 0
     ? data.sender_name
     : 'Someone';
-  const revealUrl = `${appUrl}/ment/${data.ment_id || ''}`;
+  const revealUrl = data.reveal_url || `${appUrl}/ment/${data.ment_id || ''}`;
   const inner = `
     <h2 style="color:${BRAND_DARK};margin:32px 0 14px;font-size:28px;font-weight:800;line-height:1.25;letter-spacing:-0.6px;">
       ${escapeHtml(sender)} thought of you and wrapped something kind just for you.
