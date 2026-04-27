@@ -60,9 +60,11 @@ function escapeHtml(str: string): string {
 function getSubject(emailType: string, data: TemplateData): string {
   switch (emailType) {
     case 'chain_received':
-      return `You have 24 hours to keep the ${data.chain_name} chain alive`;
+      // Sender identity intentionally hidden — revealed only on unwrap.
+      return NOTIFICATION_COPY.chain_received.subject;
     case 'ment_received':
-      return `${data.sender_name || 'Someone'} thought of you — open this when you're ready 💚`;
+      // Sender identity intentionally hidden — revealed only on unwrap.
+      return NOTIFICATION_COPY.single_ment.subject;
     case '1hr_warning':
       if (data.other_chains && data.other_chains.length > 0) {
         return `${(data.other_chains.length + 1)} of your chains are about to break`;
