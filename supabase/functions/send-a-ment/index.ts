@@ -108,63 +108,36 @@ Deno.serve(async (req) => {
 
     const senderName = senderProfile?.display_name || userEmail?.split('@')[0] || 'Someone';
 
-    // ─── Auto-login token: if recipient already has an account, generate a magic link
-    // token and embed it in the reveal URL so they're silently logged in on click.
-    let loginToken = '';
-    try {
-      const { data: existingUsers } = await adminClient.auth.admin.listUsers();
-      const recipientUser = existingUsers?.users?.find(
-        (u: any) => u.email?.toLowerCase() === recipient_email.toLowerCase()
-      );
-      if (recipientUser) {
-        const { data: linkData, error: linkError } = await adminClient.auth.admin.generateLink({
-          type: 'magiclink',
-          email: recipient_email,
-        });
-        if (!linkError && linkData?.properties?.hashed_token) {
-          loginToken = linkData.properties.hashed_token;
-        }
-      }
-    } catch (tokenErr) {
-      console.error('[SEND-A-MENT] Token generation failed (non-fatal):', tokenErr);
-    }
-
+    // ─── Lazy auto-login: skip token generation here. The reveal URL uses ?auto=1
+    // and the issue-reveal-token edge function generates/caches a token at click-time.
+    // This removes auth.admin.listUsers() and auth.admin.generateLink() from the hot path.
     const baseAppUrl = 'https://ment-maker-mania.lovable.app';
-    const revealUrl = loginToken
-      ? `${baseAppUrl}/ment/${insertedMent?.id || ''}?token=${encodeURIComponent(loginToken)}`
-      : `${baseAppUrl}/ment/${insertedMent?.id || ''}`;
+    const revealUrl = `${baseAppUrl}/ment/${insertedMent?.id || ''}?auto=1`;
 
-    // Send email via send-email function
+    // Enqueue email instead of calling send-email directly. The process-email-queue
+    // worker (pg_cron, every minute) drains the queue with retries + DLQ.
     try {
-      const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${serviceRoleKey}`,
+      const { error: enqueueErr } = await adminClient.from('email_queue').insert({
+        email_type: 'ment_received',
+        recipient_email,
+        recipient_id: null,
+        chain_id: null,
+        payload: {
+          recipient_name: recipient_email.split('@')[0],
+          chain_name: '',
+          sender_name: senderName,
+          compliment_text,
+          compliment_category,
+          chain_url: baseAppUrl,
+          app_url: baseAppUrl,
+          ment_id: insertedMent?.id || '',
+          reveal_url: revealUrl,
         },
-        body: JSON.stringify({
-          email_type: 'ment_received',
-          recipient_email,
-          recipient_id: null,
-          chain_id: null,
-          template_data: {
-            recipient_name: recipient_email.split('@')[0],
-            chain_name: '',
-            sender_name: senderName,
-            compliment_text,
-            compliment_category,
-            chain_url: baseAppUrl,
-            app_url: baseAppUrl,
-            ment_id: insertedMent?.id || '',
-            reveal_url: revealUrl,
-          },
-        }),
       });
-      const emailResult = await emailResponse.json();
-      console.log('[SEND-A-MENT] Email result:', emailResult);
-    } catch (emailErr) {
-      console.error('[SEND-A-MENT] Email send failed:', emailErr);
-      // Don't fail the whole request if email fails
+      if (enqueueErr) console.error('[SEND-A-MENT] Enqueue failed:', enqueueErr);
+    } catch (enqueueErr) {
+      console.error('[SEND-A-MENT] Enqueue threw:', enqueueErr);
+      // Don't fail the whole request if enqueue fails — the user-facing send still succeeded.
     }
 
     return new Response(
