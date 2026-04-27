@@ -153,9 +153,10 @@ Deno.serve(async (req) => {
             sender_name: senderName,
             compliment_text,
             compliment_category,
-            chain_url: 'https://ment-maker-mania.lovable.app',
-            app_url: 'https://ment-maker-mania.lovable.app',
+            chain_url: baseAppUrl,
+            app_url: baseAppUrl,
             ment_id: insertedMent?.id || '',
+            reveal_url: revealUrl,
           },
         }),
       });
