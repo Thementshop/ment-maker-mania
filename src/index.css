@@ -193,19 +193,6 @@
     animation: sparkle 1.5s ease-in-out infinite;
   }
 
-  @media (max-width: 768px) {
-    .site-header {
-      overflow-x: clip;
-    }
-
-    .header-desktop-layout {
-      display: none;
-    }
-
-    .site-header .absolute {
-      position: static;
-    }
-  }
 }
 
 @layer utilities {

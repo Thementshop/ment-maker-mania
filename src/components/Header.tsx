@@ -102,20 +102,26 @@ const Header = ({ worldCount }: HeaderProps) => {
         </div>
 
         {/* Mobile layout */}
-        <div className="md:hidden w-full px-3 py-2 flex flex-col gap-2">
-          <div className="flex items-center justify-between w-full">
-            <Link to="/" className="flex items-center gap-2 min-w-0" aria-label="The Ment Shop home">
-              <img src={unwrappedMint} alt="Mint" className="h-8 w-8 object-contain flex-shrink-0" />
-              <span className="text-sm font-bold text-ring font-display truncate">The Ment Shop</span>
+        <div className="md:hidden w-full overflow-hidden px-3 py-2">
+          <div className="grid w-full grid-cols-[minmax(0,1fr)_2.25rem] items-center gap-x-3 gap-y-2">
+            <Link
+              to="/"
+              className="grid min-w-0 max-w-full grid-cols-[2rem_minmax(0,1fr)] items-center gap-2 overflow-hidden"
+              aria-label="The Ment Shop home"
+            >
+              <img src={unwrappedMint} alt="Mint" className="h-8 w-8 min-w-8 object-contain" />
+              <span className="block min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-[14px] leading-none font-bold text-ring font-display">
+                The Ment Shop
+              </span>
             </Link>
 
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={() => setIsSettingsOpen(true)}
-              className="flex-shrink-0 w-9 h-9"
+              className="flex h-9 w-9 shrink-0 items-center justify-center"
               aria-label="Open account settings"
             >
-              <Avatar className="h-9 w-9 border-2 border-mint">
+              <Avatar className="h-9 w-9 shrink-0 border-2 border-mint">
                 <AvatarImage src={profile?.avatar_url || undefined} />
                 <AvatarFallback className="bg-mint font-display text-primary-foreground">
                   {getInitials(resolvedName)}
@@ -124,22 +130,22 @@ const Header = ({ worldCount }: HeaderProps) => {
             </motion.button>
           </div>
 
-          <div className="flex items-center justify-between w-full">
+          <div className="mt-2 grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2">
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={() => setIsHowItWorksOpen(true)}
-              className="text-sm font-semibold text-foreground px-3 py-1 rounded-full hover:bg-primary/10 font-display"
+              className="min-w-0 max-w-full overflow-hidden text-ellipsis whitespace-nowrap rounded-full px-2 py-1 text-left text-[14px] leading-none font-semibold text-foreground font-display"
             >
               How it works
             </motion.button>
 
             <motion.div
               whileTap={{ scale: 0.98 }}
-              className="flex items-center gap-1 rounded-full px-3 py-1 world-tracker"
+              className="flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1 world-tracker"
               aria-label={`World Kindness Tracker ${formattedCount}`}
             >
               <motion.span
-                className="text-sm"
+                className="text-sm leading-none"
                 animate={{ rotate: 360 }}
                 transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
               >
@@ -149,7 +155,7 @@ const Header = ({ worldCount }: HeaderProps) => {
                 key={worldCount}
                 initial={{ scale: 1.2, color: '#FFD740' }}
                 animate={{ scale: 1, color: '#FFFFFF' }}
-                className="text-sm font-bold font-display tabular-nums"
+                className="text-sm leading-none font-bold font-display tabular-nums"
               >
                 {formattedCount}
               </motion.span>
