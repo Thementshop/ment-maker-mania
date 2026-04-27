@@ -108,6 +108,32 @@ Deno.serve(async (req) => {
 
     const senderName = senderProfile?.display_name || userEmail?.split('@')[0] || 'Someone';
 
+    // ─── Auto-login token: if recipient already has an account, generate a magic link
+    // token and embed it in the reveal URL so they're silently logged in on click.
+    let loginToken = '';
+    try {
+      const { data: existingUsers } = await adminClient.auth.admin.listUsers();
+      const recipientUser = existingUsers?.users?.find(
+        (u: any) => u.email?.toLowerCase() === recipient_email.toLowerCase()
+      );
+      if (recipientUser) {
+        const { data: linkData, error: linkError } = await adminClient.auth.admin.generateLink({
+          type: 'magiclink',
+          email: recipient_email,
+        });
+        if (!linkError && linkData?.properties?.hashed_token) {
+          loginToken = linkData.properties.hashed_token;
+        }
+      }
+    } catch (tokenErr) {
+      console.error('[SEND-A-MENT] Token generation failed (non-fatal):', tokenErr);
+    }
+
+    const baseAppUrl = 'https://ment-maker-mania.lovable.app';
+    const revealUrl = loginToken
+      ? `${baseAppUrl}/ment/${insertedMent?.id || ''}?token=${encodeURIComponent(loginToken)}`
+      : `${baseAppUrl}/ment/${insertedMent?.id || ''}`;
+
     // Send email via send-email function
     try {
       const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
