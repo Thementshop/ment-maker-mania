@@ -34,6 +34,9 @@ const Index = () => {
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [levelUpBonus, setLevelUpBonus] = useState(0);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [prefilledCompliment, setPrefilledCompliment] = useState<string | null>(null);
+  const [prefilledCategory, setPrefilledCategory] = useState<string | null>(null);
+  const [prefilledSenderName, setPrefilledSenderName] = useState<string | null>(null);
 
   useEffect(() => {
     const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding');
@@ -43,6 +46,18 @@ const Index = () => {
     // Auto-open Send-a-Ment modal when redirected from MentPage post-reveal CTAs.
     if (sessionStorage.getItem('openSendMent') === '1') {
       sessionStorage.removeItem('openSendMent');
+      // Optional prefill: when the user chose "Send this same Ment" on MentPage.
+      const pComp = sessionStorage.getItem('sendMentPrefillCompliment');
+      const pCat = sessionStorage.getItem('sendMentPrefillCategory');
+      const pSender = sessionStorage.getItem('sendMentSenderName');
+      if (pComp) {
+        setPrefilledCompliment(pComp);
+        setPrefilledCategory(pCat);
+        setPrefilledSenderName(pSender);
+        sessionStorage.removeItem('sendMentPrefillCompliment');
+        sessionStorage.removeItem('sendMentPrefillCategory');
+      }
+      sessionStorage.removeItem('sendMentSenderName');
       setIsSendAMentOpen(true);
     }
   }, []);
@@ -131,7 +146,18 @@ const Index = () => {
       </main>
       
       {/* Send A Ment Modal (single, no chain) */}
-      <SendAMentModal isOpen={isSendAMentOpen} onClose={() => setIsSendAMentOpen(false)} />
+      <SendAMentModal
+        isOpen={isSendAMentOpen}
+        onClose={() => {
+          setIsSendAMentOpen(false);
+          setPrefilledCompliment(null);
+          setPrefilledCategory(null);
+          setPrefilledSenderName(null);
+        }}
+        prefilledCompliment={prefilledCompliment}
+        prefilledCategory={prefilledCategory}
+        prefilledSenderName={prefilledSenderName}
+      />
 
       {/* Start Chain Modal from card */}
       <StartChainModal isOpen={isStartChainOpen} onClose={() => setIsStartChainOpen(false)} onSuccess={() => {}} />

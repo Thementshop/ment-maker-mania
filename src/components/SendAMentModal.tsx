@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Phone, Mail } from 'lucide-react';
 import { complimentCategories, ComplimentCategory } from '@/data/compliments';
@@ -15,11 +15,20 @@ import unwrappedMint from '@/assets/unwrapped-mint.png';
 interface SendAMentModalProps {
   isOpen: boolean;
   onClose: () => void;
+  prefilledCompliment?: string | null;
+  prefilledCategory?: string | null;
+  prefilledSenderName?: string | null;
 }
 
 type Step = 'contact' | 'addContact' | 'delivery' | 'category' | 'compliment' | 'sending' | 'success';
 
-const SendAMentModal = ({ isOpen, onClose }: SendAMentModalProps) => {
+const SendAMentModal = ({
+  isOpen,
+  onClose,
+  prefilledCompliment,
+  prefilledCategory,
+  prefilledSenderName,
+}: SendAMentModalProps) => {
   const { user, session } = useAuth();
   const { toast } = useToast();
   const [step, setStep] = useState<Step>('contact');
@@ -28,32 +37,59 @@ const SendAMentModal = ({ isOpen, onClose }: SendAMentModalProps) => {
   const [selectedCategory, setSelectedCategory] = useState<ComplimentCategory | null>(null);
   const [selectedCompliment, setSelectedCompliment] = useState('');
 
+  const isPrefilled = !!prefilledCompliment;
+
+  // When the modal opens with a prefilled compliment, lock it in immediately.
+  // Skips the category + compliment selection steps entirely.
+  useEffect(() => {
+    if (isOpen && prefilledCompliment) {
+      setSelectedCompliment(prefilledCompliment);
+      if (prefilledCategory) {
+        const cat = complimentCategories.find(c => c.id === prefilledCategory) || null;
+        setSelectedCategory(cat);
+      }
+    }
+  }, [isOpen, prefilledCompliment, prefilledCategory]);
+
   const resetModal = () => {
     setStep('contact');
     setSelectedContact(null);
     setDeliveryMethod('text');
-    setSelectedCategory(null);
-    setSelectedCompliment('');
+    if (!isPrefilled) {
+      setSelectedCategory(null);
+      setSelectedCompliment('');
+    }
   };
 
   const handleClose = () => { resetModal(); onClose(); };
 
   const handleContactSelected = (contact: UserContact) => {
     setSelectedContact(contact);
-    // If contact has both phone and email, let user pick; otherwise skip to category
+    // If contact has both phone and email, let user pick; otherwise skip ahead.
     if (contact.phone && contact.email) {
       setDeliveryMethod(contact.delivery_preference === 'email' ? 'email' : 'text');
       setStep('delivery');
     } else {
-      setDeliveryMethod(contact.phone ? 'text' : 'email');
-      setStep('category');
+      const method = contact.phone ? 'text' : 'email';
+      setDeliveryMethod(method);
+      // Prefilled compliment? Send immediately. Otherwise go to category picker.
+      if (isPrefilled) {
+        void handleSend(prefilledCompliment!, contact, method);
+      } else {
+        setStep('category');
+      }
     }
   };
 
   const handleNewContactSaved = (contact: UserContact) => {
     setSelectedContact(contact);
-    setDeliveryMethod(contact.phone ? 'text' : 'email');
-    setStep('category');
+    const method = contact.phone ? 'text' : 'email';
+    setDeliveryMethod(method);
+    if (isPrefilled) {
+      void handleSend(prefilledCompliment!, contact, method);
+    } else {
+      setStep('category');
+    }
   };
 
   const handleCategorySelect = (category: ComplimentCategory) => {
@@ -66,13 +102,19 @@ const SendAMentModal = ({ isOpen, onClose }: SendAMentModalProps) => {
     await handleSend(compliment);
   };
 
-  const handleSend = async (compliment?: string) => {
-    if (!user || !selectedContact) return;
+  const handleSend = async (
+    compliment?: string,
+    contactOverride?: UserContact,
+    methodOverride?: 'text' | 'email',
+  ) => {
+    const contact = contactOverride || selectedContact;
+    const method = methodOverride || deliveryMethod;
+    if (!user || !contact) return;
     const complimentToSend = compliment || selectedCompliment;
 
     // Pre-flight: SMS is not live yet. If user picked text but contact has no email
     // for fallback, fail fast with a clear error instead of hanging.
-    if (deliveryMethod === 'text' && !selectedContact.email) {
+    if (method === 'text' && !contact.email) {
       toast({
         title: "Can't send to this contact yet",
         description: "This contact doesn't have an email address. Please add an email to send them a Ment, or add your phone number to enable SMS.",
@@ -80,7 +122,7 @@ const SendAMentModal = ({ isOpen, onClose }: SendAMentModalProps) => {
       });
       return;
     }
-    if (deliveryMethod === 'email' && !selectedContact.email) {
+    if (method === 'email' && !contact.email) {
       toast({
         title: "No email on file",
         description: "This contact doesn't have an email address. Please add one to send them a Ment.",
@@ -108,9 +150,9 @@ const SendAMentModal = ({ isOpen, onClose }: SendAMentModalProps) => {
         setStep('contact');
         return;
       }
-      const recipientIdentifier = deliveryMethod === 'text' ? selectedContact.phone : selectedContact.email;
+      const recipientIdentifier = method === 'text' ? contact.phone : contact.email;
 
-      if (deliveryMethod === 'email' && selectedContact.email) {
+      if (method === 'email' && contact.email) {
         // Use existing email flow
         const response = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-a-ment`,
@@ -121,7 +163,7 @@ const SendAMentModal = ({ isOpen, onClose }: SendAMentModalProps) => {
               'Authorization': `Bearer ${accessToken}`,
             },
             body: JSON.stringify({
-              recipient_email: selectedContact.email,
+              recipient_email: contact.email,
               compliment_text: complimentToSend,
               compliment_category: selectedCategory?.id || '',
             }),
@@ -135,7 +177,7 @@ const SendAMentModal = ({ isOpen, onClose }: SendAMentModalProps) => {
           useGameStore.setState({ jarCount: result.new_jar_count });
           useGameStore.setState(s => ({ totalSent: s.totalSent + 1 }));
         }
-      } else if (deliveryMethod === 'text' && selectedContact.phone) {
+      } else if (method === 'text' && contact.phone) {
         // Use SMS placeholder
         const response = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-sms`,
@@ -146,8 +188,8 @@ const SendAMentModal = ({ isOpen, onClose }: SendAMentModalProps) => {
               'Authorization': `Bearer ${accessToken}`,
             },
             body: JSON.stringify({
-              phone_number: selectedContact.phone,
-              recipient_name: selectedContact.contact_name,
+              phone_number: contact.phone,
+              recipient_name: contact.contact_name,
               sender_name: user.email?.split('@')[0] || 'Someone',
               reveal_url: 'https://ment-maker-mania.lovable.app',
             }),
@@ -160,7 +202,7 @@ const SendAMentModal = ({ isOpen, onClose }: SendAMentModalProps) => {
         // (No toast here; the success toast at the end covers delivery confirmation.)
 
         // Fallback: send via email if available
-        if (selectedContact.email) {
+        if (contact.email) {
           const emailResp = await fetch(
             `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-a-ment`,
             {
@@ -170,7 +212,7 @@ const SendAMentModal = ({ isOpen, onClose }: SendAMentModalProps) => {
                 'Authorization': `Bearer ${accessToken}`,
               },
               body: JSON.stringify({
-                recipient_email: selectedContact.email,
+                recipient_email: contact.email,
                 compliment_text: complimentToSend,
                 compliment_category: selectedCategory?.id || '',
               }),
@@ -193,15 +235,15 @@ const SendAMentModal = ({ isOpen, onClose }: SendAMentModalProps) => {
       supabase
         .from('user_contacts')
         .update({
-          total_ments_sent: (selectedContact.total_ments_sent || 0) + 1,
+          total_ments_sent: (contact.total_ments_sent || 0) + 1,
           last_sent_at: new Date().toISOString(),
         })
-        .eq('id', selectedContact.id)
+        .eq('id', contact.id)
         .then(({ error }) => { if (error) console.error('[SendAMent] contact stats update failed:', error); });
 
       setStep('success');
       confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#58fc59', '#FF6B9D', '#4FC3F7', '#FFD740', '#B39DDB'] });
-      toast({ title: "Compliment sent! +1 mint earned 💚", description: `Your ment was sent to ${selectedContact.contact_name}` });
+      toast({ title: "Compliment sent! +1 mint earned 💚", description: `Your ment was sent to ${contact.contact_name}` });
       setTimeout(() => handleClose(), 2500);
     } catch (error: any) {
       window.clearTimeout(timeoutId);
@@ -241,11 +283,22 @@ const SendAMentModal = ({ isOpen, onClose }: SendAMentModalProps) => {
               </button>
             )}
 
+            {/* Prefilled-compliment banner: shown above contact picker so user knows what they're sending */}
+            {isPrefilled && (step === 'contact' || step === 'addContact' || step === 'delivery') && (
+              <div className="mb-4 rounded-2xl border-2 px-4 py-3" style={{ borderColor: 'rgba(88,252,89,0.3)', background: 'linear-gradient(135deg, rgba(88,252,89,0.08), rgba(88,252,89,0.15))' }}>
+                <p className="text-xs font-semibold mb-1" style={{ color: '#166534' }}>
+                  💚 Sending this ment{prefilledSenderName ? ` (from ${prefilledSenderName})` : ''}
+                </p>
+                <p className="text-sm font-medium text-foreground italic">"{prefilledCompliment}"</p>
+              </div>
+            )}
+
             {/* Step 1: Contact Selection */}
             {step === 'contact' && (
               <ContactSelector
                 onContactSelected={handleContactSelected}
                 onNewContact={() => setStep('addContact')}
+                initialSearch={isPrefilled && prefilledSenderName ? prefilledSenderName : ''}
               />
             )}
 
@@ -266,7 +319,11 @@ const SendAMentModal = ({ isOpen, onClose }: SendAMentModalProps) => {
                 </div>
                 <div className="space-y-3">
                   <button
-                    onClick={() => { setDeliveryMethod('text'); setStep('category'); }}
+                    onClick={() => {
+                      setDeliveryMethod('text');
+                      if (isPrefilled) void handleSend(prefilledCompliment!, selectedContact, 'text');
+                      else setStep('category');
+                    }}
                     className={`w-full flex items-center gap-3 p-4 rounded-xl border-2 transition-colors ${
                       deliveryMethod === 'text' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
                     }`}
@@ -278,7 +335,11 @@ const SendAMentModal = ({ isOpen, onClose }: SendAMentModalProps) => {
                     </div>
                   </button>
                   <button
-                    onClick={() => { setDeliveryMethod('email'); setStep('category'); }}
+                    onClick={() => {
+                      setDeliveryMethod('email');
+                      if (isPrefilled) void handleSend(prefilledCompliment!, selectedContact, 'email');
+                      else setStep('category');
+                    }}
                     className={`w-full flex items-center gap-3 p-4 rounded-xl border-2 transition-colors ${
                       deliveryMethod === 'email' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
                     }`}
