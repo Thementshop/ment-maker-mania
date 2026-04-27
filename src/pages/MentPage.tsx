@@ -38,23 +38,34 @@ const MentPage = () => {
   // resend the same compliment, or pick something new.
   const [showSendBackChoice, setShowSendBackChoice] = useState(false);
 
-  // ─── Step 1: Silent auto-login from ?token=… (private delivery links only) ───
+  // ─── Step 1: Silent auto-login from ?token=… or lazy ?auto=1 (private delivery links only) ───
   useEffect(() => {
     if (isShareMode) return;
     const params = new URLSearchParams(location.search);
     const token = params.get('token');
-    if (!token) return;
+    const auto = params.get('auto');
 
-    // Strip the token from the URL bar immediately (no flash, no history entry).
-    const cleanUrl = location.pathname;
-    window.history.replaceState({}, '', cleanUrl);
+    // Strip params from URL bar immediately (no flash, no history entry).
+    if (token || auto) {
+      window.history.replaceState({}, '', location.pathname);
+    }
 
     if (isLoggedIn) return; // Already logged in — token not needed.
 
     // Silently verify. No UI, no redirect, no toast. If it fails, page works as-is.
     (async () => {
       try {
-        await supabase.auth.verifyOtp({ token_hash: token, type: 'magiclink' });
+        if (token) {
+          await supabase.auth.verifyOtp({ token_hash: token, type: 'magiclink' });
+        } else if (auto === '1' && mentId) {
+          // Lazy path: ask backend to issue a token now (cached) and verify it.
+          const { data, error: tokErr } = await supabase.functions.invoke('issue-reveal-token', {
+            body: { ment_id: mentId },
+          });
+          if (!tokErr && data?.has_token && data?.token) {
+            await supabase.auth.verifyOtp({ token_hash: data.token, type: 'magiclink' });
+          }
+        }
       } catch (err) {
         console.warn('[MentPage] Silent login failed (non-fatal):', err);
       }

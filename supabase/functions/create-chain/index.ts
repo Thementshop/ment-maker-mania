@@ -187,35 +187,31 @@ Deno.serve(async (req) => {
         });
     }
 
-    // Send email notifications (fire-and-forget)
+    // Enqueue email notifications instead of fanning out direct calls.
+    // The process-email-queue worker drains the queue with retries + DLQ.
     const senderName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Someone';
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const appBaseUrl = 'https://ment-maker-mania.lovable.app';
-    
-    for (const recipient of recipientList) {
-      if (recipient.includes('@')) {
-        const recipientName = recipient.split('@')[0];
-        fetch(`${supabaseUrl}/functions/v1/send-email`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${supabaseAnonKey}`,
-          },
-          body: JSON.stringify({
-            email_type: 'chain_received',
-            recipient_email: recipient,
-            recipient_id: null,
-            chain_id: newChain.chain_id,
-            template_data: {
-              recipient_name: recipientName,
-              chain_name: finalName,
-              sender_name: senderName,
-              compliment_category: complimentCategory || 'default',
-              chain_url: `${appBaseUrl}/chain/${newChain.chain_id}`,
-            },
-          }),
-        }).catch(e => console.warn('Email send failed for', recipient, e));
-      }
+
+    const queueRows = recipientList
+      .filter((r) => r.includes('@'))
+      .map((recipient) => ({
+        email_type: 'chain_received',
+        recipient_email: recipient,
+        recipient_id: null,
+        chain_id: newChain.chain_id,
+        payload: {
+          recipient_name: recipient.split('@')[0],
+          chain_name: finalName,
+          sender_name: senderName,
+          compliment_category: complimentCategory || 'default',
+          chain_url: `${appBaseUrl}/chain/${newChain.chain_id}`,
+        },
+      }));
+
+    if (queueRows.length > 0) {
+      adminClient.from('email_queue').insert(queueRows).then(({ error }) => {
+        if (error) console.warn('[create-chain] Enqueue failed:', error);
+      });
     }
 
     return new Response(

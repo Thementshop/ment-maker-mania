@@ -94,6 +94,102 @@ export type Database = {
         }
         Relationships: []
       }
+      email_queue: {
+        Row: {
+          attempts: number
+          chain_id: string | null
+          created_at: string
+          email_type: string
+          id: string
+          last_error: string | null
+          locked_at: string | null
+          locked_by: string | null
+          max_attempts: number
+          next_attempt_at: string
+          payload: Json
+          recipient_email: string
+          recipient_id: string | null
+          sent_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          chain_id?: string | null
+          created_at?: string
+          email_type: string
+          id?: string
+          last_error?: string | null
+          locked_at?: string | null
+          locked_by?: string | null
+          max_attempts?: number
+          next_attempt_at?: string
+          payload: Json
+          recipient_email: string
+          recipient_id?: string | null
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          chain_id?: string | null
+          created_at?: string
+          email_type?: string
+          id?: string
+          last_error?: string | null
+          locked_at?: string | null
+          locked_by?: string | null
+          max_attempts?: number
+          next_attempt_at?: string
+          payload?: Json
+          recipient_email?: string
+          recipient_id?: string | null
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      error_log: {
+        Row: {
+          chain_id: string | null
+          context: Json | null
+          created_at: string
+          error_type: string
+          id: string
+          ment_id: string | null
+          message: string
+          recipient_email: string | null
+          severity: string
+          source: string
+        }
+        Insert: {
+          chain_id?: string | null
+          context?: Json | null
+          created_at?: string
+          error_type: string
+          id?: string
+          ment_id?: string | null
+          message: string
+          recipient_email?: string | null
+          severity?: string
+          source: string
+        }
+        Update: {
+          chain_id?: string | null
+          context?: Json | null
+          created_at?: string
+          error_type?: string
+          id?: string
+          ment_id?: string | null
+          message?: string
+          recipient_email?: string | null
+          severity?: string
+          source?: string
+        }
+        Relationships: []
+      }
       ment_chains: {
         Row: {
           broken_at: string | null
@@ -231,6 +327,27 @@ export type Database = {
           display_name?: string | null
           id?: string
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      recipient_login_tokens: {
+        Row: {
+          created_at: string
+          email: string
+          expires_at: string
+          hashed_token: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          expires_at: string
+          hashed_token: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          expires_at?: string
+          hashed_token?: string
         }
         Relationships: []
       }
@@ -448,6 +565,7 @@ export type Database = {
         Args: { _user_email?: string; _user_id: string }
         Returns: string[]
       }
+      get_user_id_by_email: { Args: { _email: string }; Returns: string }
       increment_world_counter: { Args: never; Returns: number }
       is_chain_participant: {
         Args: { _chain_id: string; _identifier: string }
