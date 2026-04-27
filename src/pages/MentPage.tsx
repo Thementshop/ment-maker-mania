@@ -337,6 +337,81 @@ const MentPage = () => {
       <p className="mt-8 text-xs" style={{ color: '#6b7280' }}>
         💚 Ment Shop – Spreading Kindness, One Compliment at a Time
       </p>
+
+      {/* ── Quick "Send Back" choice screen ───────────────────────────────
+          Logged-in private-link recipients can either resend the same
+          compliment or pick something new. One tap → straight to recipient. */}
+      <AnimatePresence>
+        {showSendBackChoice && ment && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowSendBackChoice(false)}
+          >
+            <motion.div
+              onClick={(e) => e.stopPropagation()}
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl"
+            >
+              <h2 className="font-display text-xl font-bold text-center mb-1" style={{ color: '#166534' }}>
+                Pass it forward 💚
+              </h2>
+              <p className="text-center text-sm text-muted-foreground mb-5">
+                Send the same kindness, or pick something fresh.
+              </p>
+
+              {/* The compliment they just received, with one-tap resend */}
+              <div
+                className="rounded-2xl p-4 mb-3"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(88,252,89,0.08), rgba(88,252,89,0.15))',
+                  border: '2px solid rgba(88,252,89,0.3)',
+                }}
+              >
+                <p className="text-foreground text-base leading-relaxed font-semibold italic mb-4">
+                  "{ment.compliment_text}"
+                </p>
+                <button
+                  onClick={() => {
+                    sessionStorage.setItem('openSendMent', '1');
+                    sessionStorage.setItem('sendMentPrefillCompliment', ment.compliment_text);
+                    sessionStorage.setItem('sendMentPrefillCategory', ment.category);
+                    sessionStorage.setItem('sendMentSenderName', ment.sender_name);
+                    navigate('/');
+                  }}
+                  className="block w-full rounded-xl px-6 py-3 font-semibold text-white text-center transition-all hover:scale-[1.02]"
+                  style={{ background: 'linear-gradient(135deg, #58fc59, #3dd83e)' }}
+                >
+                  Send this same Ment 💚
+                </button>
+              </div>
+
+              <button
+                onClick={() => {
+                  sessionStorage.setItem('openSendMent', '1');
+                  sessionStorage.setItem('sendMentSenderName', ment.sender_name);
+                  navigate('/');
+                }}
+                className="block w-full rounded-xl px-6 py-3 font-semibold text-center transition-all hover:scale-[1.02] border-2"
+                style={{ borderColor: '#58fc59', color: '#166534' }}
+              >
+                Choose something new instead →
+              </button>
+
+              <button
+                onClick={() => setShowSendBackChoice(false)}
+                className="mt-3 w-full text-center text-xs text-muted-foreground hover:text-foreground"
+              >
+                Cancel
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
