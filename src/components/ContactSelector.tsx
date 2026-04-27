@@ -18,12 +18,13 @@ export interface UserContact {
 interface ContactSelectorProps {
   onContactSelected: (contact: UserContact) => void;
   onNewContact: () => void;
+  initialSearch?: string;
 }
 
-const ContactSelector = ({ onContactSelected, onNewContact }: ContactSelectorProps) => {
+const ContactSelector = ({ onContactSelected, onNewContact, initialSearch = '' }: ContactSelectorProps) => {
   const { user } = useAuth();
   const [contacts, setContacts] = useState<UserContact[]>([]);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(initialSearch);
   const [filtered, setFiltered] = useState<UserContact[]>([]);
   const [showAll, setShowAll] = useState(false);
   const [loading, setLoading] = useState(true);
