@@ -29,3 +29,12 @@ verify_jwt = false
 
 [functions.send-sms]
 verify_jwt = false
+
+[functions.process-email-queue]
+verify_jwt = false
+
+[functions.issue-reveal-token]
+verify_jwt = false
+
+[functions.health-check]
+verify_jwt = false
