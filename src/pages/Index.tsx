@@ -40,6 +40,11 @@ const Index = () => {
     if (!hasSeenOnboarding) {
       setShowOnboarding(true);
     }
+    // Auto-open Send-a-Ment modal when redirected from MentPage post-reveal CTAs.
+    if (sessionStorage.getItem('openSendMent') === '1') {
+      sessionStorage.removeItem('openSendMent');
+      setIsSendAMentOpen(true);
+    }
   }, []);
 
   useEffect(() => {

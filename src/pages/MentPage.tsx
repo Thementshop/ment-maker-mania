@@ -1,11 +1,13 @@
-import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useEffect, useState, useContext } from 'react';
+import { useParams, useLocation, useNavigate, Link } from 'react-router-dom';
 import { complimentCategories } from '@/data/compliments';
 import { motion, AnimatePresence } from 'framer-motion';
 import wrappedMint from '@/assets/wrapped-mint.png';
 import unwrappedMint from '@/assets/unwrapped-mint.png';
 import brandMint from '@/assets/brand-mint.png';
 import confetti from 'canvas-confetti';
+import { supabase } from '@/integrations/supabase/client';
+import { AuthContext } from '@/contexts/AuthContext';
 
 interface MentData {
   compliment_text: string;
@@ -19,10 +21,43 @@ const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 const MentPage = () => {
   const { mentId } = useParams<{ mentId: string }>();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const authCtx = useContext(AuthContext);
+  const isLoggedIn = !!authCtx?.user;
+
+  // Share-mode: viewer is NOT the original recipient. No login token, different CTAs.
+  const isShareMode =
+    location.pathname.endsWith('/shared') || location.pathname.startsWith('/share/');
+
   const [ment, setMent] = useState<MentData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [unwrapped, setUnwrapped] = useState(false);
+
+  // ─── Step 1: Silent auto-login from ?token=… (private delivery links only) ───
+  useEffect(() => {
+    if (isShareMode) return;
+    const params = new URLSearchParams(location.search);
+    const token = params.get('token');
+    if (!token) return;
+
+    // Strip the token from the URL bar immediately (no flash, no history entry).
+    const cleanUrl = location.pathname;
+    window.history.replaceState({}, '', cleanUrl);
+
+    if (isLoggedIn) return; // Already logged in — token not needed.
+
+    // Silently verify. No UI, no redirect, no toast. If it fails, page works as-is.
+    (async () => {
+      try {
+        await supabase.auth.verifyOtp({ token_hash: token, type: 'magiclink' });
+      } catch (err) {
+        console.warn('[MentPage] Silent login failed (non-fatal):', err);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const fetchMent = async () => {
@@ -33,7 +68,6 @@ const MentPage = () => {
       }
 
       try {
-        // Fetch sent_ment via REST (no auth required)
         const mentRes = await fetch(
           `${SUPABASE_URL}/rest/v1/sent_ments?id=eq.${mentId}&select=compliment_text,category,sent_at,sender_id`,
           {
@@ -53,7 +87,6 @@ const MentPage = () => {
 
         const data = mentRows[0];
 
-        // Fetch sender display name via REST
         let senderName = 'Someone';
         if (data.sender_id) {
           const profileRes = await fetch(
@@ -233,20 +266,69 @@ const MentPage = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 1 }}
               >
-                <Link
-                  to="/"
-                  className="block w-full rounded-xl px-6 py-3 font-semibold text-white text-center transition-all hover:scale-[1.02]"
-                  style={{ background: 'linear-gradient(135deg, #58fc59, #3dd83e)' }}
-                >
-                  Send a Ment Back 💚
-                </Link>
-                <Link
-                  to="/auth"
-                  className="block w-full rounded-xl px-6 py-3 font-semibold text-center transition-all hover:scale-[1.02] border-2"
-                  style={{ borderColor: '#58fc59', color: '#166534' }}
-                >
-                  Join The Ment Shop 💚
-                </Link>
+                {isShareMode ? (
+                  // ─── Share-link viewer: not the original recipient ───
+                  isLoggedIn ? (
+                    <Link
+                      to="/"
+                      className="block w-full rounded-xl px-6 py-3 font-semibold text-white text-center transition-all hover:scale-[1.02]"
+                      style={{ background: 'linear-gradient(135deg, #58fc59, #3dd83e)' }}
+                    >
+                      Join The Ment Shop 💚
+                    </Link>
+                  ) : (
+                    <Link
+                      to="/auth"
+                      className="block w-full rounded-xl px-6 py-3 font-semibold text-white text-center transition-all hover:scale-[1.02]"
+                      style={{ background: 'linear-gradient(135deg, #58fc59, #3dd83e)' }}
+                    >
+                      Join The Ment Shop 💚
+                    </Link>
+                  )
+                ) : isLoggedIn ? (
+                  // ─── Private link, logged in: send back / send new ───
+                  <>
+                    <button
+                      onClick={() => {
+                        sessionStorage.setItem('openSendMent', '1');
+                        sessionStorage.setItem('sendMentSenderName', ment!.sender_name);
+                        navigate('/');
+                      }}
+                      className="block w-full rounded-xl px-6 py-3 font-semibold text-white text-center transition-all hover:scale-[1.02]"
+                      style={{ background: 'linear-gradient(135deg, #58fc59, #3dd83e)' }}
+                    >
+                      Send a Ment Back to {ment!.sender_name} 💚
+                    </button>
+                    <button
+                      onClick={() => {
+                        sessionStorage.setItem('openSendMent', '1');
+                        navigate('/');
+                      }}
+                      className="block w-full rounded-xl px-6 py-3 font-semibold text-center transition-all hover:scale-[1.02] border-2"
+                      style={{ borderColor: '#58fc59', color: '#166534' }}
+                    >
+                      Send to Someone New
+                    </button>
+                  </>
+                ) : (
+                  // ─── Private link, not logged in: new user ───
+                  <>
+                    <Link
+                      to="/auth"
+                      className="block w-full rounded-xl px-6 py-3 font-semibold text-white text-center transition-all hover:scale-[1.02]"
+                      style={{ background: 'linear-gradient(135deg, #58fc59, #3dd83e)' }}
+                    >
+                      Create Free Account
+                    </Link>
+                    <Link
+                      to="/auth?mode=signin"
+                      className="block w-full text-center text-sm transition-colors hover:underline"
+                      style={{ color: '#166534' }}
+                    >
+                      Already have an account? Sign in
+                    </Link>
+                  </>
+                )}
               </motion.div>
             </motion.div>
           )}
