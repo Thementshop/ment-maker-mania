@@ -65,20 +65,31 @@ const SendAMentModal = ({
 
   const handleContactSelected = (contact: UserContact) => {
     setSelectedContact(contact);
-    // If contact has both phone and email, let user pick; otherwise skip to category
+    // If contact has both phone and email, let user pick; otherwise skip ahead.
     if (contact.phone && contact.email) {
       setDeliveryMethod(contact.delivery_preference === 'email' ? 'email' : 'text');
       setStep('delivery');
     } else {
-      setDeliveryMethod(contact.phone ? 'text' : 'email');
-      setStep('category');
+      const method = contact.phone ? 'text' : 'email';
+      setDeliveryMethod(method);
+      // Prefilled compliment? Send immediately. Otherwise go to category picker.
+      if (isPrefilled) {
+        void handleSend(prefilledCompliment!, contact, method);
+      } else {
+        setStep('category');
+      }
     }
   };
 
   const handleNewContactSaved = (contact: UserContact) => {
     setSelectedContact(contact);
-    setDeliveryMethod(contact.phone ? 'text' : 'email');
-    setStep('category');
+    const method = contact.phone ? 'text' : 'email';
+    setDeliveryMethod(method);
+    if (isPrefilled) {
+      void handleSend(prefilledCompliment!, contact, method);
+    } else {
+      setStep('category');
+    }
   };
 
   const handleCategorySelect = (category: ComplimentCategory) => {
