@@ -292,11 +292,7 @@ const MentPage = () => {
                   // ─── Private link, logged in: send back / send new ───
                   <>
                     <button
-                      onClick={() => {
-                        sessionStorage.setItem('openSendMent', '1');
-                        sessionStorage.setItem('sendMentSenderName', ment!.sender_name);
-                        navigate('/');
-                      }}
+                      onClick={() => setShowSendBackChoice(true)}
                       className="block w-full rounded-xl px-6 py-3 font-semibold text-white text-center transition-all hover:scale-[1.02]"
                       style={{ background: 'linear-gradient(135deg, #58fc59, #3dd83e)' }}
                     >
