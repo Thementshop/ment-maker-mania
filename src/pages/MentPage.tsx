@@ -1,17 +1,20 @@
-import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useEffect, useState, useContext } from 'react';
+import { useParams, useLocation, useNavigate, Link } from 'react-router-dom';
 import { complimentCategories } from '@/data/compliments';
 import { motion, AnimatePresence } from 'framer-motion';
 import wrappedMint from '@/assets/wrapped-mint.png';
 import unwrappedMint from '@/assets/unwrapped-mint.png';
 import brandMint from '@/assets/brand-mint.png';
 import confetti from 'canvas-confetti';
+import { supabase } from '@/integrations/supabase/client';
+import { AuthContext } from '@/contexts/AuthContext';
 
 interface MentData {
   compliment_text: string;
   category: string;
   sent_at: string | null;
   sender_name: string;
+  sender_email: string | null;
 }
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
