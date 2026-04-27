@@ -102,8 +102,14 @@ const SendAMentModal = ({
     await handleSend(compliment);
   };
 
-  const handleSend = async (compliment?: string) => {
-    if (!user || !selectedContact) return;
+  const handleSend = async (
+    compliment?: string,
+    contactOverride?: UserContact,
+    methodOverride?: 'text' | 'email',
+  ) => {
+    const contact = contactOverride || selectedContact;
+    const method = methodOverride || deliveryMethod;
+    if (!user || !contact) return;
     const complimentToSend = compliment || selectedCompliment;
 
     // Pre-flight: SMS is not live yet. If user picked text but contact has no email
