@@ -21,10 +21,43 @@ const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 const MentPage = () => {
   const { mentId } = useParams<{ mentId: string }>();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const authCtx = useContext(AuthContext);
+  const isLoggedIn = !!authCtx?.user;
+
+  // Share-mode: viewer is NOT the original recipient. No login token, different CTAs.
+  const isShareMode =
+    location.pathname.endsWith('/shared') || location.pathname.startsWith('/share/');
+
   const [ment, setMent] = useState<MentData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [unwrapped, setUnwrapped] = useState(false);
+
+  // ─── Step 1: Silent auto-login from ?token=… (private delivery links only) ───
+  useEffect(() => {
+    if (isShareMode) return;
+    const params = new URLSearchParams(location.search);
+    const token = params.get('token');
+    if (!token) return;
+
+    // Strip the token from the URL bar immediately (no flash, no history entry).
+    const cleanUrl = location.pathname;
+    window.history.replaceState({}, '', cleanUrl);
+
+    if (isLoggedIn) return; // Already logged in — token not needed.
+
+    // Silently verify. No UI, no redirect, no toast. If it fails, page works as-is.
+    (async () => {
+      try {
+        await supabase.auth.verifyOtp({ token_hash: token, type: 'magiclink' });
+      } catch (err) {
+        console.warn('[MentPage] Silent login failed (non-fatal):', err);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const fetchMent = async () => {
@@ -35,7 +68,6 @@ const MentPage = () => {
       }
 
       try {
-        // Fetch sent_ment via REST (no auth required)
         const mentRes = await fetch(
           `${SUPABASE_URL}/rest/v1/sent_ments?id=eq.${mentId}&select=compliment_text,category,sent_at,sender_id`,
           {
@@ -55,7 +87,6 @@ const MentPage = () => {
 
         const data = mentRows[0];
 
-        // Fetch sender display name via REST
         let senderName = 'Someone';
         if (data.sender_id) {
           const profileRes = await fetch(
