@@ -114,7 +114,7 @@ const SendAMentModal = ({
 
     // Pre-flight: SMS is not live yet. If user picked text but contact has no email
     // for fallback, fail fast with a clear error instead of hanging.
-    if (deliveryMethod === 'text' && !selectedContact.email) {
+    if (method === 'text' && !contact.email) {
       toast({
         title: "Can't send to this contact yet",
         description: "This contact doesn't have an email address. Please add an email to send them a Ment, or add your phone number to enable SMS.",
@@ -122,7 +122,7 @@ const SendAMentModal = ({
       });
       return;
     }
-    if (deliveryMethod === 'email' && !selectedContact.email) {
+    if (method === 'email' && !contact.email) {
       toast({
         title: "No email on file",
         description: "This contact doesn't have an email address. Please add one to send them a Ment.",
@@ -150,9 +150,9 @@ const SendAMentModal = ({
         setStep('contact');
         return;
       }
-      const recipientIdentifier = deliveryMethod === 'text' ? selectedContact.phone : selectedContact.email;
+      const recipientIdentifier = method === 'text' ? contact.phone : contact.email;
 
-      if (deliveryMethod === 'email' && selectedContact.email) {
+      if (method === 'email' && contact.email) {
         // Use existing email flow
         const response = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-a-ment`,
@@ -163,7 +163,7 @@ const SendAMentModal = ({
               'Authorization': `Bearer ${accessToken}`,
             },
             body: JSON.stringify({
-              recipient_email: selectedContact.email,
+              recipient_email: contact.email,
               compliment_text: complimentToSend,
               compliment_category: selectedCategory?.id || '',
             }),
@@ -177,7 +177,7 @@ const SendAMentModal = ({
           useGameStore.setState({ jarCount: result.new_jar_count });
           useGameStore.setState(s => ({ totalSent: s.totalSent + 1 }));
         }
-      } else if (deliveryMethod === 'text' && selectedContact.phone) {
+      } else if (method === 'text' && contact.phone) {
         // Use SMS placeholder
         const response = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-sms`,
@@ -188,8 +188,8 @@ const SendAMentModal = ({
               'Authorization': `Bearer ${accessToken}`,
             },
             body: JSON.stringify({
-              phone_number: selectedContact.phone,
-              recipient_name: selectedContact.contact_name,
+              phone_number: contact.phone,
+              recipient_name: contact.contact_name,
               sender_name: user.email?.split('@')[0] || 'Someone',
               reveal_url: 'https://ment-maker-mania.lovable.app',
             }),
@@ -202,7 +202,7 @@ const SendAMentModal = ({
         // (No toast here; the success toast at the end covers delivery confirmation.)
 
         // Fallback: send via email if available
-        if (selectedContact.email) {
+        if (contact.email) {
           const emailResp = await fetch(
             `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-a-ment`,
             {
@@ -212,7 +212,7 @@ const SendAMentModal = ({
                 'Authorization': `Bearer ${accessToken}`,
               },
               body: JSON.stringify({
-                recipient_email: selectedContact.email,
+                recipient_email: contact.email,
                 compliment_text: complimentToSend,
                 compliment_category: selectedCategory?.id || '',
               }),
@@ -235,15 +235,15 @@ const SendAMentModal = ({
       supabase
         .from('user_contacts')
         .update({
-          total_ments_sent: (selectedContact.total_ments_sent || 0) + 1,
+          total_ments_sent: (contact.total_ments_sent || 0) + 1,
           last_sent_at: new Date().toISOString(),
         })
-        .eq('id', selectedContact.id)
+        .eq('id', contact.id)
         .then(({ error }) => { if (error) console.error('[SendAMent] contact stats update failed:', error); });
 
       setStep('success');
       confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#58fc59', '#FF6B9D', '#4FC3F7', '#FFD740', '#B39DDB'] });
-      toast({ title: "Compliment sent! +1 mint earned 💚", description: `Your ment was sent to ${selectedContact.contact_name}` });
+      toast({ title: "Compliment sent! +1 mint earned 💚", description: `Your ment was sent to ${contact.contact_name}` });
       setTimeout(() => handleClose(), 2500);
     } catch (error: any) {
       window.clearTimeout(timeoutId);
