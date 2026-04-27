@@ -273,23 +273,21 @@ function buildCompletedEmail(data: TemplateData): string {
 // ─── TEMPLATE 5: Ment Received (Single Compliment) ───
 function buildMentReceivedEmail(data: TemplateData): string {
   const appUrl = data.app_url || 'https://ment-maker-mania.lovable.app';
-  const sender = data.sender_name && data.sender_name.trim().length > 0
-    ? data.sender_name
-    : 'Someone';
+  // Sender identity is intentionally NOT used here — revealed only on unwrap.
   const revealUrl = data.reveal_url || `${appUrl}/ment/${data.ment_id || ''}`;
   const inner = `
     <h2 style="color:${BRAND_DARK};margin:32px 0 14px;font-size:28px;font-weight:800;line-height:1.25;letter-spacing:-0.6px;">
-      ${escapeHtml(sender)} thought of you and wrapped something kind just for you.
+      ${escapeHtml(NOTIFICATION_COPY.single_ment.body)}
     </h2>
-    ${primaryCTA(revealUrl, 'Unwrap Your Ment', 'No account needed to view.')}
+    ${primaryCTA(revealUrl, NOTIFICATION_COPY.single_ment.cta, 'No account needed to view.')}
     <p style="color:${BRAND_DARK};font-size:16px;line-height:1.6;margin:0 0 10px;text-align:center;font-weight:600;">
       Savor your moment 💚
     </p>
     <p style="color:#4b5563;font-size:14px;line-height:1.6;margin:0 0 32px;text-align:center;">
-      If you want to add this mint to your jar, just send one back to <strong>${escapeHtml(sender)}</strong> or choose someone else's day to brighten within 24 hours and it's yours to keep!
+      To add this mint to your jar, send one back to whoever sent this — or brighten someone else's day within 24 hours and it's yours to keep!
     </p>
   `;
-  return shell('THE CANDY SHOP OF COMPLIMENTS', inner);
+  return shell(NOTIFICATION_COPY.single_ment.eyebrow, inner);
 }
 
 
