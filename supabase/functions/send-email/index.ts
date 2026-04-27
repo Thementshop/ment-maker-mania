@@ -86,10 +86,10 @@ const CARD_BG = '#ffffff';
 // ─── Header (white with hero mint image) ───
 function brandHeader(eyebrow: string): string {
   return `
-  <tr><td style="background-color:${CARD_BG};padding:40px 30px 24px;text-align:center;border-bottom:3px solid ${BRAND_GREEN};">
-    <img src="${MINT_IMG}" width="120" height="120" alt="The Ment Shop" style="display:block;margin:0 auto 18px;width:120px;height:120px;">
-    <h1 style="color:${BRAND_DARK};margin:0;font-size:24px;font-weight:800;letter-spacing:-0.3px;">THE MENT SHOP</h1>
-    <p style="color:${BRAND_GREEN_DARK};margin:8px 0 0;font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;">${escapeHtml(eyebrow)}</p>
+  <tr><td style="background-color:${CARD_BG};padding:40px 20px 24px;text-align:center;border-bottom:3px solid ${BRAND_GREEN};word-wrap:break-word;">
+    <img src="${MINT_IMG}" width="120" height="120" alt="The Ment Shop" style="display:block;margin:0 auto 18px;width:120px;height:120px;max-width:100%;">
+    <h1 style="color:${BRAND_DARK};margin:0;font-size:24px;font-weight:800;letter-spacing:-0.3px;word-wrap:break-word;">THE MENT SHOP</h1>
+    <p style="color:${BRAND_GREEN_DARK};margin:8px 0 0;font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;word-wrap:break-word;">${escapeHtml(eyebrow)}</p>
   </td></tr>`;
 }
 
@@ -106,12 +106,21 @@ const footer = `
 
 // ─── Shared shell ───
 function shell(eyebrow: string, innerHtml: string): string {
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><style>
+  img{max-width:100% !important;height:auto;}
+  table{max-width:100% !important;}
+  td{word-wrap:break-word;overflow-wrap:break-word;}
+  @media only screen and (max-width:620px){
+    .email-outer{padding:16px 8px !important;}
+    .email-card{width:100% !important;border-radius:12px !important;}
+    .email-inner{padding:0 16px !important;}
+  }
+  </style></head>
 <body style="margin:0;padding:0;background-color:${PAGE_BG};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background-color:${PAGE_BG};padding:40px 20px;"><tr><td align="center">
-<table width="600" cellpadding="0" cellspacing="0" style="background-color:${CARD_BG};border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.06);border:1px solid #eaeaea;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:${PAGE_BG};"><tr><td align="center" class="email-outer" style="padding:40px 20px;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" class="email-card" style="width:100%;max-width:600px;background-color:${CARD_BG};border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.06);border:1px solid #eaeaea;">
   ${brandHeader(eyebrow)}
-  <tr><td style="padding:0 30px;">${innerHtml}</td></tr>
+  <tr><td class="email-inner" style="padding:0 30px;word-wrap:break-word;">${innerHtml}</td></tr>
   ${footer}
 </table>
 </td></tr></table></body></html>`;
