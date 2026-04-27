@@ -266,20 +266,69 @@ const MentPage = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 1 }}
               >
-                <Link
-                  to="/"
-                  className="block w-full rounded-xl px-6 py-3 font-semibold text-white text-center transition-all hover:scale-[1.02]"
-                  style={{ background: 'linear-gradient(135deg, #58fc59, #3dd83e)' }}
-                >
-                  Send a Ment Back 💚
-                </Link>
-                <Link
-                  to="/auth"
-                  className="block w-full rounded-xl px-6 py-3 font-semibold text-center transition-all hover:scale-[1.02] border-2"
-                  style={{ borderColor: '#58fc59', color: '#166534' }}
-                >
-                  Join The Ment Shop 💚
-                </Link>
+                {isShareMode ? (
+                  // ─── Share-link viewer: not the original recipient ───
+                  isLoggedIn ? (
+                    <Link
+                      to="/"
+                      className="block w-full rounded-xl px-6 py-3 font-semibold text-white text-center transition-all hover:scale-[1.02]"
+                      style={{ background: 'linear-gradient(135deg, #58fc59, #3dd83e)' }}
+                    >
+                      Join The Ment Shop 💚
+                    </Link>
+                  ) : (
+                    <Link
+                      to="/auth"
+                      className="block w-full rounded-xl px-6 py-3 font-semibold text-white text-center transition-all hover:scale-[1.02]"
+                      style={{ background: 'linear-gradient(135deg, #58fc59, #3dd83e)' }}
+                    >
+                      Join The Ment Shop 💚
+                    </Link>
+                  )
+                ) : isLoggedIn ? (
+                  // ─── Private link, logged in: send back / send new ───
+                  <>
+                    <button
+                      onClick={() => {
+                        sessionStorage.setItem('openSendMent', '1');
+                        sessionStorage.setItem('sendMentSenderName', ment!.sender_name);
+                        navigate('/');
+                      }}
+                      className="block w-full rounded-xl px-6 py-3 font-semibold text-white text-center transition-all hover:scale-[1.02]"
+                      style={{ background: 'linear-gradient(135deg, #58fc59, #3dd83e)' }}
+                    >
+                      Send a Ment Back to {ment!.sender_name} 💚
+                    </button>
+                    <button
+                      onClick={() => {
+                        sessionStorage.setItem('openSendMent', '1');
+                        navigate('/');
+                      }}
+                      className="block w-full rounded-xl px-6 py-3 font-semibold text-center transition-all hover:scale-[1.02] border-2"
+                      style={{ borderColor: '#58fc59', color: '#166534' }}
+                    >
+                      Send to Someone New
+                    </button>
+                  </>
+                ) : (
+                  // ─── Private link, not logged in: new user ───
+                  <>
+                    <Link
+                      to="/auth"
+                      className="block w-full rounded-xl px-6 py-3 font-semibold text-white text-center transition-all hover:scale-[1.02]"
+                      style={{ background: 'linear-gradient(135deg, #58fc59, #3dd83e)' }}
+                    >
+                      Create Free Account
+                    </Link>
+                    <Link
+                      to="/auth?mode=signin"
+                      className="block w-full text-center text-sm transition-colors hover:underline"
+                      style={{ color: '#166534' }}
+                    >
+                      Already have an account? Sign in
+                    </Link>
+                  </>
+                )}
               </motion.div>
             </motion.div>
           )}
