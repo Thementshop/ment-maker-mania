@@ -146,7 +146,18 @@ const Index = () => {
       </main>
       
       {/* Send A Ment Modal (single, no chain) */}
-      <SendAMentModal isOpen={isSendAMentOpen} onClose={() => setIsSendAMentOpen(false)} />
+      <SendAMentModal
+        isOpen={isSendAMentOpen}
+        onClose={() => {
+          setIsSendAMentOpen(false);
+          setPrefilledCompliment(null);
+          setPrefilledCategory(null);
+          setPrefilledSenderName(null);
+        }}
+        prefilledCompliment={prefilledCompliment}
+        prefilledCategory={prefilledCategory}
+        prefilledSenderName={prefilledSenderName}
+      />
 
       {/* Start Chain Modal from card */}
       <StartChainModal isOpen={isStartChainOpen} onClose={() => setIsStartChainOpen(false)} onSuccess={() => {}} />
