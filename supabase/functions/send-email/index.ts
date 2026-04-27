@@ -35,6 +35,7 @@ interface TemplateData {
   compliments?: ComplimentEntry[];
   personal_note?: string;
   ment_id?: string;
+  reveal_url?: string;
 }
 
 interface SendEmailRequest {
