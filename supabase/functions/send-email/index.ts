@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
+import { NOTIFICATION_COPY } from '../_shared/notification-copy.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -59,9 +60,11 @@ function escapeHtml(str: string): string {
 function getSubject(emailType: string, data: TemplateData): string {
   switch (emailType) {
     case 'chain_received':
-      return `You have 24 hours to keep the ${data.chain_name} chain alive`;
+      // Sender identity intentionally hidden — revealed only on unwrap.
+      return NOTIFICATION_COPY.chain_received.subject;
     case 'ment_received':
-      return `${data.sender_name || 'Someone'} thought of you — open this when you're ready 💚`;
+      // Sender identity intentionally hidden — revealed only on unwrap.
+      return NOTIFICATION_COPY.single_ment.subject;
     case '1hr_warning':
       if (data.other_chains && data.other_chains.length > 0) {
         return `${(data.other_chains.length + 1)} of your chains are about to break`;
@@ -148,29 +151,26 @@ function primaryCTA(href: string, label: string, subtext?: string): string {
 
 // ─── TEMPLATE 1: Chain Received (Premium / Urgent) ───
 function buildChainReceivedEmail(data: TemplateData): string {
-  const chainName = escapeHtml(data.chain_name);
-  const senderName = data.sender_name && data.sender_name.trim().length > 0
-    ? escapeHtml(data.sender_name)
-    : 'someone';
+  // Sender identity is intentionally NOT used here — the surprise is revealed only on unwrap.
   const inner = `
     ${urgencyBanner('24-Hour Window', 'Pass it forward within 24 hours or the chain breaks.')}
     <h2 style="color:${BRAND_DARK};margin:0 0 12px;font-size:30px;font-weight:800;line-height:1.15;letter-spacing:-0.8px;">
-      ${chainName} Chain
+      ${escapeHtml(NOTIFICATION_COPY.chain_received.subject)}
     </h2>
     <p style="color:${BRAND_DARK};font-size:18px;line-height:1.5;margin:0 0 8px;font-weight:600;">
       Hey ${escapeHtml(data.recipient_name)} — you're the next link.
     </p>
     <p style="color:#4b5563;font-size:15px;line-height:1.6;margin:0 0 28px;">
-      Someone hand-picked you to receive this kindness. The chain is alive in your hands now.
+      ${escapeHtml(NOTIFICATION_COPY.chain_received.body)}
     </p>
-    ${primaryCTA(data.chain_url, 'Reveal Your Compliment', 'No account needed to view.')}
+    ${primaryCTA(data.chain_url, NOTIFICATION_COPY.chain_received.cta, 'No account needed to view.')}
     <p style="color:${BRAND_DARK};font-size:15px;line-height:1.6;margin:0 0 8px;text-align:center;font-weight:600;">
       Savor your moment 💚
     </p>
     <p style="color:#4b5563;font-size:14px;line-height:1.6;margin:0 0 32px;text-align:center;">
-      If you want to add this mint to your jar, just send one back to <strong>${senderName}</strong> or choose someone else's day to brighten within 24 hours and it's yours to keep!
+      To add this mint to your jar, send one back to whoever started this chain — or brighten someone else's day within 24 hours and it's yours to keep!
     </p>`;
-  return shell('A Chain Just Reached You', inner);
+  return shell(NOTIFICATION_COPY.chain_received.eyebrow, inner);
 }
 
 // ─── TEMPLATE 2a: 1hr Warning (Single) ───
@@ -273,23 +273,21 @@ function buildCompletedEmail(data: TemplateData): string {
 // ─── TEMPLATE 5: Ment Received (Single Compliment) ───
 function buildMentReceivedEmail(data: TemplateData): string {
   const appUrl = data.app_url || 'https://ment-maker-mania.lovable.app';
-  const sender = data.sender_name && data.sender_name.trim().length > 0
-    ? data.sender_name
-    : 'Someone';
+  // Sender identity is intentionally NOT used here — revealed only on unwrap.
   const revealUrl = data.reveal_url || `${appUrl}/ment/${data.ment_id || ''}`;
   const inner = `
     <h2 style="color:${BRAND_DARK};margin:32px 0 14px;font-size:28px;font-weight:800;line-height:1.25;letter-spacing:-0.6px;">
-      ${escapeHtml(sender)} thought of you and wrapped something kind just for you.
+      ${escapeHtml(NOTIFICATION_COPY.single_ment.body)}
     </h2>
-    ${primaryCTA(revealUrl, 'Unwrap Your Ment', 'No account needed to view.')}
+    ${primaryCTA(revealUrl, NOTIFICATION_COPY.single_ment.cta, 'No account needed to view.')}
     <p style="color:${BRAND_DARK};font-size:16px;line-height:1.6;margin:0 0 10px;text-align:center;font-weight:600;">
       Savor your moment 💚
     </p>
     <p style="color:#4b5563;font-size:14px;line-height:1.6;margin:0 0 32px;text-align:center;">
-      If you want to add this mint to your jar, just send one back to <strong>${escapeHtml(sender)}</strong> or choose someone else's day to brighten within 24 hours and it's yours to keep!
+      To add this mint to your jar, send one back to whoever sent this — or brighten someone else's day within 24 hours and it's yours to keep!
     </p>
   `;
-  return shell('THE CANDY SHOP OF COMPLIMENTS', inner);
+  return shell(NOTIFICATION_COPY.single_ment.eyebrow, inner);
 }
 
 
