@@ -283,11 +283,22 @@ const SendAMentModal = ({
               </button>
             )}
 
+            {/* Prefilled-compliment banner: shown above contact picker so user knows what they're sending */}
+            {isPrefilled && (step === 'contact' || step === 'addContact' || step === 'delivery') && (
+              <div className="mb-4 rounded-2xl border-2 px-4 py-3" style={{ borderColor: 'rgba(88,252,89,0.3)', background: 'linear-gradient(135deg, rgba(88,252,89,0.08), rgba(88,252,89,0.15))' }}>
+                <p className="text-xs font-semibold mb-1" style={{ color: '#166534' }}>
+                  💚 Sending this ment{prefilledSenderName ? ` (from ${prefilledSenderName})` : ''}
+                </p>
+                <p className="text-sm font-medium text-foreground italic">"{prefilledCompliment}"</p>
+              </div>
+            )}
+
             {/* Step 1: Contact Selection */}
             {step === 'contact' && (
               <ContactSelector
                 onContactSelected={handleContactSelected}
                 onNewContact={() => setStep('addContact')}
+                initialSearch={isPrefilled && prefilledSenderName ? prefilledSenderName : ''}
               />
             )}
 
@@ -308,7 +319,11 @@ const SendAMentModal = ({
                 </div>
                 <div className="space-y-3">
                   <button
-                    onClick={() => { setDeliveryMethod('text'); setStep('category'); }}
+                    onClick={() => {
+                      setDeliveryMethod('text');
+                      if (isPrefilled) void handleSend(prefilledCompliment!, selectedContact, 'text');
+                      else setStep('category');
+                    }}
                     className={`w-full flex items-center gap-3 p-4 rounded-xl border-2 transition-colors ${
                       deliveryMethod === 'text' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
                     }`}
@@ -320,7 +335,11 @@ const SendAMentModal = ({
                     </div>
                   </button>
                   <button
-                    onClick={() => { setDeliveryMethod('email'); setStep('category'); }}
+                    onClick={() => {
+                      setDeliveryMethod('email');
+                      if (isPrefilled) void handleSend(prefilledCompliment!, selectedContact, 'email');
+                      else setStep('category');
+                    }}
                     className={`w-full flex items-center gap-3 p-4 rounded-xl border-2 transition-colors ${
                       deliveryMethod === 'email' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
                     }`}
