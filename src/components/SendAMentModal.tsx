@@ -41,15 +41,15 @@ const SendAMentModal = ({
 
   // When the modal opens with a prefilled compliment, lock it in immediately.
   // Skips the category + compliment selection steps entirely.
-  useState(() => {
-    if (prefilledCompliment) {
+  useEffect(() => {
+    if (isOpen && prefilledCompliment) {
       setSelectedCompliment(prefilledCompliment);
       if (prefilledCategory) {
         const cat = complimentCategories.find(c => c.id === prefilledCategory) || null;
         setSelectedCategory(cat);
       }
     }
-  });
+  }, [isOpen, prefilledCompliment, prefilledCategory]);
 
   const resetModal = () => {
     setStep('contact');
