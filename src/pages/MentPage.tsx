@@ -8,6 +8,9 @@ import brandMint from '@/assets/brand-mint.png';
 import confetti from 'canvas-confetti';
 import { supabase } from '@/integrations/supabase/client';
 import { AuthContext } from '@/contexts/AuthContext';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Pause } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface MentData {
   compliment_text: string;
