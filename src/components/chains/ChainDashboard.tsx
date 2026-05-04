@@ -58,7 +58,7 @@ function sortChains(chains: ChainData[], isHolderFn: (holder: string) => boolean
 
 const ChainDashboard = () => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('active');
+  const [activeTab, setActiveTab] = useState('yourTurn');
   const [showStartModal, setShowStartModal] = useState(false);
   const [hasAutoSelected, setHasAutoSelected] = useState(false);
   const [showAllMemories, setShowAllMemories] = useState(false);
@@ -83,12 +83,9 @@ const ChainDashboard = () => {
 
   // Smart default tab selection — always lead with positive/active states
   const defaultTab = useMemo(() => {
-    const hasYourTurn = chainData.some(c => isCurrentHolder(c.current_holder) && c.status === 'active');
     const hasActive = chainData.some(c => c.status === 'active');
-
-    if (hasYourTurn) return 'yourTurn';
-    if (hasActive) return 'active';
-    return 'active';
+    if (hasActive) return 'yourTurn';
+    return 'yourTurn';
   }, [chainData, currentUserId]);
 
   useEffect(() => {
