@@ -33,7 +33,7 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
   const { toast } = useToast();
   const { user, profile, session } = useAuth();
   
-  const [step, setStep] = useState<'name' | 'recipient' | 'category' | 'compliment' | 'sending' | 'success'>('name');
+  const [step, setStep] = useState<'name' | 'recipient' | 'pickCompliment' | 'sending' | 'success'>('name');
   
   // Chain name state
   const [chainName, setChainName] = useState('');
@@ -45,7 +45,11 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
   const [recipients, setRecipients] = useState<string[]>(['', '', '']);
   const [recipientErrors, setRecipientErrors] = useState<string[]>(['', '', '']);
   
-  // Compliment state
+  // Per-recipient compliment state
+  const [activeIndex, setActiveIndex] = useState(0); // which recipient we're currently picking for
+  const [compliments, setCompliments] = useState<string[]>(['', '', '']);
+  const [activeCategory, setActiveCategory] = useState<ComplimentCategory | null>(null);
+  // legacy single-compliment state (kept for compatibility but unused in flow)
   const [selectedCategory, setSelectedCategory] = useState<ComplimentCategory | null>(null);
   const [selectedCompliment, setSelectedCompliment] = useState('');
 
