@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import ContactSelector, { type UserContact } from '@/components/ContactSelector';
 import AddContactForm from '@/components/AddContactForm';
+import CustomComplimentInput from '@/components/CustomComplimentInput';
 import { supabase } from '@/integrations/supabase/client';
 import { getFreshAccessToken } from '@/utils/freshToken';
 import confetti from 'canvas-confetti';
