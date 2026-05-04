@@ -348,6 +348,8 @@ const ChainPassModal = ({ isOpen, onClose, chain, receivedCompliment }: ChainPas
         ))}
       </div>
 
+      <CustomComplimentInput onSelect={(text) => handleComplimentSelect(text)} />
+
       <Button variant="outline" onClick={handleBack} className="w-full">
         <ArrowLeft className="h-4 w-4 mr-2" />
         Back
