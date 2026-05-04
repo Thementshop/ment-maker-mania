@@ -41,6 +41,44 @@ const MentPage = () => {
   // After unwrap, logged-in private-link users get a one-tap choice:
   // resend the same compliment, or pick something new.
   const [showSendBackChoice, setShowSendBackChoice] = useState(false);
+  const [pauseTokens, setPauseTokens] = useState<number | null>(null);
+  const [extending, setExtending] = useState(false);
+  const [popoverOpen, setPopoverOpen] = useState(false);
+
+  // Load pause-token balance for logged-in private-link recipients
+  useEffect(() => {
+    if (!isLoggedIn || isShareMode || !authCtx?.user?.id) return;
+    (async () => {
+      const { data } = await supabase
+        .from('user_game_state')
+        .select('pause_tokens')
+        .eq('user_id', authCtx.user!.id)
+        .maybeSingle();
+      setPauseTokens(data?.pause_tokens ?? 0);
+    })();
+  }, [isLoggedIn, isShareMode, authCtx?.user?.id]);
+
+  const handleUsePauseToken = async () => {
+    if (!mentId || extending) return;
+    if ((pauseTokens ?? 0) <= 0) {
+      navigate('/store');
+      return;
+    }
+    setExtending(true);
+    const { data, error: rpcErr } = await supabase.rpc('extend_single_ment_timer' as never, {
+      _ment_id: mentId,
+    } as never);
+    setExtending(false);
+    const result = data as { success?: boolean; new_expires_at?: string; tokens_remaining?: number; error?: string } | null;
+    if (rpcErr || !result?.success) {
+      toast.error('Could not extend timer. Please try again.');
+      return;
+    }
+    setPauseTokens(result.tokens_remaining ?? Math.max(0, (pauseTokens ?? 1) - 1));
+    setMent((prev) => prev ? { ...prev, recipient_expires_at: result.new_expires_at ?? prev.recipient_expires_at } : prev);
+    setPopoverOpen(false);
+    toast.success('Timer extended! ⏰ You have 48 more hours to keep this mint.');
+  };
 
   // ─── Step 1: Silent auto-login from ?token=… or lazy ?auto=1 (private delivery links only) ───
   useEffect(() => {
