@@ -13,7 +13,7 @@ const screens = [
   {
     emoji: '💚',
     title: 'Welcome to Ment Shop!',
-    description: 'Spread kindness through compliment chains and single ments. Every act of kindness earns you mints!',
+    description: 'You start with 25 mints in your Kindness Jar and 5 Pause Tokens. Use Pause Tokens to get more time when you\'re in a chain and life gets busy.',
     icon: <Heart className="h-12 w-12 text-primary" />,
     color: 'from-primary/20 to-primary/10',
   },
