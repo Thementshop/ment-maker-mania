@@ -169,7 +169,7 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
     }
   };
 
-  const handleSend = async (compliment: string) => {
+  const handleSend = async (compliment: string, perRecipient?: string[]) => {
     if (!user) {
       toast({
         title: "Please sign in",
@@ -183,6 +183,9 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
 
     const finalName = chainName.trim() || `@${displayName}'s Chain`;
     const validRecipients = recipients.map(r => r.trim()).filter(Boolean);
+    const perComplimentList = perRecipient && perRecipient.length === validRecipients.length
+      ? perRecipient
+      : validRecipients.map(() => compliment);
 
     try {
       let accessToken = session?.access_token;
