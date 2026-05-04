@@ -144,19 +144,29 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
     setStep('recipient');
   };
 
+  const validRecipients = () => recipients.map(r => r.trim()).filter(Boolean);
+
   const handleRecipientNext = () => {
     if (!validateAllRecipients()) return;
-    setStep('category');
+    setActiveIndex(0);
+    setActiveCategory(null);
+    setStep('pickCompliment');
   };
 
-  const handleCategorySelect = (category: ComplimentCategory) => {
-    setSelectedCategory(category);
-    setStep('compliment');
-  };
+  const handleComplimentChosen = (compliment: string) => {
+    const valid = validRecipients();
+    const updated = [...compliments];
+    updated[activeIndex] = compliment;
+    setCompliments(updated);
 
-  const handleComplimentSelect = (compliment: string) => {
-    setSelectedCompliment(compliment);
-    handleSend(compliment);
+    const nextIndex = activeIndex + 1;
+    if (nextIndex < valid.length) {
+      setActiveIndex(nextIndex);
+      setActiveCategory(null);
+    } else {
+      // Done — fire send with first compliment as the "primary"
+      handleSend(updated[0], updated.slice(0, valid.length));
+    }
   };
 
   const handleSend = async (compliment: string) => {
