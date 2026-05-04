@@ -10,6 +10,7 @@ interface CreateChainRequest {
   recipients: string[];
   recipientValue?: string;
   compliment: string;
+  compliments?: string[]; // optional per-recipient compliments (aligned by index)
   complimentCategory?: string;
 }
 
