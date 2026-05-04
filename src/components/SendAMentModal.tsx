@@ -379,6 +379,7 @@ const SendAMentModal = ({
                     </motion.button>
                   ))}
                 </div>
+                <CustomComplimentInput onSelect={(text) => { setSelectedCompliment(text); void handleSend(text); }} />
                 <button onClick={handleBack} className="w-full text-sm text-muted-foreground hover:text-foreground">← Back</button>
               </div>
             )}
