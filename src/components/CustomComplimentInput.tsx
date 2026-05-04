@@ -56,18 +56,27 @@ const CustomComplimentInput = ({ onSelect }: CustomComplimentInputProps) => {
       setChecking(false);
       return;
     }
-    // Server-side check (authoritative)
-    const { data, error: rpcErr } = await supabase.rpc('contains_blocked_word', { _text: trimmed });
-    setChecking(false);
-    if (rpcErr) {
-      setError("Couldn't validate your message. Please try again.");
-      return;
+    // Server-side check (authoritative) — race against a 5s timeout so the UI
+    // never hangs. If the check doesn't resolve in time, we fall back to the
+    // client-side result (already passed) and let the message through.
+    try {
+      const serverCheck = supabase.rpc('contains_blocked_word', { _text: trimmed });
+      const timeout = new Promise<{ data: false; error: null }>((resolve) =>
+        setTimeout(() => resolve({ data: false, error: null }), 5000)
+      );
+      const result = (await Promise.race([serverCheck, timeout])) as
+        | { data: boolean | null; error: unknown };
+      setChecking(false);
+      if (result?.data === true) {
+        setError("Let's keep it kind! 💚 Try rephrasing your compliment to spread positivity.");
+        return;
+      }
+      onSelect(trimmed);
+    } catch {
+      setChecking(false);
+      // Network/transient error — don't block the user, accept the message.
+      onSelect(trimmed);
     }
-    if (data === true) {
-      setError("Let's keep it kind! 💚 Try rephrasing your compliment to spread positivity.");
-      return;
-    }
-    onSelect(trimmed);
   };
 
   return (
