@@ -317,6 +317,61 @@ const MentPage = () => {
                 💚 No timer, no pressure — just kindness from <strong>{ment!.sender_name}</strong>
               </motion.p>
 
+              {isLoggedIn && !isShareMode && pauseTokens !== null && (
+                <div className="w-full flex justify-end mb-3">
+                  <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+                    <PopoverTrigger asChild>
+                      <button
+                        aria-label="Use Pause Token"
+                        className="relative w-9 h-9 rounded-full flex items-center justify-center shadow-md transition-transform hover:scale-105 active:scale-95"
+                        style={{
+                          background: 'radial-gradient(circle at 30% 30%, #fde68a, #d4a017 70%, #8a6a08)',
+                          border: '1px solid rgba(120, 90, 10, 0.5)',
+                        }}
+                      >
+                        <Pause className="w-4 h-4 fill-[#7a5a08] text-[#7a5a08]" strokeWidth={0} />
+                        <span
+                          className="absolute -bottom-1 -right-1 text-[10px] font-bold text-white rounded-full px-1.5 py-0.5 leading-none"
+                          style={{ background: '#166534', minWidth: '16px', textAlign: 'center' }}
+                        >
+                          {pauseTokens}
+                        </span>
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent align="end" className="w-72">
+                      {pauseTokens > 0 ? (
+                        <div className="space-y-3">
+                          <p className="text-sm">
+                            You have <strong>{pauseTokens}</strong> Pause Token{pauseTokens === 1 ? '' : 's'}. Use one to get 48 more hours to pass this mint forward.
+                          </p>
+                          <button
+                            onClick={handleUsePauseToken}
+                            disabled={extending}
+                            className="w-full rounded-lg px-4 py-2 font-semibold text-white text-sm disabled:opacity-60"
+                            style={{ background: 'linear-gradient(135deg, #58fc59, #3dd83e)' }}
+                          >
+                            {extending ? 'Extending…' : 'Use Pause Token'}
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          <p className="text-sm">
+                            No Pause Tokens left. Get more time with Pause Tokens in the store.
+                          </p>
+                          <Link
+                            to="/store"
+                            className="block w-full rounded-lg px-4 py-2 font-semibold text-white text-sm text-center"
+                            style={{ background: 'linear-gradient(135deg, #58fc59, #3dd83e)' }}
+                          >
+                            Go to Store
+                          </Link>
+                        </div>
+                      )}
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              )}
+
               <motion.div
                 className="space-y-3 w-full"
                 initial={{ opacity: 0, y: 10 }}
