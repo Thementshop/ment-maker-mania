@@ -75,18 +75,19 @@ const ChainCardNew = ({
   const tierInfo = visualTierConfig[visualTier];
 
   // Fetch pause tokens
-  useEffect(() => {
+  const fetchPauseTokens = useCallback(async () => {
     if (!user) return;
-    const fetchPauseTokens = async () => {
-      const { data } = await supabase
-        .from('user_game_state')
-        .select('pause_tokens')
-        .eq('user_id', user.id)
-        .single();
-      if (data) setPauseTokens(data.pause_tokens);
-    };
-    fetchPauseTokens();
+    const { data } = await supabase
+      .from('user_game_state')
+      .select('pause_tokens')
+      .eq('user_id', user.id)
+      .single();
+    if (data) setPauseTokens(data.pause_tokens);
   }, [user]);
+
+  useEffect(() => {
+    fetchPauseTokens();
+  }, [fetchPauseTokens]);
 
   // Show ultimate celebration on first view for 1000+ chains you started
   useEffect(() => {
