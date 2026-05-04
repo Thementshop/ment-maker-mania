@@ -8,12 +8,16 @@ import brandMint from '@/assets/brand-mint.png';
 import confetti from 'canvas-confetti';
 import { supabase } from '@/integrations/supabase/client';
 import { AuthContext } from '@/contexts/AuthContext';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Pause } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface MentData {
   compliment_text: string;
   category: string;
   sent_at: string | null;
   sender_name: string;
+  recipient_expires_at: string | null;
 }
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -37,6 +41,44 @@ const MentPage = () => {
   // After unwrap, logged-in private-link users get a one-tap choice:
   // resend the same compliment, or pick something new.
   const [showSendBackChoice, setShowSendBackChoice] = useState(false);
+  const [pauseTokens, setPauseTokens] = useState<number | null>(null);
+  const [extending, setExtending] = useState(false);
+  const [popoverOpen, setPopoverOpen] = useState(false);
+
+  // Load pause-token balance for logged-in private-link recipients
+  useEffect(() => {
+    if (!isLoggedIn || isShareMode || !authCtx?.user?.id) return;
+    (async () => {
+      const { data } = await supabase
+        .from('user_game_state')
+        .select('pause_tokens')
+        .eq('user_id', authCtx.user!.id)
+        .maybeSingle();
+      setPauseTokens(data?.pause_tokens ?? 0);
+    })();
+  }, [isLoggedIn, isShareMode, authCtx?.user?.id]);
+
+  const handleUsePauseToken = async () => {
+    if (!mentId || extending) return;
+    if ((pauseTokens ?? 0) <= 0) {
+      navigate('/store');
+      return;
+    }
+    setExtending(true);
+    const { data, error: rpcErr } = await supabase.rpc('extend_single_ment_timer' as never, {
+      _ment_id: mentId,
+    } as never);
+    setExtending(false);
+    const result = data as { success?: boolean; new_expires_at?: string; tokens_remaining?: number; error?: string } | null;
+    if (rpcErr || !result?.success) {
+      toast.error('Could not extend timer. Please try again.');
+      return;
+    }
+    setPauseTokens(result.tokens_remaining ?? Math.max(0, (pauseTokens ?? 1) - 1));
+    setMent((prev) => prev ? { ...prev, recipient_expires_at: result.new_expires_at ?? prev.recipient_expires_at } : prev);
+    setPopoverOpen(false);
+    toast.success('Timer extended! ⏰ You have 48 more hours to keep this mint.');
+  };
 
   // ─── Step 1: Silent auto-login from ?token=… or lazy ?auto=1 (private delivery links only) ───
   useEffect(() => {
@@ -83,7 +125,7 @@ const MentPage = () => {
 
       try {
         const mentRes = await fetch(
-          `${SUPABASE_URL}/rest/v1/sent_ments?id=eq.${mentId}&select=compliment_text,category,sent_at,sender_id`,
+          `${SUPABASE_URL}/rest/v1/sent_ments?id=eq.${mentId}&select=compliment_text,category,sent_at,sender_id,recipient_expires_at`,
           {
             headers: {
               apikey: SUPABASE_KEY,
@@ -123,6 +165,7 @@ const MentPage = () => {
           category: data.category,
           sent_at: data.sent_at,
           sender_name: senderName,
+          recipient_expires_at: data.recipient_expires_at ?? null,
         });
       } catch {
         setError("This ment has already been unwrapped or doesn't exist");
@@ -273,6 +316,61 @@ const MentPage = () => {
               >
                 💚 No timer, no pressure — just kindness from <strong>{ment!.sender_name}</strong>
               </motion.p>
+
+              {isLoggedIn && !isShareMode && pauseTokens !== null && (
+                <div className="w-full flex justify-end mb-3">
+                  <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+                    <PopoverTrigger asChild>
+                      <button
+                        aria-label="Use Pause Token"
+                        className="relative w-9 h-9 rounded-full flex items-center justify-center shadow-md transition-transform hover:scale-105 active:scale-95"
+                        style={{
+                          background: 'radial-gradient(circle at 30% 30%, #fde68a, #d4a017 70%, #8a6a08)',
+                          border: '1px solid rgba(120, 90, 10, 0.5)',
+                        }}
+                      >
+                        <Pause className="w-4 h-4 fill-[#7a5a08] text-[#7a5a08]" strokeWidth={0} />
+                        <span
+                          className="absolute -bottom-1 -right-1 text-[10px] font-bold text-white rounded-full px-1.5 py-0.5 leading-none"
+                          style={{ background: '#166534', minWidth: '16px', textAlign: 'center' }}
+                        >
+                          {pauseTokens}
+                        </span>
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent align="end" className="w-72">
+                      {pauseTokens > 0 ? (
+                        <div className="space-y-3">
+                          <p className="text-sm">
+                            You have <strong>{pauseTokens}</strong> Pause Token{pauseTokens === 1 ? '' : 's'}. Use one to get 48 more hours to pass this mint forward.
+                          </p>
+                          <button
+                            onClick={handleUsePauseToken}
+                            disabled={extending}
+                            className="w-full rounded-lg px-4 py-2 font-semibold text-white text-sm disabled:opacity-60"
+                            style={{ background: 'linear-gradient(135deg, #58fc59, #3dd83e)' }}
+                          >
+                            {extending ? 'Extending…' : 'Use Pause Token'}
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          <p className="text-sm">
+                            No Pause Tokens left. Get more time with Pause Tokens in the store.
+                          </p>
+                          <Link
+                            to="/store"
+                            className="block w-full rounded-lg px-4 py-2 font-semibold text-white text-sm text-center"
+                            style={{ background: 'linear-gradient(135deg, #58fc59, #3dd83e)' }}
+                          >
+                            Go to Store
+                          </Link>
+                        </div>
+                      )}
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              )}
 
               <motion.div
                 className="space-y-3 w-full"

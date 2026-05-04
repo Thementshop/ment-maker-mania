@@ -412,6 +412,7 @@ export type Database = {
           id: string
           personal_note: string | null
           recipient_email: string | null
+          recipient_expires_at: string | null
           recipient_type: string
           sender_id: string
           sent_at: string | null
@@ -422,6 +423,7 @@ export type Database = {
           id?: string
           personal_note?: string | null
           recipient_email?: string | null
+          recipient_expires_at?: string | null
           recipient_type: string
           sender_id: string
           sent_at?: string | null
@@ -432,6 +434,7 @@ export type Database = {
           id?: string
           personal_note?: string | null
           recipient_email?: string | null
+          recipient_expires_at?: string | null
           recipient_type?: string
           sender_id?: string
           sent_at?: string | null
@@ -586,6 +589,7 @@ export type Database = {
         Returns: number
       }
       contains_blocked_word: { Args: { _text: string }; Returns: boolean }
+      extend_single_ment_timer: { Args: { _ment_id: string }; Returns: Json }
       get_participated_chain_ids: {
         Args: { _user_email?: string; _user_id: string }
         Returns: string[]
