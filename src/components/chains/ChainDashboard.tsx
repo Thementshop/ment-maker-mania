@@ -58,7 +58,7 @@ function sortChains(chains: ChainData[], isHolderFn: (holder: string) => boolean
 
 const ChainDashboard = () => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('active');
+  const [activeTab, setActiveTab] = useState('yourTurn');
   const [showStartModal, setShowStartModal] = useState(false);
   const [hasAutoSelected, setHasAutoSelected] = useState(false);
   const [showAllMemories, setShowAllMemories] = useState(false);
