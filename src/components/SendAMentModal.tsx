@@ -166,7 +166,7 @@ const SendAMentModal = ({
             body: JSON.stringify({
               recipient_email: contact.email,
               compliment_text: complimentToSend,
-              compliment_category: selectedCategory?.id || '',
+              compliment_category: selectedCategory?.id || 'custom',
             }),
           }
         );
@@ -215,7 +215,7 @@ const SendAMentModal = ({
               body: JSON.stringify({
                 recipient_email: contact.email,
                 compliment_text: complimentToSend,
-                compliment_category: selectedCategory?.id || '',
+                compliment_category: selectedCategory?.id || 'custom',
               }),
             }
           );
