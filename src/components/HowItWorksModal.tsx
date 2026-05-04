@@ -27,12 +27,12 @@ const steps = [
   {
     icon: <Heart className="w-12 h-12 text-candy-pink fill-candy-pink" />,
     title: "Receiving a Ment",
-    description: "When someone sends you a Ment, you'll get an email or text with a link to unwrap it. Savor your moment 💚 — then send one back or pass one forward within 24 hours to add this mint permanently to your jar. Wait longer and the mint fades away — so keep the kindness flowing!"
+    description: "When someone sends you a Ment, you'll get an email or text with a link to unwrap it. Savor your moment 💚 — you have 48 hours to send one back or pass one forward to add this mint permanently to your jar. Wait longer and the mint fades away — so keep the kindness flowing!"
   },
   {
     icon: <Pause className="w-12 h-12 text-mint" />,
     title: "Pause Tokens",
-    description: "Running low on time? Use a Pause Token to reset a chain's 24-hour timer and keep the kindness alive. Every new account starts with 5 free Pause Tokens — and you earn 1 more automatically every week. Get more time with Pause Tokens anytime in the store."
+    description: "Running low on time? Use a Pause Token to get more time. Single Ments get 48 extra hours, chain Ments get 24 extra hours. Every new account starts with 5 free Pause Tokens — and you earn 1 more automatically every week. Get more time with Pause Tokens anytime in the store."
   },
   {
     icon: <Trophy className="w-12 h-12 text-candy-yellow" />,

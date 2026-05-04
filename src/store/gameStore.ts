@@ -305,7 +305,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
     if (!userId) return;
     
     const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + 8);
+    expiresAt.setHours(expiresAt.getHours() + 48);
     
     const { data, error } = await supabase
       .from('pending_ments')
