@@ -50,9 +50,9 @@ const MentPage = () => {
     if (!isLoggedIn || isShareMode || !authCtx?.user?.id) return;
     (async () => {
       const { data } = await supabase
-        .from('user_game_state')
+        .from('profiles')
         .select('pause_tokens')
-        .eq('user_id', authCtx.user!.id)
+        .eq('id', authCtx.user!.id)
         .maybeSingle();
       setPauseTokens(data?.pause_tokens ?? 0);
     })();
