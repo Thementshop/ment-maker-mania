@@ -670,7 +670,7 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
 
         {step !== 'sending' && step !== 'success' && (
           <div className="flex justify-center gap-2 py-2">
-            {[1, 2, 3, 4].map((s) => (
+            {[1, 2, 3].map((s) => (
               <div
                 key={s}
                 className={`w-2 h-2 rounded-full transition-all ${
@@ -684,8 +684,7 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
         <AnimatePresence mode="wait">
           {step === 'name' && renderNameStep()}
           {step === 'recipient' && renderRecipientStep()}
-          {step === 'category' && renderCategoryStep()}
-          {step === 'compliment' && renderComplimentStep()}
+          {step === 'pickCompliment' && renderPickComplimentStep()}
           {step === 'sending' && renderSendingStep()}
           {step === 'success' && renderSuccessStep()}
         </AnimatePresence>
