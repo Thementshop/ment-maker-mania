@@ -14,6 +14,7 @@ interface MentData {
   category: string;
   sent_at: string | null;
   sender_name: string;
+  recipient_expires_at: string | null;
 }
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -83,7 +84,7 @@ const MentPage = () => {
 
       try {
         const mentRes = await fetch(
-          `${SUPABASE_URL}/rest/v1/sent_ments?id=eq.${mentId}&select=compliment_text,category,sent_at,sender_id`,
+          `${SUPABASE_URL}/rest/v1/sent_ments?id=eq.${mentId}&select=compliment_text,category,sent_at,sender_id,recipient_expires_at`,
           {
             headers: {
               apikey: SUPABASE_KEY,
@@ -123,6 +124,7 @@ const MentPage = () => {
           category: data.category,
           sent_at: data.sent_at,
           sender_name: senderName,
+          recipient_expires_at: data.recipient_expires_at ?? null,
         });
       } catch {
         setError("This ment has already been unwrapped or doesn't exist");
