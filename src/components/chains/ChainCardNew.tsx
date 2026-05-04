@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronRight, Pause, ShoppingCart, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useCountdown } from '@/hooks/useCountdown';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -74,18 +75,19 @@ const ChainCardNew = ({
   const tierInfo = visualTierConfig[visualTier];
 
   // Fetch pause tokens
-  useEffect(() => {
+  const fetchPauseTokens = useCallback(async () => {
     if (!user) return;
-    const fetchPauseTokens = async () => {
-      const { data } = await supabase
-        .from('user_game_state')
-        .select('pause_tokens')
-        .eq('user_id', user.id)
-        .single();
-      if (data) setPauseTokens(data.pause_tokens);
-    };
-    fetchPauseTokens();
+    const { data } = await supabase
+      .from('user_game_state')
+      .select('pause_tokens')
+      .eq('user_id', user.id)
+      .single();
+    if (data) setPauseTokens(data.pause_tokens);
   }, [user]);
+
+  useEffect(() => {
+    fetchPauseTokens();
+  }, [fetchPauseTokens]);
 
   // Show ultimate celebration on first view for 1000+ chains you started
   useEffect(() => {
@@ -132,7 +134,8 @@ const ChainCardNew = ({
     try {
       const success = await onUsePauseToken(chain.chain_id);
       if (success) {
-        toast.success('⏸️ Chain paused! Timer reset to 24:00:00');
+        toast.success('Timer extended! ⏰ You now have 24 more hours.');
+        await fetchPauseTokens();
         onChainPassed?.();
       } else {
         toast.error('Failed to use pause token');
@@ -319,6 +322,65 @@ const ChainCardNew = ({
             </Button>
           )}
         </div>
+        {/* Pause Token Coin Indicator (active chains only) */}
+        {chain.status === 'active' && (
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                aria-label={`You have ${pauseTokens} Pause Tokens`}
+                className="absolute bottom-3 right-3 z-20 flex items-center gap-1 group"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <span
+                  className="relative w-6 h-6 rounded-full flex items-center justify-center shadow-md ring-1 ring-yellow-700/40 group-hover:scale-110 transition-transform"
+                  style={{
+                    background: 'radial-gradient(circle at 30% 30%, #fde68a 0%, #fbbf24 45%, #b45309 100%)',
+                  }}
+                >
+                  <Pause
+                    className="w-3 h-3"
+                    fill="#78350f"
+                    strokeWidth={0}
+                  />
+                </span>
+                <span className="text-xs font-bold text-yellow-800">x{pauseTokens}</span>
+              </button>
+            </PopoverTrigger>
+            <PopoverContent side="top" align="end" className="w-64 p-4">
+              {pauseTokens > 0 ? (
+                <>
+                  <p className="text-sm text-foreground mb-3">
+                    You have <span className="font-bold">{pauseTokens}</span> Pause Token{pauseTokens === 1 ? '' : 's'}. Use one to get more time on this chain.
+                  </p>
+                  <Button
+                    className="w-full rounded-full"
+                    size="sm"
+                    onClick={handleUsePauseToken}
+                    disabled={isPausing}
+                  >
+                    <Pause className="h-3 w-3 mr-1.5" />
+                    {isPausing ? 'Extending...' : 'Use Pause Token'}
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm text-foreground mb-3">
+                    No Pause Tokens left. Get more time with Pause Tokens in the store.
+                  </p>
+                  <Button
+                    variant="outline"
+                    className="w-full rounded-full"
+                    size="sm"
+                    onClick={() => navigate('/store')}
+                  >
+                    <ShoppingCart className="h-3 w-3 mr-1.5" />
+                    Go to Token Store
+                  </Button>
+                </>
+              )}
+            </PopoverContent>
+          </Popover>
+        )}
       </motion.div>
 
       {/* Pass Chain Modal */}
