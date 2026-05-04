@@ -113,12 +113,16 @@ Deno.serve(async (req) => {
 
     console.log('Chain created:', newChain.chain_id);
 
-    const linkInserts = recipientList.map(recipient => ({
+    const perRecipient = (body.compliments && body.compliments.length === recipientList.length)
+      ? body.compliments
+      : recipientList.map(() => compliment);
+
+    const linkInserts = recipientList.map((recipient, i) => ({
       chain_id: newChain.chain_id,
       passed_by: userId,
       passed_to: recipient,
       received_compliment: '',
-      sent_compliment: compliment,
+      sent_compliment: perRecipient[i] || compliment,
       was_forwarded: false,
       compliment_category: complimentCategory || null,
     }));
