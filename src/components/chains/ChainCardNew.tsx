@@ -134,7 +134,8 @@ const ChainCardNew = ({
     try {
       const success = await onUsePauseToken(chain.chain_id);
       if (success) {
-        toast.success('⏸️ Chain paused! Timer reset to 24:00:00');
+        toast.success('Timer extended! ⏰ You now have 24 more hours.');
+        await fetchPauseTokens();
         onChainPassed?.();
       } else {
         toast.error('Failed to use pause token');
