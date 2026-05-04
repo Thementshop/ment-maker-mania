@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { complimentCategories, type ComplimentCategory } from '@/data/compliments';
+import CustomComplimentInput from '@/components/CustomComplimentInput';
 import { getAvailableChainNames } from '@/utils/chainNames';
 import confetti from 'canvas-confetti';
 
@@ -32,7 +33,7 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
   const { toast } = useToast();
   const { user, profile, session } = useAuth();
   
-  const [step, setStep] = useState<'name' | 'recipient' | 'category' | 'compliment' | 'sending' | 'success'>('name');
+  const [step, setStep] = useState<'name' | 'recipient' | 'pickCompliment' | 'sending' | 'success'>('name');
   
   // Chain name state
   const [chainName, setChainName] = useState('');
@@ -44,7 +45,11 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
   const [recipients, setRecipients] = useState<string[]>(['', '', '']);
   const [recipientErrors, setRecipientErrors] = useState<string[]>(['', '', '']);
   
-  // Compliment state
+  // Per-recipient compliment state
+  const [activeIndex, setActiveIndex] = useState(0); // which recipient we're currently picking for
+  const [compliments, setCompliments] = useState<string[]>(['', '', '']);
+  const [activeCategory, setActiveCategory] = useState<ComplimentCategory | null>(null);
+  // legacy single-compliment state (kept for compatibility but unused in flow)
   const [selectedCategory, setSelectedCategory] = useState<ComplimentCategory | null>(null);
   const [selectedCompliment, setSelectedCompliment] = useState('');
 
@@ -74,6 +79,9 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
     setRecipientType('contact');
     setRecipients(['', '', '']);
     setRecipientErrors(['', '', '']);
+    setActiveIndex(0);
+    setCompliments(['', '', '']);
+    setActiveCategory(null);
     setSelectedCategory(null);
     setSelectedCompliment('');
   }, []);
@@ -136,22 +144,32 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
     setStep('recipient');
   };
 
+  const validRecipients = () => recipients.map(r => r.trim()).filter(Boolean);
+
   const handleRecipientNext = () => {
     if (!validateAllRecipients()) return;
-    setStep('category');
+    setActiveIndex(0);
+    setActiveCategory(null);
+    setStep('pickCompliment');
   };
 
-  const handleCategorySelect = (category: ComplimentCategory) => {
-    setSelectedCategory(category);
-    setStep('compliment');
+  const handleComplimentChosen = (compliment: string) => {
+    const valid = validRecipients();
+    const updated = [...compliments];
+    updated[activeIndex] = compliment;
+    setCompliments(updated);
+
+    const nextIndex = activeIndex + 1;
+    if (nextIndex < valid.length) {
+      setActiveIndex(nextIndex);
+      setActiveCategory(null);
+    } else {
+      // Done — fire send with first compliment as the "primary"
+      handleSend(updated[0], updated.slice(0, valid.length));
+    }
   };
 
-  const handleComplimentSelect = (compliment: string) => {
-    setSelectedCompliment(compliment);
-    handleSend(compliment);
-  };
-
-  const handleSend = async (compliment: string) => {
+  const handleSend = async (compliment: string, perRecipient?: string[]) => {
     if (!user) {
       toast({
         title: "Please sign in",
@@ -165,6 +183,9 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
 
     const finalName = chainName.trim() || `@${displayName}'s Chain`;
     const validRecipients = recipients.map(r => r.trim()).filter(Boolean);
+    const perComplimentList = perRecipient && perRecipient.length === validRecipients.length
+      ? perRecipient
+      : validRecipients.map(() => compliment);
 
     try {
       let accessToken = session?.access_token;
@@ -220,7 +241,8 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
             chainName: finalName,
             recipients: validRecipients,
             compliment: compliment,
-            complimentCategory: selectedCategory?.id || null,
+            compliments: perComplimentList,
+            complimentCategory: activeCategory?.id || selectedCategory?.id || null,
           }),
           signal: controller.signal
         }
@@ -285,8 +307,16 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
   const handleBack = () => {
     switch (step) {
       case 'recipient': setStep('name'); break;
-      case 'category': setStep('recipient'); break;
-      case 'compliment': setStep('category'); break;
+      case 'pickCompliment':
+        if (activeCategory) {
+          setActiveCategory(null);
+        } else if (activeIndex > 0) {
+          setActiveIndex(activeIndex - 1);
+          setActiveCategory(null);
+        } else {
+          setStep('recipient');
+        }
+        break;
       default: break;
     }
   };
@@ -461,82 +491,109 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
     </motion.div>
   );
 
-  const renderCategoryStep = () => (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      className="space-y-4"
-    >
-      <div className="text-center mb-2">
-        <h3 className="text-lg font-semibold">Pick a Category</h3>
-        <p className="text-sm text-muted-foreground mt-1">
-          What kind of ment will start this chain?
-        </p>
-      </div>
+  const renderPickComplimentStep = () => {
+    const valid = validRecipients();
+    const recipientLabel = valid[activeIndex] || `Recipient ${activeIndex + 1}`;
+    const previousLabel = activeIndex > 0 ? (valid[activeIndex - 1] || `Recipient ${activeIndex}`) : '';
+    const previousCompliment = activeIndex > 0 ? compliments[activeIndex - 1] : '';
 
-      <div className="grid grid-cols-2 gap-3">
-        {complimentCategories.map((category) => (
-          <motion.button
-            key={category.id}
-            onClick={() => handleCategorySelect(category)}
-            className="p-4 rounded-xl border-2 border-border hover:border-primary bg-card hover:bg-primary/5 transition-all text-left"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <span className="text-2xl mb-2 block">{category.emoji}</span>
-            <span className="font-semibold text-sm">{category.name}</span>
-          </motion.button>
-        ))}
-      </div>
-
-      <Button variant="outline" onClick={handleBack} className="w-full">
-        <ArrowLeft className="h-4 w-4 mr-2" />
-        Back
-      </Button>
-    </motion.div>
-  );
-
-  const renderComplimentStep = () => (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      className="space-y-4"
-    >
-      <div className="text-center mb-2">
-        <span className="text-2xl">{selectedCategory?.emoji}</span>
-        <h3 className="text-lg font-semibold mt-1">{selectedCategory?.name}</h3>
-        <p className="text-sm text-muted-foreground">
-          Pick the ment to start the chain
-        </p>
-      </div>
-
-      <ScrollArea className="h-[300px] pr-2">
-        <div className="space-y-2">
-          {selectedCategory?.compliments.map((compliment, index) => (
-            <motion.button
-              key={index}
-              onClick={() => handleComplimentSelect(compliment)}
-              className="w-full p-3 rounded-xl border border-border hover:border-primary bg-card hover:bg-primary/5 transition-all text-left text-sm"
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.99 }}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.03 }}
-            >
-              {compliment}
-            </motion.button>
-          ))}
+    return (
+      <motion.div
+        key={`pick-${activeIndex}-${activeCategory?.id || 'cats'}`}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        className="space-y-4"
+      >
+        <div className="text-center mb-1">
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">
+            Ment {activeIndex + 1} of {valid.length}
+          </p>
+          <h3 className="text-lg font-semibold mt-1">For {recipientLabel}</h3>
         </div>
-      </ScrollArea>
 
-      <Button variant="outline" onClick={handleBack} className="w-full">
-        <ArrowLeft className="h-4 w-4 mr-2" />
-        Back
-      </Button>
-    </motion.div>
-  );
+        {/* "Same as previous" big quick action */}
+        {activeIndex > 0 && previousCompliment && !activeCategory && (
+          <button
+            onClick={() => handleComplimentChosen(previousCompliment)}
+            className="w-full p-4 rounded-2xl border-2 border-primary bg-primary/10 hover:bg-primary/15 transition-all text-left"
+          >
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0">
+                <Check className="h-5 w-5" />
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold text-sm">
+                  {activeIndex === 1
+                    ? `Same compliment as ${previousLabel}?`
+                    : 'Same compliment as above?'}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1 italic line-clamp-2">
+                  "{previousCompliment}"
+                </p>
+                <p className="text-xs text-primary font-medium mt-1">Tap to use this →</p>
+              </div>
+            </div>
+          </button>
+        )}
+
+        {!activeCategory ? (
+          <>
+            <div className="text-center">
+              <p className="text-sm text-muted-foreground">
+                {activeIndex > 0 ? 'Or pick something different' : 'Pick a category'}
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {complimentCategories.map((category) => (
+                <motion.button
+                  key={category.id}
+                  onClick={() => setActiveCategory(category)}
+                  className="p-4 rounded-xl border-2 border-border hover:border-primary bg-card hover:bg-primary/5 transition-all text-left"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <span className="text-2xl mb-2 block">{category.emoji}</span>
+                  <span className="font-semibold text-sm">{category.name}</span>
+                </motion.button>
+              ))}
+            </div>
+            <CustomComplimentInput onSelect={(text) => handleComplimentChosen(text)} />
+          </>
+        ) : (
+          <>
+            <div className="text-center mb-1">
+              <span className="text-2xl">{activeCategory.emoji}</span>
+              <h4 className="text-base font-semibold mt-1">{activeCategory.name}</h4>
+            </div>
+            <ScrollArea className="h-[260px] pr-2">
+              <div className="space-y-2">
+                {activeCategory.compliments.map((compliment, index) => (
+                  <motion.button
+                    key={index}
+                    onClick={() => handleComplimentChosen(compliment)}
+                    className="w-full p-3 rounded-xl border border-border hover:border-primary bg-card hover:bg-primary/5 transition-all text-left text-sm"
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.03 }}
+                  >
+                    {compliment}
+                  </motion.button>
+                ))}
+              </div>
+            </ScrollArea>
+          </>
+        )}
+
+        <Button variant="outline" onClick={handleBack} className="w-full">
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back
+        </Button>
+      </motion.div>
+    );
+  };
 
   const renderSendingStep = () => (
     <motion.div
@@ -596,9 +653,8 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
     switch (step) {
       case 'name': return 1;
       case 'recipient': return 2;
-      case 'category': return 3;
-      case 'compliment': return 4;
-      default: return 4;
+      case 'pickCompliment': return 3;
+      default: return 3;
     }
   };
 
@@ -614,7 +670,7 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
 
         {step !== 'sending' && step !== 'success' && (
           <div className="flex justify-center gap-2 py-2">
-            {[1, 2, 3, 4].map((s) => (
+            {[1, 2, 3].map((s) => (
               <div
                 key={s}
                 className={`w-2 h-2 rounded-full transition-all ${
@@ -628,8 +684,7 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
         <AnimatePresence mode="wait">
           {step === 'name' && renderNameStep()}
           {step === 'recipient' && renderRecipientStep()}
-          {step === 'category' && renderCategoryStep()}
-          {step === 'compliment' && renderComplimentStep()}
+          {step === 'pickCompliment' && renderPickComplimentStep()}
           {step === 'sending' && renderSendingStep()}
           {step === 'success' && renderSuccessStep()}
         </AnimatePresence>
