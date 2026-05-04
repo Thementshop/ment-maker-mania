@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { complimentCategories, type ComplimentCategory } from '@/data/compliments';
+import CustomComplimentInput from '@/components/CustomComplimentInput';
 import { getAvailableChainNames } from '@/utils/chainNames';
 import confetti from 'canvas-confetti';
 
