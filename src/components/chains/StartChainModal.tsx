@@ -307,8 +307,16 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
   const handleBack = () => {
     switch (step) {
       case 'recipient': setStep('name'); break;
-      case 'category': setStep('recipient'); break;
-      case 'compliment': setStep('category'); break;
+      case 'pickCompliment':
+        if (activeCategory) {
+          setActiveCategory(null);
+        } else if (activeIndex > 0) {
+          setActiveIndex(activeIndex - 1);
+          setActiveCategory(null);
+        } else {
+          setStep('recipient');
+        }
+        break;
       default: break;
     }
   };
