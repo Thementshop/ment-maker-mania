@@ -314,7 +314,13 @@ const MentPage = () => {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.8 }}
               >
-                💚 No timer, no pressure — just kindness from <strong>{ment!.sender_name}</strong>
+                {isShareMode ? (
+                  <>💚 A little kindness from <strong>{ment!.sender_name}</strong></>
+                ) : isLoggedIn ? (
+                  <>You have <strong>48 hours</strong> to send one back to <strong>{ment!.sender_name}</strong> or brighten someone new's day to add this mint to your jar. 💚</>
+                ) : (
+                  <>Want to add this mint to your Kindness Jar? Create a free account and you'll have <strong>48 hours</strong> to pass the kindness forward.</>
+                )}
               </motion.p>
 
               {isLoggedIn && !isShareMode && pauseTokens !== null && (
