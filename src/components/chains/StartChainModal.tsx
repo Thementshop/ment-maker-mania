@@ -241,7 +241,8 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
             chainName: finalName,
             recipients: validRecipients,
             compliment: compliment,
-            complimentCategory: selectedCategory?.id || null,
+            compliments: perComplimentList,
+            complimentCategory: activeCategory?.id || selectedCategory?.id || null,
           }),
           signal: controller.signal
         }
