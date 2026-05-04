@@ -653,9 +653,8 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
     switch (step) {
       case 'name': return 1;
       case 'recipient': return 2;
-      case 'category': return 3;
-      case 'compliment': return 4;
-      default: return 4;
+      case 'pickCompliment': return 3;
+      default: return 3;
     }
   };
 
