@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
+import CustomComplimentInput from '@/components/CustomComplimentInput';
 import { useMentChains, type MentChain, type ChainLink } from '@/hooks/useMentChains';
 import { complimentCategories, type ComplimentCategory } from '@/data/compliments';
 import confetti from 'canvas-confetti';
@@ -346,6 +347,8 @@ const ChainPassModal = ({ isOpen, onClose, chain, receivedCompliment }: ChainPas
           </motion.button>
         ))}
       </div>
+
+      <CustomComplimentInput onSelect={(text) => handleComplimentSelect(text)} />
 
       <Button variant="outline" onClick={handleBack} className="w-full">
         <ArrowLeft className="h-4 w-4 mr-2" />

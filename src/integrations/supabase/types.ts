@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      blocked_words: {
+        Row: {
+          category: string | null
+          created_at: string
+          id: string
+          word: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          word: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          word?: string
+        }
+        Relationships: []
+      }
       chain_links: {
         Row: {
           chain_id: string
@@ -561,9 +582,17 @@ export type Database = {
         Args: { claiming_user_id: string }
         Returns: number
       }
+      contains_blocked_word: { Args: { _text: string }; Returns: boolean }
       get_participated_chain_ids: {
         Args: { _user_email?: string; _user_id: string }
         Returns: string[]
+      }
+      get_popular_compliments: {
+        Args: { _limit?: number }
+        Returns: {
+          compliment_text: string
+          sent_count: number
+        }[]
       }
       get_user_id_by_email: { Args: { _email: string }; Returns: string }
       increment_world_counter: { Args: never; Returns: number }

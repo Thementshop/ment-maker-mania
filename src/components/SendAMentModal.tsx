@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import ContactSelector, { type UserContact } from '@/components/ContactSelector';
 import AddContactForm from '@/components/AddContactForm';
+import CustomComplimentInput from '@/components/CustomComplimentInput';
 import { supabase } from '@/integrations/supabase/client';
 import { getFreshAccessToken } from '@/utils/freshToken';
 import confetti from 'canvas-confetti';
@@ -378,6 +379,7 @@ const SendAMentModal = ({
                     </motion.button>
                   ))}
                 </div>
+                <CustomComplimentInput onSelect={(text) => { setSelectedCompliment(text); void handleSend(text); }} />
                 <button onClick={handleBack} className="w-full text-sm text-muted-foreground hover:text-foreground">← Back</button>
               </div>
             )}
