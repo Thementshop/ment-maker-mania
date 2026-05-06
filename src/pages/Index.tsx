@@ -98,6 +98,16 @@ const Index = () => {
       </div>
       
       <main className="container flex-1 py-6 sm:py-8 pb-24 px-4">
+        {/* TEMP: payment testing — remove after testing */}
+        <div className="mb-4 flex justify-center">
+          <Link
+            to="/store"
+            className="inline-flex items-center gap-2 rounded-full border-2 border-dashed border-primary bg-primary/10 px-5 py-2 font-display text-sm font-bold text-primary hover:bg-primary/20 transition-colors"
+          >
+            🧪 Open Store (test)
+          </Link>
+        </div>
+
         <TooltipProvider>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-8">
             {/* Left: Kindness Jar */}
