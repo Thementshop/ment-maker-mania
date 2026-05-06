@@ -14,14 +14,9 @@ interface Props {
 
 export function StripeCheckoutDialog({ open, priceId, userId, customerEmail, onClose }: Props) {
   const [error, setError] = useState<string | null>(null);
-  const [key, setKey] = useState(0);
 
-  // Force-remount Provider on each new priceId so clientSecret can change
   useEffect(() => {
-    if (open && priceId) {
-      setError(null);
-      setKey((k) => k + 1);
-    }
+    if (open && priceId) setError(null);
   }, [open, priceId]);
 
   const options = useMemo(() => {
@@ -39,7 +34,6 @@ export function StripeCheckoutDialog({ open, priceId, userId, customerEmail, onC
           },
         });
         if (invokeError) {
-          // Friendly message for the monthly Mint Boost block
           const msg = (invokeError as any)?.context?.body || invokeError.message;
           if (typeof msg === "string" && msg.includes("mint_boost_already_purchased_this_month")) {
             setError("You've already boosted your jar this month!");
@@ -63,11 +57,11 @@ export function StripeCheckoutDialog({ open, priceId, userId, customerEmail, onC
         <DialogHeader className="px-6 pt-6">
           <DialogTitle>Checkout</DialogTitle>
         </DialogHeader>
-        <div className="p-2">
+        <div className="p-2 min-h-[400px]">
           {error ? (
             <div className="p-6 text-sm text-destructive text-center">{error}</div>
-          ) : options ? (
-            <EmbeddedCheckoutProvider key={key} stripe={getStripe()} options={options}>
+          ) : open && priceId && options ? (
+            <EmbeddedCheckoutProvider key={priceId} stripe={getStripe()} options={options}>
               <EmbeddedCheckout />
             </EmbeddedCheckoutProvider>
           ) : null}
