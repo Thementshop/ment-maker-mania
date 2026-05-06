@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useGameStore } from '@/store/gameStore';
 import { useAuth } from '@/contexts/AuthContext';
 import { useChainNotifications } from '@/hooks/useChainNotifications';
