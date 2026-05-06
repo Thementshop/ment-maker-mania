@@ -333,6 +333,7 @@ export type Database = {
           created_at: string | null
           display_name: string | null
           id: string
+          pause_token_last_awarded_at: string | null
           pause_tokens: number
           updated_at: string | null
         }
@@ -341,6 +342,7 @@ export type Database = {
           created_at?: string | null
           display_name?: string | null
           id: string
+          pause_token_last_awarded_at?: string | null
           pause_tokens?: number
           updated_at?: string | null
         }
@@ -349,6 +351,7 @@ export type Database = {
           created_at?: string | null
           display_name?: string | null
           id?: string
+          pause_token_last_awarded_at?: string | null
           pause_tokens?: number
           updated_at?: string | null
         }
