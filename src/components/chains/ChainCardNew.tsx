@@ -253,7 +253,24 @@ const ChainCardNew = ({
         <div className="px-4 pb-4 space-y-2">
           {isYourTurn && chain.status === 'active' ? (
             <>
-              <Button 
+              {countdown.totalSeconds <= 6 * 3600 && (
+                <button
+                  type="button"
+                  onClick={() => navigate('/store')}
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-amber-100 to-yellow-200 hover:from-amber-200 hover:to-yellow-300 transition-colors border border-amber-300/60"
+                >
+                  <span
+                    className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center shadow-sm ring-1 ring-yellow-700/40"
+                    style={{ background: 'radial-gradient(circle at 30% 30%, #fde68a 0%, #fbbf24 45%, #b45309 100%)' }}
+                  >
+                    <Pause className="w-3 h-3" fill="#78350f" strokeWidth={0} />
+                  </span>
+                  <span className="text-xs font-semibold text-amber-900 text-left">
+                    Running low on time? Get more time with Pause Tokens
+                  </span>
+                </button>
+              )}
+
                 className={`w-full rounded-full ${
                   visualTier === 'ultimate'
                     ? 'bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 text-white hover:opacity-90'
