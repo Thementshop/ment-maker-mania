@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
       mode: "payment",
       ui_mode: "embedded_page",
       return_url: returnUrl,
-      automatic_tax: { enabled: true },
+      
       ...(customerEmail && { customer_email: customerEmail }),
       metadata: {
         ...(userId && { userId }),
