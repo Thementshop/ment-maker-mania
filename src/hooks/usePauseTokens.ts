@@ -113,26 +113,16 @@ export const usePauseTokens = (): UsePauseTokensReturn => {
     if (!user) return false;
     if (!state.unlimited && state.pauseTokens <= 0) return false;
     try {
-      const newExpiresAt = new Date();
-      newExpiresAt.setHours(newExpiresAt.getHours() + 24);
-      const { error: chainError } = await supabase
-        .from('ment_chains')
-        .update({ expires_at: newExpiresAt.toISOString() })
-        .eq('chain_id', chainId);
-      if (chainError) throw chainError;
+      // Server-side RPC adds 24h on top of remaining time (does not reset).
+      const { data, error } = await supabase.rpc('extend_chain_timer', { _chain_id: chainId });
+      if (error) throw error;
+      const result = data as { success: boolean; unlimited?: boolean; tokens_remaining?: number | null } | null;
+      if (!result?.success) return false;
 
-      if (!state.unlimited) {
-        const { error: tokenError } = await supabase
-          .from('user_game_state')
-          .update({
-            pause_tokens: state.pauseTokens - 1,
-            total_tokens_used: state.totalTokensUsed + 1,
-          })
-          .eq('user_id', user.id);
-        if (tokenError) throw tokenError;
+      if (!result.unlimited) {
         setState(prev => ({
           ...prev,
-          pauseTokens: prev.pauseTokens - 1,
+          pauseTokens: typeof result.tokens_remaining === 'number' ? result.tokens_remaining : prev.pauseTokens - 1,
           totalTokensUsed: prev.totalTokensUsed + 1,
         }));
       }

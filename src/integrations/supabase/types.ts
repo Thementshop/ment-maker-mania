@@ -634,6 +634,7 @@ export type Database = {
         Returns: number
       }
       contains_blocked_word: { Args: { _text: string }; Returns: boolean }
+      extend_chain_timer: { Args: { _chain_id: string }; Returns: Json }
       extend_single_ment_timer: { Args: { _ment_id: string }; Returns: Json }
       get_participated_chain_ids: {
         Args: { _user_email?: string; _user_id: string }
