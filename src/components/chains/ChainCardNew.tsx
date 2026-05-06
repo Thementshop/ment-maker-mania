@@ -271,6 +271,7 @@ const ChainCardNew = ({
                 </button>
               )}
 
+              <Button
                 className={`w-full rounded-full ${
                   visualTier === 'ultimate'
                     ? 'bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 text-white hover:opacity-90'
