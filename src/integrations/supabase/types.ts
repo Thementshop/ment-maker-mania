@@ -291,6 +291,39 @@ export type Database = {
           },
         ]
       }
+      payment_events: {
+        Row: {
+          amount_cents: number | null
+          event_id: string
+          event_type: string
+          id: string
+          price_id: string | null
+          processed_at: string
+          raw: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          amount_cents?: number | null
+          event_id: string
+          event_type: string
+          id?: string
+          price_id?: string | null
+          processed_at?: string
+          raw?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          amount_cents?: number | null
+          event_id?: string
+          event_type?: string
+          id?: string
+          price_id?: string | null
+          processed_at?: string
+          raw?: Json | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       pending_ments: {
         Row: {
           category: string
@@ -333,8 +366,11 @@ export type Database = {
           created_at: string | null
           display_name: string | null
           id: string
+          mint_boost_last_purchased_at: string | null
           pause_token_last_awarded_at: string | null
           pause_tokens: number
+          pause_tokens_unlimited: boolean
+          pause_tokens_unlimited_expires_at: string | null
           updated_at: string | null
         }
         Insert: {
@@ -342,8 +378,11 @@ export type Database = {
           created_at?: string | null
           display_name?: string | null
           id: string
+          mint_boost_last_purchased_at?: string | null
           pause_token_last_awarded_at?: string | null
           pause_tokens?: number
+          pause_tokens_unlimited?: boolean
+          pause_tokens_unlimited_expires_at?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -351,8 +390,11 @@ export type Database = {
           created_at?: string | null
           display_name?: string | null
           id?: string
+          mint_boost_last_purchased_at?: string | null
           pause_token_last_awarded_at?: string | null
           pause_tokens?: number
+          pause_tokens_unlimited?: boolean
+          pause_tokens_unlimited_expires_at?: string | null
           updated_at?: string | null
         }
         Relationships: []
