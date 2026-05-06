@@ -1,169 +1,93 @@
+## Goal
 
-# Pre-Launch Hardening Plan
+Set up Stripe payments for The Ment Shop with 5 one-time products, then wire them into the existing Token Store with full purchase fulfillment, monthly purchase limit on Mint Boost, and an "unlimited Pause Tokens" mode that bypasses token decrement.
 
-Infrastructure-only. No user-facing behavior changes. Five workstreams.
+## Step 1 — Create products in Stripe (test environment)
 
----
+One `batch_create_product` call covering all 5 SKUs. All one-time purchases (no `recurring_interval`), `quantity_min=1`, `quantity_max=1`. Stable snake_case IDs that match across sandbox and live:
 
-## 1. Email Queue (decouple send-a-ment / create-chain from Resend)
-
-Add a durable Postgres-backed queue between any code that wants to send an email and the actual Resend call. Spikes get absorbed; failures get retried; nothing is dropped silently.
-
-**New table: `email_queue`**
-- `id uuid pk`, `email_type text`, `recipient_email text`, `payload jsonb` (full template_data), `chain_id uuid null`
-- `status text` — `pending | processing | sent | failed | dlq` (default `pending`)
-- `attempts int default 0`, `max_attempts int default 5`
-- `next_attempt_at timestamptz default now()`, `locked_at timestamptz null`, `locked_by text null`
-- `last_error text null`, `created_at`, `updated_at`
-- Indexes: `(status, next_attempt_at)`, `(recipient_email)`
-- RLS: enable, no public policies (service role only).
-
-**Producer change**
-- `send-a-ment`, `create-chain`, `send-completed-email`, `send-milestone-email`, `check-expiring-chains` stop calling `send-email` directly. Instead they `INSERT` a row into `email_queue` with the full payload. This is one fast local DB write — the hot path returns immediately.
-
-**Consumer: new edge function `process-email-queue`** (verify_jwt = false)
-- Claims a batch of up to 10 rows where `status='pending' AND next_attempt_at <= now()` using `UPDATE ... RETURNING` with `FOR UPDATE SKIP LOCKED`, sets `status='processing'`, `locked_at=now()`.
-- For each row: invokes existing `send-email` logic (refactor `send-email/index.ts` to export a `sendEmail(payload)` function reused by both the HTTP handler and the worker).
-- On success → `status='sent'`.
-- On failure → `attempts++`, exponential backoff `next_attempt_at = now() + (2^attempts * 30s)`, status back to `pending`. After `max_attempts` → `status='dlq'` and a row written to the new `error_log` table (see §4).
-- On Resend 429 → respect `Retry-After`, do not increment attempts past 1 for that cycle.
-
-**Schedule via pg_cron (every 15 seconds via 4 staggered minute jobs, or every minute with batch size 40)**
-- One pg_cron job calls `process-email-queue` every minute. Throughput: ~40 emails/min default, easily tunable by changing batch size.
-
-**Janitor**
-- Daily pg_cron job: delete `sent` rows older than 7 days; keep `dlq` rows for 30 days for inspection.
-
----
-
-## 2. Lazy / cached auth-token generation
-
-Today `send-a-ment` calls `auth.admin.listUsers()` then `auth.admin.generateLink()` synchronously for every send. `listUsers()` returns the entire user table — this gets catastrophically slow past a few thousand users and is also rate-limited.
-
-**Changes to `send-a-ment` (and same pattern in `create-chain` for chain emails):**
-
-a. **Stop calling `listUsers()`.** Replace with a direct lookup:
-```sql
-select id from auth.users where lower(email) = lower($1) limit 1
-```
-via `adminClient.from('auth.users')` won't work — instead use a SECURITY DEFINER RPC `get_user_id_by_email(_email text)` returning uuid. O(1) indexed lookup.
-
-b. **Move token generation out of the hot path.** Two options, we'll do both:
-- **Lazy**: do not generate the magic-link token at send time at all. Instead, the email reveal URL becomes `/ment/:id?auto=1`. When the recipient clicks it, the `MentPage` calls a new lightweight edge function `issue-reveal-token` which (i) confirms the ment exists, (ii) confirms the recipient email matches, (iii) generates the magic link token then, (iv) redirects with `?token=...`. This pushes the expensive auth call to click-time (1 per actual open) instead of send-time (1 per send, even un-opened).
-- **Cache**: add a `recipient_login_tokens` table `(email pk, hashed_token text, expires_at timestamptz)`. `issue-reveal-token` checks cache first; if a non-expired token exists, reuse it. TTL = 1 hour (matches Supabase magic link lifetime).
-
-Auth-token generation drops from "every send" to "every actual click, and only for users without a fresh cached token." Expected reduction: 80–95% of current calls.
-
----
-
-## 3. Cloud instance sizing recommendation
-
-I cannot read your Cloud → Overview directly. Based on the workload profile (write-heavy: chain inserts, jar updates, realtime broadcasts on `world_kindness_counter`, queue polling every minute, plus Resend fan-out), here is the concrete recommendation for **1,000 concurrent users**:
-
-| Setting | Recommended | Why |
+| price_id | Display name | Amount |
 |---|---|---|
-| Compute size | **Small ($15/mo) → Medium ($60/mo)** | Default Micro (1GB / shared CPU) will saturate CPU on Realtime + queue worker. Medium gives 4GB RAM, 2 dedicated vCPU — handles ~200 concurrent DB connections comfortably. |
-| Connection pooler | **Transaction mode, pool size 200** | Edge functions are short-lived; transaction pooling maximizes reuse. |
-| Direct connections | Keep ≤ 20 | Reserve for migrations + pg_cron. |
-| Realtime concurrent connections | Verify limit ≥ 1,500 | One subscriber per active user for `world_kindness_counter`. |
-| Disk | 8 GB SSD is fine for launch | Email queue + logs grow slowly with janitor in place. |
-| PITR | Enable (7-day) | Cheap insurance pre-launch. |
+| `pause_tokens_20` | 20 Pause Tokens | $2.50 |
+| `pause_tokens_50` | 50 Pause Tokens | $5.00 |
+| `pause_tokens_100` | 100 Pause Tokens | $7.50 |
+| `pause_tokens_unlimited_year` | 1 Year Unlimited Pause Tokens | $19.50 |
+| `mint_boost` | Mint Boost — 25 Mints | $4.00 |
 
-**Start at Small**, watch the CPU graph for 48 hours after launch, jump to Medium if sustained CPU > 60%. Do not start on Micro — the queue worker + realtime alone will eat it.
+After creation, set tax codes via Stripe API (required for the +0.5% tax calculation you chose):
+- All Pause Token SKUs → `txcd_10000000` (general digital goods)
+- Mint Boost → `txcd_10000000` (general digital goods)
 
----
+## Step 2 — Database (already migrated)
 
-## 4. Error monitoring table
+`profiles` already has `pause_tokens_unlimited`, `pause_tokens_unlimited_expires_at`, `mint_boost_last_purchased_at`. A `payment_events` table is in place for webhook idempotency. No further migrations.
 
-**New table: `error_log`**
-- `id uuid pk`, `created_at timestamptz default now()`
-- `source text` — e.g. `send-email`, `process-email-queue`, `issue-reveal-token`, `send-a-ment`, `create-chain`
-- `error_type text` — `email_failed`, `token_generation_failed`, `queue_dlq`, `resend_rate_limit`, `db_error`, `unknown`
-- `recipient_email text null`, `chain_id uuid null`, `ment_id uuid null`
-- `message text`, `context jsonb` (stack, payload, response body)
-- `severity text` — `warn | error | critical`
-- Index `(created_at desc)`, `(source, error_type)`. RLS service-role only.
+## Step 3 — Backend edge functions
 
-**Wired into:**
-- `process-email-queue` writes on every Resend failure and every DLQ event.
-- `send-a-ment`, `create-chain` write on token generation failure (currently silently swallowed).
-- `send-email` writes on Resend non-2xx.
-- `issue-reveal-token` writes on missing user / generation failure.
+Three new functions, all with `verify_jwt = false` in `supabase/config.toml`:
 
-**Inspection**
-- You query `select * from error_log where created_at > now() - interval '1 hour' order by created_at desc;` directly in the Cloud SQL editor. No UI built in this pass — you said inspect-able, not dashboard. (We can add a `/admin/errors` page later if desired.)
+1. **`_shared/stripe.ts`** — gateway-routed `createStripeClient(env)` + `verifyWebhook(req, env)` HMAC verifier (per Lovable Stripe utility pattern).
+2. **`create-checkout`** — accepts `{ priceId, userId, customerEmail, returnUrl, environment }`. For `mint_boost`, server-side guard: read `profiles.mint_boost_last_purchased_at` and reject with 409 if it's in the current calendar month. Adds `automatic_tax: { enabled: true }` (matches your "tax calculation only" choice). Returns embedded checkout `clientSecret`.
+3. **`payments-webhook`** — handles `checkout.session.completed` (Stripe core event for one-time payments). Looks up `userId` and `priceId` from session metadata + line items, deduplicates via `payment_events.event_id`, then fulfills:
+   - `pause_tokens_20|50|100` → increment `profiles.pause_tokens` and `user_game_state.pause_tokens` by 20/50/100
+   - `pause_tokens_unlimited_year` → set `pause_tokens_unlimited = true`; if existing `pause_tokens_unlimited_expires_at` is in the future, add 365 days to it; otherwise set to `now() + 365 days` (stacking behavior)
+   - `mint_boost` → add 25 to `user_game_state.jar_count`; set `profiles.mint_boost_last_purchased_at = now()`
 
----
+## Step 4 — App-wide unlimited Pause Tokens behavior
 
-## 5. Health-check edge function
+Add helper `isPauseTokensUnlimited(profile)` (true when flag set AND expiry > now). Update:
+- `usePauseTokens` hook — expose `unlimited: boolean`, treat balance as ∞ for UI, skip decrement in `usePauseToken`/`extend_single_ment_timer` paths when unlimited.
+- DB function `extend_single_ment_timer` — short-circuit token deduction when unlimited.
+- Anywhere the gold coin token count renders, show "∞" when unlimited.
 
-**New edge function: `health-check`** (verify_jwt = false, GET)
+## Step 5 — Token Store UI rebuild (`src/pages/Store.tsx`)
 
-Returns JSON:
-```json
-{
-  "status": "ok" | "degraded" | "down",
-  "timestamp": "...",
-  "checks": {
-    "database": { "ok": true, "latency_ms": 12 },
-    "email_provider": { "ok": true, "latency_ms": 180 },
-    "edge_runtime": { "ok": true },
-    "email_queue": { "ok": true, "pending": 4, "dlq": 0, "oldest_pending_age_s": 12 },
-    "recent_errors_5m": 2
-  }
-}
-```
+Two clean sections, mobile-first, brand styling (Screamin' Green accents, gold coin asset):
 
-Implementation:
-- DB: `select 1` against `world_kindness_counter` with 2s timeout.
-- Email provider: `GET https://api.resend.com/domains` with the API key, 3s timeout. Counts 2xx as healthy.
-- Email queue: count of `pending` and `dlq` rows, oldest pending age. Flags `degraded` if `oldest_pending_age_s > 300` or `dlq > 10`.
-- Recent errors: count of `error_log` rows in last 5 min, severity ≥ error. Flags `degraded` if > 20.
-- `status` = worst of all checks. HTTP 200 always (so uptime monitors can parse the body); use `status` field for alerting.
+**Section 1 — "Get more time with Pause Tokens"**
+- 4 cards (20 / 50 / 100 / Unlimited Year) with the existing gold Pause Token coin
+- Each card: name, quantity, price, "Get Tokens" CTA → opens embedded checkout
+- Unlimited card visually elevated (best value badge)
 
-Hook this up later to UptimeRobot / BetterStack with one HTTP check — pre-launch you can curl it manually.
+**Section 2 — "Boost your jar"**
+- Single Mint Boost card: "25 Mints — $4.00", "Add to your jar" CTA
+- If `mint_boost_last_purchased_at` is in current calendar month: button disabled, label "Available [Month 1]" (first of next month), helper text below: "1 Mint Boost available per month"
 
----
+UI rules enforced:
+- Words "buy"/"purchase" never appear in copy (use "Get", "Add", "Unlock")
+- No header nav entry for the store (already accessed via chain cards & MentPage)
+- No subscription UI, no separate pricing page
+- After successful checkout return: toast "Your Pause Tokens have been added! 💚" or "25 mints added to your jar! 💚", then close store/back to previous page
+- Test-mode banner at top of store while in sandbox
 
-## Technical summary (file-level)
+## Step 6 — Checkout return handling
 
-**New files**
-- `supabase/functions/process-email-queue/index.ts`
-- `supabase/functions/issue-reveal-token/index.ts`
-- `supabase/functions/health-check/index.ts`
-- `supabase/functions/_shared/send-email-core.ts` (extracted from current `send-email/index.ts`)
-- `supabase/functions/_shared/error-log.ts` (helper: `logError({ source, type, ... })`)
+`/checkout/return` page reads `session_id`, polls user's profile/game state for ~5s for the fulfillment update, then shows success toast and routes back to the previous context (chain card → chain dashboard, MentPage → MentPage, store → store).
 
-**Modified files**
-- `supabase/functions/send-a-ment/index.ts` — replace direct `send-email` fetch with `email_queue` insert; remove `listUsers()`/`generateLink()` from hot path.
-- `supabase/functions/create-chain/index.ts` — same.
-- `supabase/functions/send-completed-email/index.ts`, `send-milestone-email/index.ts`, `check-expiring-chains/index.ts` — enqueue instead of direct send.
-- `supabase/functions/send-email/index.ts` — keep HTTP handler as thin wrapper around `send-email-core.ts` (backward compatible).
-- `supabase/config.toml` — add `[functions.process-email-queue]`, `[functions.issue-reveal-token]`, `[functions.health-check]` blocks with `verify_jwt = false`.
-- `src/pages/MentPage.tsx` — when URL has `?auto=1` (no token yet), call `issue-reveal-token`, then continue. Existing `?token=` path unchanged.
+## Step 7 — Merch placeholder
 
-**Migrations**
-- Create `email_queue`, `error_log`, `recipient_login_tokens` tables with RLS.
-- `get_user_id_by_email(text)` SECURITY DEFINER function.
-- pg_cron: every-minute job → `process-email-queue`; daily janitor.
+No code. Just a memory note that physical merch will be added later via Shopify (Stripe + Lovable's seamless flow doesn't handle physical with shipping cleanly).
 
-**Zero user-facing change**
-- Same email arrives, same content, same auto-login, same reveal page. The only observable difference is that on cold-start cache misses, the very first click on a magic link adds ~300ms for token generation — invisible alongside the page load.
+## Test checklist (sandbox, with card `4242 4242 4242 4242`)
 
----
+1. Each Pause Token tier opens checkout and increments correct quantity post-payment
+2. Unlimited Year sets `pause_tokens_unlimited = true` and expiry ≈ now+365d; second purchase pushes expiry to ≈ now+730d
+3. While unlimited active: token UI shows ∞, extending a single Ment / chain does not decrement balance
+4. Mint Boost adds 25 to jar count, sets `mint_boost_last_purchased_at`, and a second attempt in the same calendar month is blocked at the UI (disabled button) AND server (409 from create-checkout)
+5. Success toasts render correctly for both purchase paths
+6. Store layout is clean at 375px and 1024px viewports
 
-## Rollout order
+## Out of scope
 
-1. Migrations (tables + RPC + RLS).
-2. Deploy `health-check` first — gives you a baseline before anything changes.
-3. Deploy `send-email-core` refactor (no behavior change).
-4. Deploy `process-email-queue` + cron — but keep producers calling `send-email` directly for now.
-5. Switch producers to enqueue. Watch `email_queue` drain.
-6. Deploy `issue-reveal-token` + MentPage `?auto=1` path. Keep old `?token=` path working for in-flight emails.
-7. Remove `listUsers()`/`generateLink()` from `send-a-ment` and `create-chain`.
+- Going live (separate user-driven flow via Payments dashboard)
+- Refunds UI
+- Physical merch (deferred)
 
-Each step is independently reversible.
+## Technical details
 
----
-
-Approve and I'll implement in this order. Total: ~6 new files, ~6 modified files, 1 migration.
+- Stripe SDK pinned `stripe@22.0.2`, API version `2026-03-25.dahlia`
+- `EmbeddedCheckoutProvider` + `EmbeddedCheckout` from `@stripe/react-stripe-js@6.2.0`, `@stripe/stripe-js@9.2.0`
+- All Stripe API calls routed through `connector-gateway.lovable.dev/stripe` via `createStripeClient`
+- Webhook handler reads `?env=sandbox|live` and uses matching `PAYMENTS_*_WEBHOOK_SECRET` for HMAC verification
+- Client-side mint-boost gating reads from existing `profiles` SELECT (already permitted by RLS)
+- All fulfillment writes happen in webhook with service role key (bypasses RLS)
