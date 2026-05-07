@@ -141,7 +141,11 @@ const Store = () => {
   const tokenDisplay = unlimited ? '∞' : isLoading ? '…' : String(pauseTokens);
 
   const handleBypassApplied = async ({ priceId, quantity }: { priceId: string; quantity?: number | null }) => {
-    await Promise.all([refetch(), loadProfile()]);
+    setCheckoutPriceId(null);
+
+    void Promise.all([refetch(), loadProfile()]).catch((error) => {
+      console.error('Preview purchase refresh failed:', error);
+    });
 
     if (priceId === 'mint_boost') {
       confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#58fc59', '#3ed83f'] });
@@ -155,8 +159,6 @@ const Store = () => {
             : `${quantity ?? ''} Pause Tokens added in preview mode! 💚`.trim(),
       });
     }
-
-    setCheckoutPriceId(null);
   };
 
   return (
