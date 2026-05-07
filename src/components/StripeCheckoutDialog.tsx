@@ -15,18 +15,23 @@ interface Props {
 export function StripeCheckoutDialog({ open, priceId, userId, customerEmail, onClose }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [bypassResult, setBypassResult] = useState<string | null>(null);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
 
   useEffect(() => {
     if (open && priceId) {
       setError(null);
       setBypassResult(null);
+      setClientSecret(null);
     }
   }, [open, priceId]);
 
-  const options = useMemo(() => {
-    if (!open || !priceId) return null;
-    return {
-      fetchClientSecret: async (): Promise<string> => {
+  useEffect(() => {
+    let cancelled = false;
+
+    const prepareCheckout = async () => {
+      if (!open || !priceId) return;
+
+      try {
         const returnUrl = `${window.location.origin}/store?checkout=success&session_id={CHECKOUT_SESSION_ID}`;
         const { data, error: invokeError } = await supabase.functions.invoke("create-checkout", {
           body: {
@@ -38,6 +43,9 @@ export function StripeCheckoutDialog({ open, priceId, userId, customerEmail, onC
             allowSandboxBypass: true,
           },
         });
+
+        if (cancelled) return;
+
         if (invokeError) {
           const msg = (invokeError as any)?.context?.body || invokeError.message;
           if (typeof msg === "string" && msg.includes("mint_boost_already_purchased_this_month")) {
@@ -49,8 +57,9 @@ export function StripeCheckoutDialog({ open, priceId, userId, customerEmail, onC
           } else {
             setError(invokeError.message || "Couldn't open checkout");
           }
-          throw invokeError;
+          return;
         }
+
         if (data?.bypassApplied) {
           const grantedLabel =
             priceId === "mint_boost"
@@ -59,20 +68,37 @@ export function StripeCheckoutDialog({ open, priceId, userId, customerEmail, onC
               ? "Unlimited Pause Tokens were enabled for preview testing."
               : `${data.quantity ?? "Your"} Pause Tokens were added for preview testing.`;
           setBypassResult(grantedLabel);
-          throw new Error("preview_bypass_applied");
+          return;
         }
+
         if (!data?.clientSecret) {
           setError("Couldn't open checkout");
-          throw new Error("No clientSecret returned");
+          return;
         }
+
         const rawClientSecret = data.clientSecret as string;
-        const clientSecret = rawClientSecret.includes("%")
+        const resolvedClientSecret = rawClientSecret.includes("%")
           ? decodeURIComponent(rawClientSecret)
           : rawClientSecret;
-        return clientSecret;
-      },
+        setClientSecret(resolvedClientSecret);
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Couldn't open checkout");
+        }
+      }
+    };
+
+    void prepareCheckout();
+
+    return () => {
+      cancelled = true;
     };
   }, [open, priceId, userId, customerEmail]);
+
+  const options = useMemo(() => {
+    if (!clientSecret) return null;
+    return { clientSecret };
+  }, [clientSecret]);
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
@@ -87,6 +113,8 @@ export function StripeCheckoutDialog({ open, priceId, userId, customerEmail, onC
             </div>
           ) : error ? (
             <div className="p-6 text-sm text-destructive text-center">{error}</div>
+          ) : open && priceId && !clientSecret ? (
+            <div className="p-6 text-sm text-center text-muted-foreground">Preparing checkout…</div>
           ) : open && priceId && options ? (
             <EmbeddedCheckoutProvider key={priceId} stripe={getStripe()} options={options}>
               <EmbeddedCheckout />
