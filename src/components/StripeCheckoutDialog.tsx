@@ -9,10 +9,11 @@ interface Props {
   priceId: string | null;
   userId?: string;
   customerEmail?: string;
+  onBypassApplied?: (result: { priceId: string; quantity?: number | null }) => Promise<void> | void;
   onClose: () => void;
 }
 
-export function StripeCheckoutDialog({ open, priceId, userId, customerEmail, onClose }: Props) {
+export function StripeCheckoutDialog({ open, priceId, userId, customerEmail, onBypassApplied, onClose }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [bypassResult, setBypassResult] = useState<string | null>(null);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
@@ -61,13 +62,17 @@ export function StripeCheckoutDialog({ open, priceId, userId, customerEmail, onC
         }
 
         if (data?.bypassApplied) {
-          const grantedLabel =
-            priceId === "mint_boost"
-              ? "25 mints were added to your jar for preview testing."
-              : priceId === "pause_tokens_unlimited_year"
-              ? "Unlimited Pause Tokens were enabled for preview testing."
-              : `${data.quantity ?? "Your"} Pause Tokens were added for preview testing.`;
-          setBypassResult(grantedLabel);
+          if (onBypassApplied) {
+            await onBypassApplied({ priceId, quantity: (data.quantity as number | null | undefined) ?? null });
+          } else {
+            const grantedLabel =
+              priceId === "mint_boost"
+                ? "25 mints were added to your jar for preview testing."
+                : priceId === "pause_tokens_unlimited_year"
+                ? "Unlimited Pause Tokens were enabled for preview testing."
+                : `${data.quantity ?? "Your"} Pause Tokens were added for preview testing.`;
+            setBypassResult(grantedLabel);
+          }
           return;
         }
 
@@ -93,7 +98,7 @@ export function StripeCheckoutDialog({ open, priceId, userId, customerEmail, onC
     return () => {
       cancelled = true;
     };
-  }, [open, priceId, userId, customerEmail]);
+  }, [open, priceId, userId, customerEmail, onBypassApplied]);
 
   const options = useMemo(() => {
     if (!clientSecret) return null;
