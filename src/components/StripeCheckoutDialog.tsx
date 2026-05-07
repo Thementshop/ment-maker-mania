@@ -46,7 +46,11 @@ export function StripeCheckoutDialog({ open, priceId, userId, customerEmail, onC
           setError("Couldn't open checkout");
           throw new Error("No clientSecret returned");
         }
-        return data.clientSecret as string;
+        const rawClientSecret = data.clientSecret as string;
+        const clientSecret = rawClientSecret.includes("%")
+          ? decodeURIComponent(rawClientSecret)
+          : rawClientSecret;
+        return clientSecret;
       },
     };
   }, [open, priceId, userId, customerEmail]);
