@@ -17,12 +17,14 @@ export function StripeCheckoutDialog({ open, priceId, userId, customerEmail, onB
   const [error, setError] = useState<string | null>(null);
   const [bypassResult, setBypassResult] = useState<string | null>(null);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [isPreparing, setIsPreparing] = useState(false);
 
   useEffect(() => {
     if (open && priceId) {
       setError(null);
       setBypassResult(null);
       setClientSecret(null);
+      setIsPreparing(true);
     }
   }, [open, priceId]);
 
@@ -33,6 +35,7 @@ export function StripeCheckoutDialog({ open, priceId, userId, customerEmail, onB
       if (!open || !priceId) return;
 
       try {
+        setIsPreparing(true);
         const returnUrl = `${window.location.origin}/store?checkout=success&session_id={CHECKOUT_SESSION_ID}`;
         const { data, error: invokeError } = await supabase.functions.invoke("create-checkout", {
           body: {
@@ -48,6 +51,7 @@ export function StripeCheckoutDialog({ open, priceId, userId, customerEmail, onB
         if (cancelled) return;
 
         if (invokeError) {
+          setIsPreparing(false);
           const msg = (invokeError as any)?.context?.body || invokeError.message;
           if (typeof msg === "string" && msg.includes("mint_boost_already_purchased_this_month")) {
             setError("You've already boosted your jar this month!");
@@ -62,8 +66,13 @@ export function StripeCheckoutDialog({ open, priceId, userId, customerEmail, onB
         }
 
         if (data?.bypassApplied) {
+          setIsPreparing(false);
           if (onBypassApplied) {
-            await onBypassApplied({ priceId, quantity: (data.quantity as number | null | undefined) ?? null });
+            void Promise.resolve(
+              onBypassApplied({ priceId, quantity: (data.quantity as number | null | undefined) ?? null })
+            ).catch((callbackError) => {
+              console.error("Bypass completion failed:", callbackError);
+            });
           } else {
             const grantedLabel =
               priceId === "mint_boost"
@@ -77,6 +86,7 @@ export function StripeCheckoutDialog({ open, priceId, userId, customerEmail, onB
         }
 
         if (!data?.clientSecret) {
+          setIsPreparing(false);
           setError("Couldn't open checkout");
           return;
         }
@@ -86,8 +96,10 @@ export function StripeCheckoutDialog({ open, priceId, userId, customerEmail, onB
           ? decodeURIComponent(rawClientSecret)
           : rawClientSecret;
         setClientSecret(resolvedClientSecret);
+        setIsPreparing(false);
       } catch (err) {
         if (!cancelled) {
+          setIsPreparing(false);
           setError(err instanceof Error ? err.message : "Couldn't open checkout");
         }
       }
@@ -118,7 +130,7 @@ export function StripeCheckoutDialog({ open, priceId, userId, customerEmail, onB
             </div>
           ) : error ? (
             <div className="p-6 text-sm text-destructive text-center">{error}</div>
-          ) : open && priceId && !clientSecret ? (
+          ) : open && priceId && isPreparing && !clientSecret ? (
             <div className="p-6 text-sm text-center text-muted-foreground">Preparing checkout…</div>
           ) : open && priceId && options ? (
             <EmbeddedCheckoutProvider key={priceId} stripe={getStripe()} options={options}>
