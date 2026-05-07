@@ -65,7 +65,7 @@ const Store = () => {
   const [mintBoostLast, setMintBoostLast] = useState<string | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
 
-  const loadProfile = async () => {
+  const loadProfile = useCallback(async () => {
     if (!user) {
       setProfileLoading(false);
       return;
@@ -77,12 +77,12 @@ const Store = () => {
       .maybeSingle();
     setMintBoostLast((data?.mint_boost_last_purchased_at as string | null) ?? null);
     setProfileLoading(false);
-  };
+  }, [user]);
 
   useEffect(() => {
     loadProfile();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
+  }, [loadProfile]);
 
   // Handle checkout return
   useEffect(() => {
