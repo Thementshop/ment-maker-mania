@@ -14,9 +14,13 @@ interface Props {
 
 export function StripeCheckoutDialog({ open, priceId, userId, customerEmail, onClose }: Props) {
   const [error, setError] = useState<string | null>(null);
+  const [bypassResult, setBypassResult] = useState<string | null>(null);
 
   useEffect(() => {
-    if (open && priceId) setError(null);
+    if (open && priceId) {
+      setError(null);
+      setBypassResult(null);
+    }
   }, [open, priceId]);
 
   const options = useMemo(() => {
@@ -31,6 +35,7 @@ export function StripeCheckoutDialog({ open, priceId, userId, customerEmail, onC
             customerEmail,
             returnUrl,
             environment: getStripeEnvironment(),
+            allowSandboxBypass: true,
           },
         });
         if (invokeError) {
@@ -45,6 +50,16 @@ export function StripeCheckoutDialog({ open, priceId, userId, customerEmail, onC
             setError(invokeError.message || "Couldn't open checkout");
           }
           throw invokeError;
+        }
+        if (data?.bypassApplied) {
+          const grantedLabel =
+            priceId === "mint_boost"
+              ? "25 mints were added to your jar for preview testing."
+              : priceId === "pause_tokens_unlimited_year"
+              ? "Unlimited Pause Tokens were enabled for preview testing."
+              : `${data.quantity ?? "Your"} Pause Tokens were added for preview testing.`;
+          setBypassResult(grantedLabel);
+          throw new Error("preview_bypass_applied");
         }
         if (!data?.clientSecret) {
           setError("Couldn't open checkout");
@@ -66,7 +81,11 @@ export function StripeCheckoutDialog({ open, priceId, userId, customerEmail, onC
           <DialogTitle>Checkout</DialogTitle>
         </DialogHeader>
         <div className="p-2 min-h-[400px]">
-          {error ? (
+          {bypassResult ? (
+            <div className="p-6 text-sm text-center space-y-4">
+              <p>{bypassResult}</p>
+            </div>
+          ) : error ? (
             <div className="p-6 text-sm text-destructive text-center">{error}</div>
           ) : open && priceId && options ? (
             <EmbeddedCheckoutProvider key={priceId} stripe={getStripe()} options={options}>
