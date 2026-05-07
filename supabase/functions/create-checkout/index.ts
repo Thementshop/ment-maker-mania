@@ -34,7 +34,12 @@ async function getAuthenticatedUserId(req: Request, supabase: ReturnType<typeof 
 function isPreviewBypassAllowed(returnUrl: string): boolean {
   try {
     const origin = new URL(returnUrl).origin;
-    return origin.includes("id-preview--") || origin.includes("localhost");
+    return (
+      origin.includes("id-preview--") ||
+      origin.includes("localhost") ||
+      origin.endsWith(".lovableproject.com") ||
+      origin.endsWith(".lovable.app")
+    );
   } catch {
     return false;
   }
