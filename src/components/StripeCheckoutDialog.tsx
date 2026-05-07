@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from "@stripe/react-stripe-js";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { getStripe, getStripeEnvironment } from "@/lib/stripe";
-import { supabase } from "@/integrations/supabase/client";
+import { getFreshAccessToken } from "@/utils/freshToken";
 
 interface Props {
   open: boolean;
@@ -17,12 +17,14 @@ export function StripeCheckoutDialog({ open, priceId, userId, customerEmail, onB
   const [error, setError] = useState<string | null>(null);
   const [bypassResult, setBypassResult] = useState<string | null>(null);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [isPreparing, setIsPreparing] = useState(false);
 
   useEffect(() => {
     if (open && priceId) {
       setError(null);
       setBypassResult(null);
       setClientSecret(null);
+      setIsPreparing(true);
     }
   }, [open, priceId]);
 
@@ -33,37 +35,70 @@ export function StripeCheckoutDialog({ open, priceId, userId, customerEmail, onB
       if (!open || !priceId) return;
 
       try {
+        setIsPreparing(true);
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+        if (!supabaseUrl || !supabaseKey) {
+          throw new Error("App configuration is missing. Please refresh and try again.");
+        }
+
+        const accessToken = await getFreshAccessToken();
+        if (!accessToken) {
+          throw new Error("Session expired. Please sign in again.");
+        }
+
         const returnUrl = `${window.location.origin}/store?checkout=success&session_id={CHECKOUT_SESSION_ID}`;
-        const { data, error: invokeError } = await supabase.functions.invoke("create-checkout", {
-          body: {
+        const controller = new AbortController();
+        const timeoutId = window.setTimeout(() => controller.abort(), 12000);
+
+        const response = await fetch(`${supabaseUrl}/functions/v1/create-checkout`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": supabaseKey,
+            "Authorization": `Bearer ${accessToken}`,
+          },
+          signal: controller.signal,
+          body: JSON.stringify({
             priceId,
             userId,
             customerEmail,
             returnUrl,
             environment: getStripeEnvironment(),
             allowSandboxBypass: true,
-          },
+          }),
         });
+        window.clearTimeout(timeoutId);
+
+        const data = await response.json().catch(() => null);
 
         if (cancelled) return;
 
-        if (invokeError) {
-          const msg = (invokeError as any)?.context?.body || invokeError.message;
+        if (!response.ok) {
+          setIsPreparing(false);
+          const msg = data?.error || data?.message || `Checkout failed (HTTP ${response.status})`;
           if (typeof msg === "string" && msg.includes("mint_boost_already_purchased_this_month")) {
             setError("You've already boosted your jar this month!");
+          } else if (response.status === 401 || response.status === 403) {
+            setError("Session expired. Please sign in again.");
           } else if (typeof msg === "string" && msg.includes("sandbox_account_not_ready")) {
             setError("Your test payments account isn't fully ready yet, so checkout can't open right now.");
           } else if (typeof msg === "string" && msg.includes("live_account_not_ready")) {
             setError("Your payments account isn't ready for checkout yet.");
           } else {
-            setError(invokeError.message || "Couldn't open checkout");
+            setError(typeof msg === "string" ? msg : "Couldn't open checkout");
           }
           return;
         }
 
         if (data?.bypassApplied) {
+          setIsPreparing(false);
           if (onBypassApplied) {
-            await onBypassApplied({ priceId, quantity: (data.quantity as number | null | undefined) ?? null });
+            void Promise.resolve(
+              onBypassApplied({ priceId, quantity: (data.quantity as number | null | undefined) ?? null })
+            ).catch((callbackError) => {
+              console.error("Bypass completion failed:", callbackError);
+            });
           } else {
             const grantedLabel =
               priceId === "mint_boost"
@@ -77,6 +112,7 @@ export function StripeCheckoutDialog({ open, priceId, userId, customerEmail, onB
         }
 
         if (!data?.clientSecret) {
+          setIsPreparing(false);
           setError("Couldn't open checkout");
           return;
         }
@@ -86,9 +122,16 @@ export function StripeCheckoutDialog({ open, priceId, userId, customerEmail, onB
           ? decodeURIComponent(rawClientSecret)
           : rawClientSecret;
         setClientSecret(resolvedClientSecret);
+        setIsPreparing(false);
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Couldn't open checkout");
+          setIsPreparing(false);
+          const message = err instanceof Error && err.name === "AbortError"
+            ? "Checkout timed out. Please try again."
+            : err instanceof Error
+            ? err.message
+            : "Couldn't open checkout";
+          setError(message);
         }
       }
     };
@@ -118,7 +161,7 @@ export function StripeCheckoutDialog({ open, priceId, userId, customerEmail, onB
             </div>
           ) : error ? (
             <div className="p-6 text-sm text-destructive text-center">{error}</div>
-          ) : open && priceId && !clientSecret ? (
+          ) : open && priceId && isPreparing && !clientSecret ? (
             <div className="p-6 text-sm text-center text-muted-foreground">Preparing checkout…</div>
           ) : open && priceId && options ? (
             <EmbeddedCheckoutProvider key={priceId} stripe={getStripe()} options={options}>

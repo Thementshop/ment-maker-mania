@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Sparkles, Check, Infinity as InfinityIcon } from 'lucide-react';
@@ -65,7 +65,7 @@ const Store = () => {
   const [mintBoostLast, setMintBoostLast] = useState<string | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
 
-  const loadProfile = async () => {
+  const loadProfile = useCallback(async () => {
     if (!user) {
       setProfileLoading(false);
       return;
@@ -77,12 +77,12 @@ const Store = () => {
       .maybeSingle();
     setMintBoostLast((data?.mint_boost_last_purchased_at as string | null) ?? null);
     setProfileLoading(false);
-  };
+  }, [user]);
 
   useEffect(() => {
     loadProfile();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
+  }, [loadProfile]);
 
   // Handle checkout return
   useEffect(() => {
@@ -140,8 +140,12 @@ const Store = () => {
   const mintBlocked = isInCurrentMonth(mintBoostLast);
   const tokenDisplay = unlimited ? '∞' : isLoading ? '…' : String(pauseTokens);
 
-  const handleBypassApplied = async ({ priceId, quantity }: { priceId: string; quantity?: number | null }) => {
-    await Promise.all([refetch(), loadProfile()]);
+  const handleBypassApplied = useCallback(async ({ priceId, quantity }: { priceId: string; quantity?: number | null }) => {
+    setCheckoutPriceId(null);
+
+    void Promise.all([refetch(), loadProfile()]).catch((error) => {
+      console.error('Preview purchase refresh failed:', error);
+    });
 
     if (priceId === 'mint_boost') {
       confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#58fc59', '#3ed83f'] });
@@ -155,9 +159,7 @@ const Store = () => {
             : `${quantity ?? ''} Pause Tokens added in preview mode! 💚`.trim(),
       });
     }
-
-    setCheckoutPriceId(null);
-  };
+  }, [loadProfile, refetch, toast]);
 
   return (
     <div className="min-h-screen bg-gradient-mint flex flex-col">
