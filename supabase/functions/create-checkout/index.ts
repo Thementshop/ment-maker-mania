@@ -50,6 +50,18 @@ Deno.serve(async (req) => {
     }
 
     const stripe = createStripeClient(env);
+    const account = await stripe.accounts.retrieve();
+
+    if ("charges_enabled" in account && !account.charges_enabled) {
+      return json(
+        {
+          error: env === "sandbox" ? "sandbox_account_not_ready" : "live_account_not_ready",
+          detailsSubmitted: account.details_submitted ?? false,
+        },
+        409,
+      );
+    }
+
     const prices = await stripe.prices.list({ lookup_keys: [priceId], limit: 1 });
     if (!prices.data.length) return json({ error: "Price not found" }, 404);
     const stripePrice = prices.data[0];
