@@ -140,6 +140,25 @@ const Store = () => {
   const mintBlocked = isInCurrentMonth(mintBoostLast);
   const tokenDisplay = unlimited ? '∞' : isLoading ? '…' : String(pauseTokens);
 
+  const handleBypassApplied = async ({ priceId, quantity }: { priceId: string; quantity?: number | null }) => {
+    await Promise.all([refetch(), loadProfile()]);
+
+    if (priceId === 'mint_boost') {
+      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#58fc59', '#3ed83f'] });
+      toast({ title: '25 mints added in preview mode! 💚' });
+    } else {
+      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#FFD700', '#58fc59'] });
+      toast({
+        title:
+          priceId === 'pause_tokens_unlimited_year'
+            ? 'Unlimited Pause Tokens enabled in preview mode! 💚'
+            : `${quantity ?? ''} Pause Tokens added in preview mode! 💚`.trim(),
+      });
+    }
+
+    setCheckoutPriceId(null);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-mint flex flex-col">
       <PaymentTestModeBanner />
@@ -303,6 +322,7 @@ const Store = () => {
         priceId={checkoutPriceId}
         userId={user?.id}
         customerEmail={user?.email ?? undefined}
+        onBypassApplied={handleBypassApplied}
         onClose={() => setCheckoutPriceId(null)}
       />
     </div>
