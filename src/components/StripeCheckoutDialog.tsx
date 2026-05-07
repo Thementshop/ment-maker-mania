@@ -37,6 +37,10 @@ export function StripeCheckoutDialog({ open, priceId, userId, customerEmail, onC
           const msg = (invokeError as any)?.context?.body || invokeError.message;
           if (typeof msg === "string" && msg.includes("mint_boost_already_purchased_this_month")) {
             setError("You've already boosted your jar this month!");
+          } else if (typeof msg === "string" && msg.includes("sandbox_account_not_ready")) {
+            setError("Your test payments account isn't fully ready yet, so checkout can't open right now.");
+          } else if (typeof msg === "string" && msg.includes("live_account_not_ready")) {
+            setError("Your payments account isn't ready for checkout yet.");
           } else {
             setError(invokeError.message || "Couldn't open checkout");
           }
