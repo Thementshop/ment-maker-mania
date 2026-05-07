@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from "@stripe/react-stripe-js";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { getStripe, getStripeEnvironment } from "@/lib/stripe";
-import { supabase } from "@/integrations/supabase/client";
+import { getFreshAccessToken } from "@/utils/freshToken";
 
 interface Props {
   open: boolean;
@@ -36,31 +36,57 @@ export function StripeCheckoutDialog({ open, priceId, userId, customerEmail, onB
 
       try {
         setIsPreparing(true);
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+        if (!supabaseUrl || !supabaseKey) {
+          throw new Error("App configuration is missing. Please refresh and try again.");
+        }
+
+        const accessToken = await getFreshAccessToken();
+        if (!accessToken) {
+          throw new Error("Session expired. Please sign in again.");
+        }
+
         const returnUrl = `${window.location.origin}/store?checkout=success&session_id={CHECKOUT_SESSION_ID}`;
-        const { data, error: invokeError } = await supabase.functions.invoke("create-checkout", {
-          body: {
+        const controller = new AbortController();
+        const timeoutId = window.setTimeout(() => controller.abort(), 12000);
+
+        const response = await fetch(`${supabaseUrl}/functions/v1/create-checkout`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": supabaseKey,
+            "Authorization": `Bearer ${accessToken}`,
+          },
+          signal: controller.signal,
+          body: JSON.stringify({
             priceId,
             userId,
             customerEmail,
             returnUrl,
             environment: getStripeEnvironment(),
             allowSandboxBypass: true,
-          },
+          }),
         });
+        window.clearTimeout(timeoutId);
+
+        const data = await response.json().catch(() => null);
 
         if (cancelled) return;
 
-        if (invokeError) {
+        if (!response.ok) {
           setIsPreparing(false);
-          const msg = (invokeError as any)?.context?.body || invokeError.message;
+          const msg = data?.error || data?.message || `Checkout failed (HTTP ${response.status})`;
           if (typeof msg === "string" && msg.includes("mint_boost_already_purchased_this_month")) {
             setError("You've already boosted your jar this month!");
+          } else if (response.status === 401 || response.status === 403) {
+            setError("Session expired. Please sign in again.");
           } else if (typeof msg === "string" && msg.includes("sandbox_account_not_ready")) {
             setError("Your test payments account isn't fully ready yet, so checkout can't open right now.");
           } else if (typeof msg === "string" && msg.includes("live_account_not_ready")) {
             setError("Your payments account isn't ready for checkout yet.");
           } else {
-            setError(invokeError.message || "Couldn't open checkout");
+            setError(typeof msg === "string" ? msg : "Couldn't open checkout");
           }
           return;
         }
@@ -100,7 +126,12 @@ export function StripeCheckoutDialog({ open, priceId, userId, customerEmail, onB
       } catch (err) {
         if (!cancelled) {
           setIsPreparing(false);
-          setError(err instanceof Error ? err.message : "Couldn't open checkout");
+          const message = err instanceof Error && err.name === "AbortError"
+            ? "Checkout timed out. Please try again."
+            : err instanceof Error
+            ? err.message
+            : "Couldn't open checkout";
+          setError(message);
         }
       }
     };
