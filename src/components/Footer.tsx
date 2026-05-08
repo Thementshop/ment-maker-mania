@@ -49,12 +49,12 @@ const Footer = () => {
             </p>
             <div className="space-y-2">
               <motion.a
-                href="mailto:info@mentshop.com"
+                href="mailto:hello@mentshop.com"
                 whileHover={{ scale: 1.02 }}
                 className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
               >
                 <Mail className="w-4 h-4" />
-                info@mentshop.com
+                hello@mentshop.com
               </motion.a>
             </div>
           </motion.div>
@@ -76,7 +76,7 @@ const Footer = () => {
               Align your brand with positivity and make a meaningful impact together.
             </p>
             <motion.a
-              href="mailto:ads@thementshop.com"
+              href="mailto:info@mentshop.com"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 
