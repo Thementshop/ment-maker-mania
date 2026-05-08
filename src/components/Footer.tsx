@@ -6,6 +6,22 @@ import unwrappedMint from '@/assets/unwrapped-mint.png';
 import brandMint from '@/assets/brand-mint.png';
 
 const Footer = () => {
+  const [copied, setCopied] = useState<string | null>(null);
+
+  const handleEmailClick = (email: string) => (e: React.MouseEvent<HTMLAnchorElement>) => {
+    // Try to open the user's mail client in a new tab so the preview iframe
+    // doesn't try to load a webmail provider that refuses to be framed.
+    const win = window.open(`mailto:${email}`, '_blank');
+    // Always copy to clipboard as a reliable fallback.
+    navigator.clipboard?.writeText(email).then(() => {
+      setCopied(email);
+      toast.success(`Copied ${email} to clipboard`);
+      setTimeout(() => setCopied(null), 2000);
+    }).catch(() => {});
+    // If the popup was blocked or nothing happens, the toast still confirms the copy.
+    if (!win) e.preventDefault();
+  };
+
   return (
     <footer className="bg-card/80 backdrop-blur-sm border-t border-border/50 mt-auto">
       <div className="container py-12 px-4">
