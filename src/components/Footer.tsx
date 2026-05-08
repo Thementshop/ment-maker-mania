@@ -49,12 +49,12 @@ const Footer = () => {
             </p>
             <div className="space-y-2">
               <motion.a
-                href="mailto:info@mentshop.com"
+                href="mailto:hello@mentshop.com"
                 whileHover={{ scale: 1.02 }}
                 className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
               >
                 <Mail className="w-4 h-4" />
-                info@mentshop.com
+                hello@mentshop.com
               </motion.a>
             </div>
           </motion.div>
