@@ -98,11 +98,14 @@ const Footer = () => {
             </p>
             <a
               href="mailto:info@mentshop.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={handleEmailClick('info@mentshop.com')}
               className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 
                          rounded-full text-sm font-semibold text-primary transition-colors hover:scale-[1.02] active:scale-[0.98]"
             >
-              <Megaphone className="w-4 h-4" />
-              Get in touch
+              {copied === 'info@mentshop.com' ? <Check className="w-4 h-4" /> : <Megaphone className="w-4 h-4" />}
+              {copied === 'info@mentshop.com' ? 'Email copied!' : 'Get in touch'}
             </a>
           </motion.div>
         </div>
