@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import MintButton from '@/components/MintButton';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,19 +13,25 @@ const SendMentSection = ({ onOpenModal, totalSent }: SendMentSectionProps) => {
   const { user } = useAuth();
   const [lifetimeSent, setLifetimeSent] = useState<number>(0);
 
-  useEffect(() => {
+  const fetchCount = useCallback(async () => {
     if (!user?.id) return;
-    let cancelled = false;
-    (async () => {
-      const { count } = await supabase
+    // Total ments sent = single ments + every chain link this user passed (one per recipient)
+    const [{ count: singles }, { count: chainSends }] = await Promise.all([
+      supabase
         .from('sent_ments')
         .select('id', { count: 'exact', head: true })
-        .eq('sender_id', user.id);
-      if (!cancelled) setLifetimeSent(count ?? 0);
-    })();
-    return () => { cancelled = true; };
-    // Re-fetch whenever a new send happens (totalSent increments locally).
-  }, [user?.id, totalSent]);
+        .eq('sender_id', user.id),
+      supabase
+        .from('chain_links')
+        .select('link_id', { count: 'exact', head: true })
+        .eq('passed_by', user.id),
+    ]);
+    setLifetimeSent((singles ?? 0) + (chainSends ?? 0));
+  }, [user?.id]);
+
+  useEffect(() => {
+    fetchCount();
+  }, [fetchCount, totalSent]);
 
   return (
     <motion.div
