@@ -66,17 +66,16 @@ const Footer = () => {
               Have questions, feedback, or just want to say hi? We'd love to hear from you!
             </p>
             <div className="space-y-2">
-              <motion.a
+              <a
                 href="mailto:hello@mentshop.com"
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={handleEmailClick('hello@mentshop.com')}
-                whileHover={{ scale: 1.02 }}
-                className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
+                className="inline-flex items-center gap-2 text-sm text-primary hover:underline hover:scale-[1.02] active:scale-[0.98] transition-transform"
               >
                 {copied === 'hello@mentshop.com' ? <Check className="w-4 h-4" /> : <Mail className="w-4 h-4" />}
                 hello@mentshop.com
-              </motion.a>
+              </a>
             </div>
           </motion.div>
 
