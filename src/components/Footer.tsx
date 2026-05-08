@@ -75,16 +75,14 @@ const Footer = () => {
               Partner with The Ment Shop to reach our community of kindness enthusiasts. 
               Align your brand with positivity and make a meaningful impact together.
             </p>
-            <motion.a
+            <a
               href="mailto:info@mentshop.com"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
               className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 
-                         rounded-full text-sm font-semibold text-primary transition-colors"
+                         rounded-full text-sm font-semibold text-primary transition-colors hover:scale-[1.02] active:scale-[0.98]"
             >
               <Megaphone className="w-4 h-4" />
               Get in touch
-            </motion.a>
+            </a>
           </motion.div>
         </div>
 
