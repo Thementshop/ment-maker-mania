@@ -76,7 +76,7 @@ const Footer = () => {
               Align your brand with positivity and make a meaningful impact together.
             </p>
             <motion.a
-              href="mailto:ads@thementshop.com"
+              href="mailto:info@mentshop.com"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 
