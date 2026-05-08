@@ -1,9 +1,27 @@
 import { motion } from 'framer-motion';
-import { Heart, Mail, Megaphone, Info } from 'lucide-react';
+import { Heart, Mail, Megaphone, Info, Copy, Check } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
 import unwrappedMint from '@/assets/unwrapped-mint.png';
 import brandMint from '@/assets/brand-mint.png';
 
 const Footer = () => {
+  const [copied, setCopied] = useState<string | null>(null);
+
+  const handleEmailClick = (email: string) => (e: React.MouseEvent<HTMLAnchorElement>) => {
+    // Try to open the user's mail client in a new tab so the preview iframe
+    // doesn't try to load a webmail provider that refuses to be framed.
+    const win = window.open(`mailto:${email}`, '_blank');
+    // Always copy to clipboard as a reliable fallback.
+    navigator.clipboard?.writeText(email).then(() => {
+      setCopied(email);
+      toast.success(`Copied ${email} to clipboard`);
+      setTimeout(() => setCopied(null), 2000);
+    }).catch(() => {});
+    // If the popup was blocked or nothing happens, the toast still confirms the copy.
+    if (!win) e.preventDefault();
+  };
+
   return (
     <footer className="bg-card/80 backdrop-blur-sm border-t border-border/50 mt-auto">
       <div className="container py-12 px-4">
@@ -50,10 +68,13 @@ const Footer = () => {
             <div className="space-y-2">
               <motion.a
                 href="mailto:hello@mentshop.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={handleEmailClick('hello@mentshop.com')}
                 whileHover={{ scale: 1.02 }}
                 className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
               >
-                <Mail className="w-4 h-4" />
+                {copied === 'hello@mentshop.com' ? <Check className="w-4 h-4" /> : <Mail className="w-4 h-4" />}
                 hello@mentshop.com
               </motion.a>
             </div>
@@ -77,11 +98,14 @@ const Footer = () => {
             </p>
             <a
               href="mailto:info@mentshop.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={handleEmailClick('info@mentshop.com')}
               className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 
                          rounded-full text-sm font-semibold text-primary transition-colors hover:scale-[1.02] active:scale-[0.98]"
             >
-              <Megaphone className="w-4 h-4" />
-              Get in touch
+              {copied === 'info@mentshop.com' ? <Check className="w-4 h-4" /> : <Megaphone className="w-4 h-4" />}
+              {copied === 'info@mentshop.com' ? 'Email copied!' : 'Get in touch'}
             </a>
           </motion.div>
         </div>
