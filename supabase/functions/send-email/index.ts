@@ -104,7 +104,7 @@ const footer = `
     THE MENT SHOP &nbsp;·&nbsp; A chain of kindness, passed person to person.
   </p>
   <p style="color:#9ca3af;font-size:11px;margin:0;">
-    Questions? <a href="mailto:info@mentshop.com" style="color:${BRAND_GREEN_DARK};text-decoration:none;font-weight:600;">info@mentshop.com</a>
+    Questions? <a href="mailto:hello@mentshop.com" style="color:${BRAND_GREEN_DARK};text-decoration:none;font-weight:600;">hello@mentshop.com</a>
   </p>
 </td></tr>`;
 
