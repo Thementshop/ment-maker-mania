@@ -1,5 +1,7 @@
 import { motion } from 'framer-motion';
-import { Heart, Mail, Megaphone, Info } from 'lucide-react';
+import { Heart, Mail, Megaphone, Info, Copy, Check } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
 import unwrappedMint from '@/assets/unwrapped-mint.png';
 import brandMint from '@/assets/brand-mint.png';
 
