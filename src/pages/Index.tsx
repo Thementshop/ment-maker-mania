@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useGameStore } from '@/store/gameStore';
 import { useAuth } from '@/contexts/AuthContext';
 import { useChainNotifications } from '@/hooks/useChainNotifications';
+import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import SendAMentModal from '@/components/SendAMentModal';
@@ -19,7 +20,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 
 const Index = () => {
   useChainNotifications();
-  const { profile, user, session } = useAuth();
+  const { user, session, isLoading: authIsLoading } = useAuth();
   const {
     jarCount,
     totalSent,
@@ -28,6 +29,7 @@ const Index = () => {
     isLoading,
     sendMent,
     loadGameState,
+    refreshTick,
   } = useGameStore();
   
   const [isSendAMentOpen, setIsSendAMentOpen] = useState(false);
@@ -38,6 +40,8 @@ const Index = () => {
   const [prefilledCompliment, setPrefilledCompliment] = useState<string | null>(null);
   const [prefilledCategory, setPrefilledCategory] = useState<string | null>(null);
   const [prefilledSenderName, setPrefilledSenderName] = useState<string | null>(null);
+  const [liveJarCount, setLiveJarCount] = useState(0);
+  const [liveMentsSent, setLiveMentsSent] = useState(0);
 
   useEffect(() => {
     const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding');
@@ -65,26 +69,48 @@ const Index = () => {
 
   useEffect(() => {
     if (!user) return;
-
-    console.log('[MINT DEBUG][Index] Forcing home-page game state hydration', {
-      userId: user.id,
-      hasToken: !!session?.access_token,
-      currentJarBefore: useGameStore.getState().jarCount,
-    });
-
     loadGameState(user.id, session?.access_token)
-      .then(() => {
-        const state = useGameStore.getState();
-        console.log('[MINT DEBUG][Index] Home-page hydration complete', {
-          jarCount: state.jarCount,
-          totalSent: state.totalSent,
-          currentLevel: state.currentLevel,
-        });
-      })
-      .catch((error) => {
-        console.error('[MINT DEBUG][Index] Home-page hydration failed', error);
-      });
+      .catch(() => undefined);
   }, [user?.id, session?.access_token, loadGameState]);
+
+  useEffect(() => {
+    if (authIsLoading) return;
+
+    if (!user?.id) {
+      setLiveJarCount(0);
+      setLiveMentsSent(0);
+      return;
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      const [{ data: mintRows }, { count: singles }, { count: chainSends }] = await Promise.all([
+        supabase
+          .from('mint_transactions')
+          .select('amount')
+          .eq('user_id', user.id),
+        supabase
+          .from('sent_ments')
+          .select('id', { count: 'exact', head: true })
+          .eq('sender_id', user.id),
+        supabase
+          .from('chain_links')
+          .select('link_id', { count: 'exact', head: true })
+          .eq('passed_by', user.id),
+      ]);
+
+      if (cancelled) return;
+
+      const jarTotal = (mintRows ?? []).reduce((sum, row) => sum + (row.amount ?? 0), 0);
+      setLiveJarCount(jarTotal);
+      setLiveMentsSent((singles ?? 0) + (chainSends ?? 0));
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, authIsLoading, refreshTick]);
 
   return (
     <div className="min-h-screen bg-gradient-mint flex flex-col">
@@ -115,7 +141,7 @@ const Index = () => {
             <Tooltip>
               <TooltipTrigger asChild>
                 <div>
-                  <KindnessJarSection totalSent={totalSent} />
+                  <KindnessJarSection totalSent={liveMentsSent} jarCount={liveJarCount} />
                 </div>
               </TooltipTrigger>
               <TooltipContent>
@@ -130,7 +156,7 @@ const Index = () => {
             <Tooltip>
               <TooltipTrigger asChild>
                 <div>
-                  <SendMentSection onOpenModal={() => setIsSendAMentOpen(true)} />
+                  <SendMentSection onOpenModal={() => setIsSendAMentOpen(true)} lifetimeSent={liveMentsSent} />
                 </div>
               </TooltipTrigger>
               <TooltipContent><p>Send a compliment to earn mints! ✨</p></TooltipContent>
