@@ -65,25 +65,8 @@ const Index = () => {
 
   useEffect(() => {
     if (!user) return;
-
-    console.log('[MINT DEBUG][Index] Forcing home-page game state hydration', {
-      userId: user.id,
-      hasToken: !!session?.access_token,
-      currentJarBefore: useGameStore.getState().jarCount,
-    });
-
     loadGameState(user.id, session?.access_token)
-      .then(() => {
-        const state = useGameStore.getState();
-        console.log('[MINT DEBUG][Index] Home-page hydration complete', {
-          jarCount: state.jarCount,
-          totalSent: state.totalSent,
-          currentLevel: state.currentLevel,
-        });
-      })
-      .catch((error) => {
-        console.error('[MINT DEBUG][Index] Home-page hydration failed', error);
-      });
+      .catch(() => undefined);
   }, [user?.id, session?.access_token, loadGameState]);
 
   return (
@@ -115,7 +98,7 @@ const Index = () => {
             <Tooltip>
               <TooltipTrigger asChild>
                 <div>
-                  <KindnessJarSection totalSent={totalSent} />
+                  <KindnessJarSection totalSent={totalSent} userId={user?.id ?? null} authResolved={!isLoading} />
                 </div>
               </TooltipTrigger>
               <TooltipContent>
@@ -130,7 +113,7 @@ const Index = () => {
             <Tooltip>
               <TooltipTrigger asChild>
                 <div>
-                  <SendMentSection onOpenModal={() => setIsSendAMentOpen(true)} />
+                  <SendMentSection onOpenModal={() => setIsSendAMentOpen(true)} userId={user?.id ?? null} authResolved={!isLoading} />
                 </div>
               </TooltipTrigger>
               <TooltipContent><p>Send a compliment to earn mints! ✨</p></TooltipContent>
