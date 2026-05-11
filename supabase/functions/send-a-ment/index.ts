@@ -62,18 +62,31 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Failed to save ment' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // Award 1 mint
+    const { error: mintTransactionError } = await adminClient
+      .from('mint_transactions')
+      .insert({
+        user_id: userId,
+        amount: 1,
+        reason: 'send',
+      });
+
+    if (mintTransactionError) {
+      console.error('[SEND-A-MENT] Mint transaction error:', mintTransactionError);
+    }
+
+    // Keep legacy user game state counters in sync for the existing UI/store
     const { data: gameState } = await adminClient
       .from('user_game_state')
-      .select('jar_count')
+      .select('jar_count, total_sent')
       .eq('user_id', userId)
       .single();
 
     const newJarCount = (gameState?.jar_count ?? 25) + 1;
+    const newTotalSent = (gameState?.total_sent ?? 0) + 1;
 
     await adminClient
       .from('user_game_state')
-      .update({ jar_count: newJarCount, total_sent: gameState ? undefined : 1 })
+      .update({ jar_count: newJarCount, total_sent: newTotalSent })
       .eq('user_id', userId);
 
     // Increment total_sent
@@ -141,7 +154,7 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, mint_earned: true, new_jar_count: newJarCount }),
+      JSON.stringify({ success: true, mint_earned: true, new_jar_count: newJarCount, new_total_sent: newTotalSent }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
