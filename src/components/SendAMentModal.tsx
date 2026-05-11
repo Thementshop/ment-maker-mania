@@ -173,15 +173,9 @@ const SendAMentModal = ({
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || 'Failed to send ment');
 
-        if (typeof result.new_jar_count === 'number') {
-          const { useGameStore } = await import('@/store/gameStore');
-          useGameStore.setState({
-            jarCount: result.new_jar_count,
-            totalSent: typeof result.new_total_sent === 'number'
-              ? result.new_total_sent
-              : useGameStore.getState().totalSent + 1,
-          });
-        }
+        // Force homepage counters to refetch their canonical sources
+        const { useGameStore } = await import('@/store/gameStore');
+        useGameStore.getState().bumpRefresh();
       } else if (method === 'text' && contact.phone) {
         // Use SMS placeholder
         const response = await fetch(
