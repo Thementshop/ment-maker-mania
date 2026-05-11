@@ -217,16 +217,9 @@ const SendAMentModal = ({
               }),
             }
           );
-          const emailResult = await emailResp.json();
-          if (typeof emailResult.new_jar_count === 'number') {
-            const { useGameStore } = await import('@/store/gameStore');
-            useGameStore.setState({
-              jarCount: emailResult.new_jar_count,
-              totalSent: typeof emailResult.new_total_sent === 'number'
-                ? emailResult.new_total_sent
-                : useGameStore.getState().totalSent + 1,
-            });
-          }
+          await emailResp.json();
+          const { useGameStore } = await import('@/store/gameStore');
+          useGameStore.getState().bumpRefresh();
         }
       }
 
