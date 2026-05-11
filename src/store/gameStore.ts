@@ -19,6 +19,9 @@ export interface GameState {
   worldKindnessCount: number;
   isLoading: boolean;
   userId: string | null;
+  /** Bumped after any send/pass to force homepage counters to refetch canonical sources. */
+  refreshTick: number;
+  bumpRefresh: () => void;
   
   // Actions
   loadGameState: (userId: string, token?: string) => Promise<void>;
