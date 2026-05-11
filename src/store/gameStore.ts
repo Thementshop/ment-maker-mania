@@ -98,6 +98,7 @@ const initialState = {
   worldKindnessCount: 0,
   isLoading: false,
   userId: null,
+  refreshTick: 0,
 };
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -126,7 +127,8 @@ const restFetch = async (table: string, params: string, token: string): Promise<
 
 export const useGameStore = create<GameState>()((set, get) => ({
   ...initialState,
-  
+  bumpRefresh: () => set((s) => ({ refreshTick: s.refreshTick + 1 })),
+
   loadGameState: async (userId: string, passedToken?: string) => {
     console.log('[MINT DEBUG] loadGameState EXECUTE', {
       userId,
