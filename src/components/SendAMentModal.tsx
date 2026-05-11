@@ -173,10 +173,14 @@ const SendAMentModal = ({
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || 'Failed to send ment');
 
-        if (result.new_jar_count) {
+        if (typeof result.new_jar_count === 'number') {
           const { useGameStore } = await import('@/store/gameStore');
-          useGameStore.setState({ jarCount: result.new_jar_count });
-          useGameStore.setState(s => ({ totalSent: s.totalSent + 1 }));
+          useGameStore.setState({
+            jarCount: result.new_jar_count,
+            totalSent: typeof result.new_total_sent === 'number'
+              ? result.new_total_sent
+              : useGameStore.getState().totalSent + 1,
+          });
         }
       } else if (method === 'text' && contact.phone) {
         // Use SMS placeholder
@@ -220,10 +224,14 @@ const SendAMentModal = ({
             }
           );
           const emailResult = await emailResp.json();
-          if (emailResult.new_jar_count) {
+          if (typeof emailResult.new_jar_count === 'number') {
             const { useGameStore } = await import('@/store/gameStore');
-            useGameStore.setState({ jarCount: emailResult.new_jar_count });
-            useGameStore.setState(s => ({ totalSent: s.totalSent + 1 }));
+            useGameStore.setState({
+              jarCount: emailResult.new_jar_count,
+              totalSent: typeof emailResult.new_total_sent === 'number'
+                ? emailResult.new_total_sent
+                : useGameStore.getState().totalSent + 1,
+            });
           }
         }
       }
