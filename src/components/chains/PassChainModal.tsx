@@ -424,9 +424,10 @@ const PassChainModal = ({
         );
       }
 
-      // Update jar in UI immediately
+      // Update jar in UI immediately (legacy local state) + force canonical refetch
       const { useGameStore } = await import('@/store/gameStore');
       useGameStore.setState({ jarCount: newJarCount });
+      useGameStore.getState().bumpRefresh();
 
       // 6b. Award +1 mint to recipient (fire-and-forget, non-blocking)
       try {
