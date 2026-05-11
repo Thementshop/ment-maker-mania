@@ -115,7 +115,7 @@ const Index = () => {
             <Tooltip>
               <TooltipTrigger asChild>
                 <div>
-                  <KindnessJarSection jarCount={jarCount} totalSent={totalSent} />
+                  <KindnessJarSection totalSent={totalSent} />
                 </div>
               </TooltipTrigger>
               <TooltipContent>
@@ -130,11 +130,7 @@ const Index = () => {
             <Tooltip>
               <TooltipTrigger asChild>
                 <div>
-                  <SendMentSection 
-                    onOpenModal={() => setIsSendAMentOpen(true)} 
-                    totalSent={totalSent} 
-                  />
-                </div>
+                  <SendMentSection onOpenModal={() => setIsSendAMentOpen(true)} />
               </TooltipTrigger>
               <TooltipContent><p>Send a compliment to earn mints! ✨</p></TooltipContent>
             </Tooltip>
