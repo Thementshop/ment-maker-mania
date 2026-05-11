@@ -19,7 +19,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 
 const Index = () => {
   useChainNotifications();
-  const { profile, user, session } = useAuth();
+  const { user, session, isLoading: authIsLoading } = useAuth();
   const {
     jarCount,
     totalSent,
@@ -98,7 +98,7 @@ const Index = () => {
             <Tooltip>
               <TooltipTrigger asChild>
                 <div>
-                  <KindnessJarSection totalSent={totalSent} userId={user?.id ?? null} authResolved={!isLoading} />
+                  <KindnessJarSection totalSent={totalSent} userId={user?.id ?? null} authResolved={!authIsLoading} />
                 </div>
               </TooltipTrigger>
               <TooltipContent>
@@ -113,7 +113,7 @@ const Index = () => {
             <Tooltip>
               <TooltipTrigger asChild>
                 <div>
-                  <SendMentSection onOpenModal={() => setIsSendAMentOpen(true)} userId={user?.id ?? null} authResolved={!isLoading} />
+                  <SendMentSection onOpenModal={() => setIsSendAMentOpen(true)} userId={user?.id ?? null} authResolved={!authIsLoading} />
                 </div>
               </TooltipTrigger>
               <TooltipContent><p>Send a compliment to earn mints! ✨</p></TooltipContent>
