@@ -3,19 +3,20 @@ import { motion } from 'framer-motion';
 import MintButton from '@/components/MintButton';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useGameStore } from '@/store/gameStore';
 
 interface SendMentSectionProps {
   onOpenModal: () => void;
-  totalSent: number;
 }
 
-const SendMentSection = ({ onOpenModal, totalSent }: SendMentSectionProps) => {
+const SendMentSection = ({ onOpenModal }: SendMentSectionProps) => {
   const { user } = useAuth();
+  const refreshTick = useGameStore((s) => s.refreshTick);
   const [lifetimeSent, setLifetimeSent] = useState<number>(0);
 
   const fetchCount = useCallback(async () => {
     if (!user?.id) return;
-    // Total ments sent = single ments + every chain link this user passed (one per recipient)
+    // Canonical source: COUNT(sent_ments) + COUNT(chain_links) for this user
     const [{ count: singles }, { count: chainSends }] = await Promise.all([
       supabase
         .from('sent_ments')
@@ -31,7 +32,7 @@ const SendMentSection = ({ onOpenModal, totalSent }: SendMentSectionProps) => {
 
   useEffect(() => {
     fetchCount();
-  }, [fetchCount, totalSent]);
+  }, [fetchCount, refreshTick]);
 
   return (
     <motion.div
