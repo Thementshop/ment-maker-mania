@@ -29,6 +29,7 @@ const Index = () => {
     isLoading,
     sendMent,
     loadGameState,
+    refreshTick,
   } = useGameStore();
   
   const [isSendAMentOpen, setIsSendAMentOpen] = useState(false);
@@ -109,7 +110,7 @@ const Index = () => {
     return () => {
       cancelled = true;
     };
-  }, [user?.id, authIsLoading]);
+  }, [user?.id, authIsLoading, refreshTick]);
 
   return (
     <div className="min-h-screen bg-gradient-mint flex flex-col">
