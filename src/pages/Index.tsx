@@ -131,6 +131,7 @@ const Index = () => {
               <TooltipTrigger asChild>
                 <div>
                   <SendMentSection onOpenModal={() => setIsSendAMentOpen(true)} />
+                </div>
               </TooltipTrigger>
               <TooltipContent><p>Send a compliment to earn mints! ✨</p></TooltipContent>
             </Tooltip>
