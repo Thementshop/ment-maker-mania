@@ -1,45 +1,13 @@
 import { useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import MintButton from '@/components/MintButton';
-import { supabase } from '@/integrations/supabase/client';
-import { useGameStore } from '@/store/gameStore';
 
 interface SendMentSectionProps {
   onOpenModal: () => void;
-  userId: string | null;
-  authResolved: boolean;
+  lifetimeSent: number;
 }
 
-const SendMentSection = ({ onOpenModal, userId, authResolved }: SendMentSectionProps) => {
-  const refreshTick = useGameStore((s) => s.refreshTick);
-  const [lifetimeSent, setLifetimeSent] = useState<number>(0);
-
-  const fetchCount = useCallback(async () => {
-    if (!authResolved) return;
-
-    if (!userId) {
-      setLifetimeSent(0);
-      return;
-    }
-
-    // Canonical source: COUNT(sent_ments) + COUNT(chain_links) for this user
-    const [{ count: singles }, { count: chainSends }] = await Promise.all([
-      supabase
-        .from('sent_ments')
-        .select('id', { count: 'exact', head: true })
-        .eq('sender_id', userId),
-      supabase
-        .from('chain_links')
-        .select('link_id', { count: 'exact', head: true })
-        .eq('passed_by', userId),
-    ]);
-    setLifetimeSent((singles ?? 0) + (chainSends ?? 0));
-  }, [userId, authResolved]);
-
-  useEffect(() => {
-    fetchCount();
-  }, [fetchCount, refreshTick]);
-
+const SendMentSection = ({ onOpenModal, lifetimeSent }: SendMentSectionProps) => {
   return (
     <motion.div
       className="bg-card rounded-2xl p-6 shadow-lg border border-border h-full flex flex-col items-center justify-center min-h-[280px]"
