@@ -3,38 +3,35 @@ import { motion } from 'framer-motion';
 import MintJar from '@/components/MintJar';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useGameStore } from '@/store/gameStore';
 
 interface KindnessJarSectionProps {
-  jarCount: number;
   totalSent: number;
 }
 
-const KindnessJarSection = ({ jarCount, totalSent }: KindnessJarSectionProps) => {
+const KindnessJarSection = ({ totalSent }: KindnessJarSectionProps) => {
   const { user } = useAuth();
-  const [liveJarCount, setLiveJarCount] = useState<number>(jarCount);
+  const refreshTick = useGameStore((s) => s.refreshTick);
+  const [liveJarCount, setLiveJarCount] = useState<number>(0);
 
   useEffect(() => {
     if (!user?.id) {
-      setLiveJarCount(jarCount);
+      setLiveJarCount(0);
       return;
     }
     let cancelled = false;
     (async () => {
-      // Kindness Jar = SUM(amount) from mint_transactions for this user
+      // Canonical source: SUM(amount) from mint_transactions for this user
       const { data, error } = await supabase
         .from('mint_transactions')
         .select('amount')
         .eq('user_id', user.id);
-      if (cancelled) return;
-      if (error || !data) {
-        setLiveJarCount(jarCount);
-        return;
-      }
+      if (cancelled || error || !data) return;
       const sum = data.reduce((acc, row) => acc + (row.amount ?? 0), 0);
       setLiveJarCount(sum);
     })();
     return () => { cancelled = true; };
-  }, [user?.id, jarCount, totalSent]);
+  }, [user?.id, refreshTick]);
 
   return (
     <motion.div
