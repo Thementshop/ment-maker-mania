@@ -10,39 +10,29 @@ interface HowItWorksModalProps {
 
 const steps = [
   {
-    icon: <img src={unwrappedMint} alt="Mint" className="w-16 h-16 object-contain" />,
-    title: "Collect Ments",
-    description: "Start your journey with 25 mints in your jar. Earn 1 extra mint every time you send a compli-ment to brighten someone's day."
-  },
-  {
     icon: <Send className="w-12 h-12 text-primary" />,
-    title: "Send a Compli-Ment",
-    description: "Pick from our library of uplifting compliments — or write your own — and send it to anyone via email or text. Each send adds a mint to your jar."
+    title: "Send a Ment",
+    description: "Pick a compliment, wrap it up like the sweetest little mint candy, and send it to someone who deserves a brighter day. Every send earns you a mint for your jar."
   },
   {
     icon: <img src={wrappedMint} alt="Wrapped Mint" className="w-16 h-16 object-contain" />,
-    title: "Start a Chain",
-    description: "Send a compliment to up to 3 people and challenge them to pass it forward within 24 hours. Starting a chain rewards YOU with 5 mints instantly — and each recipient earns 1 mint too, but only if they keep the kindness moving within 24 hours!"
+    title: "They unwrap something wonderful",
+    description: "Your recipient gets a notification that someone is thinking of them right now. They tap to unwrap their mint and find your compliment waiting inside."
   },
   {
     icon: <Heart className="w-12 h-12 text-candy-pink fill-candy-pink" />,
-    title: "Receiving a Ment",
-    description: "When someone sends you a Ment, you'll get an email or text with a link to unwrap it. Savor your moment 💚 — you have 48 hours to send one back or pass one forward to add this mint permanently to your jar. Wait longer and the mint fades away — so keep the kindness flowing!"
+    title: "Pass it forward",
+    description: "Received a Ment? Pass the kindness to someone new within 48 hours and that mint is yours to keep in your jar forever. Life got wonderfully busy? One tap of a Pause Token adds another 48 hours to your clock."
   },
   {
-    icon: <Pause className="w-12 h-12 text-mint" />,
-    title: "Pause Tokens",
-    description: "Running low on time? Use a Pause Token to get more time. Single Ments get 48 extra hours, chain Ments get 24 extra hours. Every new account starts with 5 free Pause Tokens — and you earn 1 more automatically every week. Get more time with Pause Tokens anytime in the store."
+    icon: <img src={unwrappedMint} alt="Mint" className="w-16 h-16 object-contain" />,
+    title: "Watch your jar grow",
+    description: "Every mint you earn fills your Kindness Jar a little more. The more kindness you spread, the more your jar transforms. One mint becomes five, five becomes twenty-five — and the journey has only just begun."
   },
   {
     icon: <Trophy className="w-12 h-12 text-candy-yellow" />,
-    title: "Level Up",
-    description: "The more ments you send, the higher you climb! Unlock fun titles from 'Encourage-Ment' to 'Enlighment'."
-  },
-  {
-    icon: <Globe className="w-12 h-12 text-mint" />,
-    title: "Join the Movement",
-    description: "Every ment you send adds to the global kindness counter. Together, we're making the world sweeter! 🌍"
+    title: "Start a Chain",
+    description: "Send a Ment to multiple people at once and watch kindness travel further than you ever expected. Starting a chain earns you 5 mints instantly — and if life gets wonderfully busy, one tap of a Pause Token adds another 24 hours to your clock so that sweet little chain can keep going."
   }
 ];
 

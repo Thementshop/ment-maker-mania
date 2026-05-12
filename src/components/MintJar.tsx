@@ -100,17 +100,6 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
         </p>
       )}
 
-      {/* Next tier goal */}
-      {nextTier ? (
-        <p className="text-xs text-muted-foreground text-center mt-1.5">
-          {mintsToNext} mints until {nextTier.name} Jar 🏆
-        </p>
-      ) : (
-        <p className="text-xs text-primary text-center font-semibold mt-1.5">
-          🏆 Max Tier Reached!
-        </p>
-      )}
-
       {/* Tier-Up Celebration Modal */}
       <AnimatePresence>
         {showTierUp && (

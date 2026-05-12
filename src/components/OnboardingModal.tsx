@@ -12,8 +12,8 @@ interface OnboardingModalProps {
 const screens = [
   {
     emoji: '💚',
-    title: 'Welcome to Ment Shop!',
-    description: 'You start with 25 mints in your Kindness Jar and 5 Pause Tokens. Use Pause Tokens to get more time when you\'re in a chain and life gets busy.',
+    title: 'WE HAVE BEEN WAITING FOR YOU',
+    description: "Your Kindness Jar is here, your very first mint is inside, and honestly the universe is already a little shinier. Go make someone's day. 💚",
     icon: <Heart className="h-12 w-12 text-primary" />,
     color: 'from-primary/20 to-primary/10',
   },
