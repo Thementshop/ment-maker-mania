@@ -81,7 +81,7 @@ Deno.serve(async (req) => {
       .eq('user_id', userId)
       .single();
 
-    const newJarCount = (gameState?.jar_count ?? 25) + 1;
+    const newJarCount = (gameState?.jar_count ?? 1) + 1;
     const newTotalSent = (gameState?.total_sent ?? 0) + 1;
 
     await adminClient
