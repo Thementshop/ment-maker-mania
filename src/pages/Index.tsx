@@ -75,6 +75,7 @@ const Index = () => {
 
   useEffect(() => {
     console.log('user id:', user?.id);
+    console.log('auth loading:', authIsLoading);
 
     if (authIsLoading) return;
 
