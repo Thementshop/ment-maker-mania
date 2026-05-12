@@ -83,7 +83,7 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
         animate={{ scale: 1 }}
         transition={{ type: 'spring', stiffness: 300 }}
       >
-        {jarCount} mints
+        {jarCount} {jarCount === 1 ? 'Mint' : 'Ments'}
       </motion.p>
 
       {/* Level progress bar */}
