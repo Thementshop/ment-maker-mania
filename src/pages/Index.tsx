@@ -74,6 +74,8 @@ const Index = () => {
   }, [user?.id, session?.access_token, loadGameState]);
 
   useEffect(() => {
+    console.log('user id:', user?.id);
+
     if (authIsLoading) return;
 
     if (!user?.id) {
