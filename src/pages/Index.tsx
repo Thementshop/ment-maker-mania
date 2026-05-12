@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { useGameStore } from '@/store/gameStore';
 import { useAuth } from '@/contexts/AuthContext';
 import { useChainNotifications } from '@/hooks/useChainNotifications';
-import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import SendAMentModal from '@/components/SendAMentModal';
@@ -17,6 +16,7 @@ import StartChainModal from '@/components/chains/StartChainModal';
 import tmsBanner from '@/assets/TMS_banner.png';
 import brandMint from '@/assets/brand-mint.png';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { getFreshAccessToken } from '@/utils/freshToken';
 
 const Index = () => {
   useChainNotifications();
@@ -74,16 +74,9 @@ const Index = () => {
   }, [user?.id, session?.access_token, loadGameState]);
 
   useEffect(() => {
-    console.log('user id:', user?.id);
-    console.log('auth loading:', authIsLoading);
-
-    if (authIsLoading) {
-      console.log('SKIPPING FETCH — reason:', 'authIsLoading is true');
-      return;
-    }
+    if (authIsLoading) return;
 
     if (!user?.id) {
-      console.log('SKIPPING FETCH — reason:', 'user?.id is missing');
       setLiveJarCount(0);
       setLiveMentsSent(0);
       return;
@@ -92,38 +85,58 @@ const Index = () => {
     let cancelled = false;
 
     (async () => {
-      console.log('ABOUT TO FETCH mint_transactions');
-      const mintTransactionsQuery = supabase
-        .from('mint_transactions')
-        .select('amount')
-        .eq('user_id', user.id);
+      const token = (await getFreshAccessToken()) || session?.access_token || null;
+      if (!token) return;
 
-      console.log('ABOUT TO FETCH sent_ments');
-      const sentMentsQuery = supabase
-        .from('sent_ments')
-        .select('id', { count: 'exact', head: true })
-        .eq('sender_id', user.id);
+      const baseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const apiKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      const controller = new AbortController();
+      const timeoutId = window.setTimeout(() => controller.abort(), 12000);
 
-      console.log('ABOUT TO FETCH chain_links');
-      const chainLinksQuery = supabase
-        .from('chain_links')
-        .select('link_id', { count: 'exact', head: true })
-        .eq('passed_by', user.id);
+      try {
+        const [mintRes, sentRes, chainRes] = await Promise.all([
+          fetch(`${baseUrl}/rest/v1/mint_transactions?select=amount&user_id=eq.${user.id}`, {
+            headers: {
+              apikey: apiKey,
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            signal: controller.signal,
+          }),
+          fetch(`${baseUrl}/rest/v1/sent_ments?select=id&sender_id=eq.${user.id}`, {
+            method: 'HEAD',
+            headers: {
+              apikey: apiKey,
+              Authorization: `Bearer ${token}`,
+              Prefer: 'count=exact',
+            },
+            signal: controller.signal,
+          }),
+          fetch(`${baseUrl}/rest/v1/chain_links?select=link_id&passed_by=eq.${user.id}`, {
+            method: 'HEAD',
+            headers: {
+              apikey: apiKey,
+              Authorization: `Bearer ${token}`,
+              Prefer: 'count=exact',
+            },
+            signal: controller.signal,
+          }),
+        ]);
 
-      const [{ data: mintRows }, { count: singles }, { count: chainSends }] = await Promise.all([
-        mintTransactionsQuery,
-        sentMentsQuery,
-        chainLinksQuery,
-      ]);
+        if (!mintRes.ok || !sentRes.ok || !chainRes.ok) return;
 
-      if (cancelled) {
-        console.log('SKIPPING FETCH — reason:', 'effect was cancelled before state update');
-        return;
+        const mintRows = await mintRes.json();
+        const singles = Number(sentRes.headers.get('content-range')?.split('/')[1] ?? 0);
+        const chainSends = Number(chainRes.headers.get('content-range')?.split('/')[1] ?? 0);
+
+        if (cancelled) return;
+
+        const jarTotal = (mintRows ?? []).reduce((sum: number, row: { amount: number | null }) => sum + (row.amount ?? 0), 0);
+        setLiveJarCount(jarTotal);
+        setLiveMentsSent(singles + chainSends);
+      } finally {
+        window.clearTimeout(timeoutId);
       }
-
-      const jarTotal = (mintRows ?? []).reduce((sum, row) => sum + (row.amount ?? 0), 0);
-      setLiveJarCount(jarTotal);
-      setLiveMentsSent((singles ?? 0) + (chainSends ?? 0));
     })();
 
     return () => {
