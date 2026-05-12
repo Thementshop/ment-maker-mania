@@ -103,8 +103,7 @@ const Index = () => {
             },
             signal: controller.signal,
           }),
-          fetch(`${baseUrl}/rest/v1/sent_ments?select=id&sender_id=eq.${user.id}`, {
-            method: 'HEAD',
+          fetch(`${baseUrl}/rest/v1/sent_ments?select=id&sender_id=eq.${user.id}&limit=1`, {
             headers: {
               apikey: apiKey,
               Authorization: `Bearer ${token}`,
@@ -112,8 +111,7 @@ const Index = () => {
             },
             signal: controller.signal,
           }),
-          fetch(`${baseUrl}/rest/v1/chain_links?select=link_id&passed_by=eq.${user.id}`, {
-            method: 'HEAD',
+          fetch(`${baseUrl}/rest/v1/chain_links?select=link_id&passed_by=eq.${user.id}&limit=1`, {
             headers: {
               apikey: apiKey,
               Authorization: `Bearer ${token}`,
