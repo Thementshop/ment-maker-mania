@@ -77,9 +77,13 @@ const Index = () => {
     console.log('user id:', user?.id);
     console.log('auth loading:', authIsLoading);
 
-    if (authIsLoading) return;
+    if (authIsLoading) {
+      console.log('SKIPPING FETCH — reason:', 'authIsLoading is true');
+      return;
+    }
 
     if (!user?.id) {
+      console.log('SKIPPING FETCH — reason:', 'user?.id is missing');
       setLiveJarCount(0);
       setLiveMentsSent(0);
       return;
@@ -88,22 +92,34 @@ const Index = () => {
     let cancelled = false;
 
     (async () => {
+      console.log('ABOUT TO FETCH mint_transactions');
+      const mintTransactionsQuery = supabase
+        .from('mint_transactions')
+        .select('amount')
+        .eq('user_id', user.id);
+
+      console.log('ABOUT TO FETCH sent_ments');
+      const sentMentsQuery = supabase
+        .from('sent_ments')
+        .select('id', { count: 'exact', head: true })
+        .eq('sender_id', user.id);
+
+      console.log('ABOUT TO FETCH chain_links');
+      const chainLinksQuery = supabase
+        .from('chain_links')
+        .select('link_id', { count: 'exact', head: true })
+        .eq('passed_by', user.id);
+
       const [{ data: mintRows }, { count: singles }, { count: chainSends }] = await Promise.all([
-        supabase
-          .from('mint_transactions')
-          .select('amount')
-          .eq('user_id', user.id),
-        supabase
-          .from('sent_ments')
-          .select('id', { count: 'exact', head: true })
-          .eq('sender_id', user.id),
-        supabase
-          .from('chain_links')
-          .select('link_id', { count: 'exact', head: true })
-          .eq('passed_by', user.id),
+        mintTransactionsQuery,
+        sentMentsQuery,
+        chainLinksQuery,
       ]);
 
-      if (cancelled) return;
+      if (cancelled) {
+        console.log('SKIPPING FETCH — reason:', 'effect was cancelled before state update');
+        return;
+      }
 
       const jarTotal = (mintRows ?? []).reduce((sum, row) => sum + (row.amount ?? 0), 0);
       setLiveJarCount(jarTotal);
