@@ -274,9 +274,9 @@ const MentPage = () => {
                 {isShareMode ? (
                   <>💚 A little kindness from <strong>{ment!.sender_name}</strong></>
                 ) : isLoggedIn ? (
-                  <>This mint is yours to keep. 💚 Pass the kindness forward whenever the moment feels right — and earn another mint for your jar.</>
+                  <>That mint just landed in your jar and it is SO proud to be there. Want to spread the sweetness? Send a Ment to someone who deserves a brighter day.</>
                 ) : (
-                  <>Create a free account to add this mint to your Kindness Jar — yours to keep, no timer, no rush. 💚</>
+                  <>This mint is waiting for you. Create a free account and start filling your very own Kindness Jar — one sweet little compliment at a time.</>
                 )}
               </motion.p>
 
@@ -324,7 +324,7 @@ const MentPage = () => {
                       className="block w-full rounded-xl px-6 py-3 font-semibold text-center transition-all hover:scale-[1.02] border-2"
                       style={{ borderColor: '#58fc59', color: '#166534' }}
                     >
-                      Send to Someone New
+                      Choose someone new
                     </button>
                   </>
                 ) : (
