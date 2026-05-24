@@ -153,7 +153,7 @@ function primaryCTA(href: string, label: string, subtext?: string): string {
 function buildChainReceivedEmail(data: TemplateData): string {
   // Sender identity is intentionally NOT used here — the surprise is revealed only on unwrap.
   const inner = `
-    ${urgencyBanner('24-Hour Window', 'Pass it forward within 24 hours or the chain breaks.')}
+    ${urgencyBanner('48-Hour Window', 'Pass it forward within 48 hours or the chain breaks.')}
     <h2 style="color:${BRAND_DARK};margin:0 0 12px;font-size:30px;font-weight:800;line-height:1.15;letter-spacing:-0.8px;">
       ${escapeHtml(NOTIFICATION_COPY.chain_received.subject)}
     </h2>
