@@ -423,9 +423,9 @@ export const useMentChains = (): UseMentChainsReturn => {
 
       if (fetchError) throw fetchError;
 
-      // Reset timer to NOW + 24 hours
+      // Reset timer to NOW + 48 hours
       const newExpiresAt = new Date();
-      newExpiresAt.setHours(newExpiresAt.getHours() + 24);
+      newExpiresAt.setHours(newExpiresAt.getHours() + 48);
 
       const newShareCount = (chainData?.share_count || 0) + 1;
       const newTier = getChainTier(newShareCount);
@@ -501,8 +501,8 @@ export const useMentChains = (): UseMentChainsReturn => {
         return false;
       }
 
-      // Reset timer to NOW + 24 hours
-      const newExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      // Reset timer to NOW + 48 hours
+      const newExpiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
 
       // Update chain timer
       const { error: chainError } = await supabase

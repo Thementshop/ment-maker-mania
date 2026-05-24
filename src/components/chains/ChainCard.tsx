@@ -93,7 +93,7 @@ const ChainCard = ({
 
       toast({
         title: "Pause token used! ⏸️",
-        description: "Timer reset to 24 hours",
+        description: "Added 48 hours to the chain timer",
       });
 
       await refetch();
@@ -253,7 +253,7 @@ const ChainCard = ({
             </TooltipTrigger>
             <TooltipContent>
               <p className="text-sm">
-                Use Pause Token (+24h)
+                Use Pause Token (+48h)
                 <br />
                 <span className="text-muted-foreground">You have {pauseTokens} token{pauseTokens !== 1 ? 's' : ''}</span>
               </p>

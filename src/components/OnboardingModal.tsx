@@ -20,13 +20,13 @@ const screens = [
   {
     emoji: '🔗',
     title: 'How Chains Work',
-    description: 'Start a chain by picking a compliment and sending it to up to 3 people. Each person has 24 hours to pass it forward!',
+    description: 'Start a chain by picking a compliment and sending it to up to 3 people. Each person has 48 hours to pass it forward!',
     icon: <Link2 className="h-12 w-12 text-orange-500" />,
     color: 'from-orange-500/20 to-orange-500/10',
     steps: [
       '1. Pick a compliment',
       '2. Send to up to 3 people',
-      '3. They pass it forward within 24 hours',
+      '3. They pass it forward within 48 hours',
     ],
   },
   {

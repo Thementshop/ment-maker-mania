@@ -153,7 +153,7 @@ function primaryCTA(href: string, label: string, subtext?: string): string {
 function buildChainReceivedEmail(data: TemplateData): string {
   // Sender identity is intentionally NOT used here — the surprise is revealed only on unwrap.
   const inner = `
-    ${urgencyBanner('24-Hour Window', 'Pass it forward within 24 hours or the chain breaks.')}
+    ${urgencyBanner('48-Hour Window', 'Pass it forward within 48 hours or the chain breaks.')}
     <h2 style="color:${BRAND_DARK};margin:0 0 12px;font-size:30px;font-weight:800;line-height:1.15;letter-spacing:-0.8px;">
       ${escapeHtml(NOTIFICATION_COPY.chain_received.subject)}
     </h2>
@@ -168,7 +168,7 @@ function buildChainReceivedEmail(data: TemplateData): string {
       Savor your moment 💚
     </p>
     <p style="color:#4b5563;font-size:14px;line-height:1.6;margin:0 0 20px;text-align:center;">
-      To add this mint to your jar, send one back to whoever started this chain — or brighten someone else's day within 24 hours and it's yours to keep!
+      To add this mint to your jar, send one back to whoever started this chain — or brighten someone else's day within 48 hours and it's yours to keep!
     </p>
     <p style="color:#666666;font-size:13px;line-height:1.5;margin:0 0 32px;text-align:center;">
       Need more time? Get more time with Pause Tokens inside the app.
@@ -287,7 +287,7 @@ function buildMentReceivedEmail(data: TemplateData): string {
       Savor your moment 💚
     </p>
     <p style="color:#4b5563;font-size:14px;line-height:1.6;margin:0 0 32px;text-align:center;">
-      To add this mint to your jar, send one back to whoever sent this — or brighten someone else's day within 48 hours and it's yours to keep!
+      This mint is yours to keep. Pass the kindness forward whenever the moment feels right to earn another mint for your jar.
     </p>
   `;
   return shell(NOTIFICATION_COPY.single_ment.eyebrow, inner);
