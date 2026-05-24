@@ -296,7 +296,7 @@ const Store = () => {
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li className="flex items-start gap-2">
                 <Check className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-                <span>Use a token to reset a chain's countdown back to 24 hours</span>
+                <span>Use a token to add 48 hours on top of a chain's remaining time</span>
               </li>
               <li className="flex items-start gap-2">
                 <Check className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
