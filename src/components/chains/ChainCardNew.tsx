@@ -227,11 +227,11 @@ const ChainCardNew = ({
                 <div className="flex flex-col items-center gap-1.5">
                   <span className={`text-xs flex items-center gap-1 ${
                     countdown.hours < 2 ? 'text-destructive' : 
-                    countdown.hours < 6 ? 'text-yellow-600' : 'text-muted-foreground'
+                    countdown.hours < 12 ? 'text-yellow-600' : 'text-muted-foreground'
                   }`}>
                     ⏳ {countdown.formattedTime} remaining
                   </span>
-                  {countdown.hours < 6 && (
+                  {countdown.hours < 12 && (
                     <Button
                       variant="ghost"
                       size="sm"
