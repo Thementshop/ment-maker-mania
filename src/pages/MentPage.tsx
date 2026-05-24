@@ -83,12 +83,15 @@ const MentPage = () => {
 
       try {
         const mentRes = await fetch(
-          `${SUPABASE_URL}/rest/v1/sent_ments?id=eq.${mentId}&select=compliment_text,category,sent_at,sender_id,recipient_expires_at`,
+          `${SUPABASE_URL}/rest/v1/rpc/get_ment_for_reveal`,
           {
+            method: 'POST',
             headers: {
               apikey: SUPABASE_KEY,
               Authorization: `Bearer ${SUPABASE_KEY}`,
+              'Content-Type': 'application/json',
             },
+            body: JSON.stringify({ _ment_id: mentId }),
           }
         );
         const mentRows = await mentRes.json();
@@ -104,12 +107,15 @@ const MentPage = () => {
         let senderName = 'Someone';
         if (data.sender_id) {
           const profileRes = await fetch(
-            `${SUPABASE_URL}/rest/v1/profiles?id=eq.${data.sender_id}&select=display_name`,
+            `${SUPABASE_URL}/rest/v1/rpc/get_public_profiles`,
             {
+              method: 'POST',
               headers: {
                 apikey: SUPABASE_KEY,
                 Authorization: `Bearer ${SUPABASE_KEY}`,
+                'Content-Type': 'application/json',
               },
+              body: JSON.stringify({ _ids: [data.sender_id] }),
             }
           );
           const profiles = await profileRes.json();
