@@ -364,7 +364,7 @@ const PassChainModal = ({
       }
 
       // 4. Update chain
-      const newExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      const newExpiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
       const newShareCount = chain.share_count + 1;
       const newTier = getChainTier(newShareCount);
 
