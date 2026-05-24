@@ -423,9 +423,9 @@ export const useMentChains = (): UseMentChainsReturn => {
 
       if (fetchError) throw fetchError;
 
-      // Reset timer to NOW + 24 hours
+      // Reset timer to NOW + 48 hours
       const newExpiresAt = new Date();
-      newExpiresAt.setHours(newExpiresAt.getHours() + 24);
+      newExpiresAt.setHours(newExpiresAt.getHours() + 48);
 
       const newShareCount = (chainData?.share_count || 0) + 1;
       const newTier = getChainTier(newShareCount);
