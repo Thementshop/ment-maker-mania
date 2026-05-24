@@ -641,7 +641,7 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
           </p>
           <div className="flex items-center justify-center gap-2 mt-4 text-orange-500">
             <Sparkles className="h-5 w-5" />
-            <span className="font-semibold">24h Timer Started</span>
+            <span className="font-semibold">48h Timer Started</span>
             <Sparkles className="h-5 w-5" />
           </div>
         </motion.div>
