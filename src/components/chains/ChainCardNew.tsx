@@ -253,7 +253,7 @@ const ChainCardNew = ({
         <div className="px-4 pb-4 space-y-2">
           {isYourTurn && chain.status === 'active' ? (
             <>
-              {countdown.timeLeft > 0 && countdown.timeLeft <= 6 * 3600 * 1000 && (
+              {countdown.timeLeft > 0 && countdown.timeLeft <= 12 * 3600 * 1000 && (
                 <button
                   type="button"
                   onClick={() => navigate('/store')}
