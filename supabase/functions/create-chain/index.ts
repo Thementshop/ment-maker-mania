@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
 
     console.log('Creating chain with', recipientList.length, 'recipients');
 
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
     const finalName = chainName?.trim() || `@${user.user_metadata?.full_name || user.email?.split('@')[0] || 'User'}'s Chain`;
 
     // Use adminClient for all DB operations to bypass RLS and avoid token issues
