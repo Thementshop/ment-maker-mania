@@ -193,7 +193,7 @@ const Store = () => {
         {/* PAUSE TOKENS SECTION */}
         <section className="mb-10">
           <h2 className="text-2xl font-bold text-foreground mb-1">Get more time with Pause Tokens</h2>
-          <p className="text-sm text-muted-foreground mb-5">Reset any chain timer back to 24 hours.</p>
+          <p className="text-sm text-muted-foreground mb-5">Add 48 more hours to any chain timer.</p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {pauseTiers.map((tier, idx) => (
