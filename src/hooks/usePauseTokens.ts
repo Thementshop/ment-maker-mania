@@ -113,7 +113,7 @@ export const usePauseTokens = (): UsePauseTokensReturn => {
     if (!user) return false;
     if (!state.unlimited && state.pauseTokens <= 0) return false;
     try {
-      // Server-side RPC adds 24h on top of remaining time (does not reset).
+      // Server-side RPC adds 48h on top of remaining time (does not reset).
       const { data, error } = await supabase.rpc('extend_chain_timer', { _chain_id: chainId });
       if (error) throw error;
       const result = data as { success: boolean; unlimited?: boolean; tokens_remaining?: number | null } | null;
