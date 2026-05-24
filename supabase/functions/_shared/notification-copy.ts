@@ -24,8 +24,8 @@ export const NOTIFICATION_COPY = {
     eyebrow: 'A Ment Just Arrived',
   },
   chain_received: {
-    subject: '⏰ Someone added you to a kindness chain — you have 24 hours!',
-    body: "You're the next link in a kindness chain. Pass it forward within 24 hours or the chain breaks.",
+    subject: '⏰ Someone added you to a kindness chain — you have 48 hours!',
+    body: "You're the next link in a kindness chain. Pass it forward within 48 hours or the chain breaks.",
     cta: 'Reveal Your Compliment',
     eyebrow: 'A Chain Just Reached You',
   },
