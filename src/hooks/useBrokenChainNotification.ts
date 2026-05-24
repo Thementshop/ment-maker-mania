@@ -65,34 +65,25 @@ export const useBrokenChainNotification = () => {
       .eq('chain_id', chain.chain_id)
       .order('passed_at', { ascending: true });
 
-    // Resolve display names for link authors
-    const resolvedLinks = await Promise.all(
-      (links || []).map(async (link) => {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('display_name')
-          .eq('id', link.passed_by)
-          .single();
-        
-        return {
-          ...link,
-          passed_by_display_name: profile?.display_name || null,
-        };
-      })
-    );
+    // Resolve display names for link authors via safe RPC
+    const linkAuthorIds = Array.from(new Set((links || []).map((l) => l.passed_by).filter(Boolean)));
+    const { data: linkProfiles } = linkAuthorIds.length
+      ? await supabase.rpc('get_public_profiles', { _ids: linkAuthorIds })
+      : { data: [] as any[] };
+    const profileMap = new Map(((linkProfiles || []) as any[]).map((p: any) => [p.id, p.display_name]));
+
+    const resolvedLinks = (links || []).map((link) => ({
+      ...link,
+      passed_by_display_name: (profileMap.get(link.passed_by) as string) || null,
+    }));
 
     // Resolve broken_by display name
     let brokenByDisplayName: string | undefined;
     if (chain.broken_by) {
-      // Check if it's a UUID (registered user) or email/phone
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       if (uuidRegex.test(chain.broken_by)) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('display_name')
-          .eq('id', chain.broken_by)
-          .single();
-        brokenByDisplayName = profile?.display_name || undefined;
+        const { data: bp } = await supabase.rpc('get_public_profiles', { _ids: [chain.broken_by] });
+        brokenByDisplayName = ((bp || []) as any[])[0]?.display_name || undefined;
       } else {
         // It's an email/phone - use as-is
         brokenByDisplayName = chain.broken_by;
