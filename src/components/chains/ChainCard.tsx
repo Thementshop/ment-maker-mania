@@ -253,7 +253,7 @@ const ChainCard = ({
             </TooltipTrigger>
             <TooltipContent>
               <p className="text-sm">
-                Use Pause Token (+24h)
+                Use Pause Token (+48h)
                 <br />
                 <span className="text-muted-foreground">You have {pauseTokens} token{pauseTokens !== 1 ? 's' : ''}</span>
               </p>
