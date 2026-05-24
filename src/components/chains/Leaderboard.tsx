@@ -150,22 +150,15 @@ const Leaderboard = () => {
         month: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
         allTime: new Date(0)
       }[selectedPeriod];
-      
-      let query = supabase
-        .from('ment_chains')
-        .select('chain_id, chain_name, share_count, tier, created_at, started_by, status')
-        .order('share_count', { ascending: false })
-        .limit(10);
-      
-      if (selectedPeriod !== 'allTime') {
-        query = query.gte('created_at', startDate.toISOString());
-      }
-      
-      const { data, error } = await query;
-      
+
+      const { data, error } = await supabase.rpc('get_top_chains', {
+        _since: selectedPeriod === 'allTime' ? null : startDate.toISOString(),
+        _limit: 10,
+      });
+
       if (error) throw error;
-      
-      setTopChains(data || []);
+
+      setTopChains((data || []) as any);
     } catch (error) {
       console.error('Error fetching leaderboard:', error);
       toast.error('Failed to load leaderboard');
