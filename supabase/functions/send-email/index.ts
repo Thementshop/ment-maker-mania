@@ -168,7 +168,7 @@ function buildChainReceivedEmail(data: TemplateData): string {
       Savor your moment 💚
     </p>
     <p style="color:#4b5563;font-size:14px;line-height:1.6;margin:0 0 20px;text-align:center;">
-      To add this mint to your jar, send one back to whoever started this chain — or brighten someone else's day within 24 hours and it's yours to keep!
+      To add this mint to your jar, send one back to whoever started this chain — or brighten someone else's day within 48 hours and it's yours to keep!
     </p>
     <p style="color:#666666;font-size:13px;line-height:1.5;margin:0 0 32px;text-align:center;">
       Need more time? Get more time with Pause Tokens inside the app.
