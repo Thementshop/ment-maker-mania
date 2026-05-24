@@ -287,7 +287,7 @@ function buildMentReceivedEmail(data: TemplateData): string {
       Savor your moment 💚
     </p>
     <p style="color:#4b5563;font-size:14px;line-height:1.6;margin:0 0 32px;text-align:center;">
-      To add this mint to your jar, send one back to whoever sent this — or brighten someone else's day within 48 hours and it's yours to keep!
+      This mint is yours to keep. Pass the kindness forward whenever the moment feels right to earn another mint for your jar.
     </p>
   `;
   return shell(NOTIFICATION_COPY.single_ment.eyebrow, inner);
