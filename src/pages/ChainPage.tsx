@@ -410,44 +410,49 @@ const ChainPage = () => {
         const apiKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
         const token = session?.access_token || apiKey;
 
+        // Public reveal RPC — no email / current_holder PII leakage
         const chainRes = await fetch(
-          `${baseUrl}/rest/v1/ment_chains?select=*&chain_id=eq.${chainId}`,
+          `${baseUrl}/rest/v1/rpc/get_chain_for_reveal`,
           {
+            method: 'POST',
             headers: {
               'apikey': apiKey,
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json',
-              'Accept': 'application/vnd.pgrst.object+json',
             },
+            body: JSON.stringify({ _chain_id: chainId }),
             signal: controller.signal,
           }
         );
 
         if (!chainRes.ok) throw new Error(`Chain fetch failed: ${chainRes.status}`);
-        const chainData = await chainRes.json();
+        const rows = await chainRes.json();
+        if (!rows?.length) return null;
+        const chainData = rows[0];
 
-        const userIds = [chainData.started_by];
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        if (uuidRegex.test(chainData.current_holder)) {
-          userIds.push(chainData.current_holder);
-        }
-
+        // Resolve starter display name via safe RPC
         const profileRes = await fetch(
-          `${baseUrl}/rest/v1/profiles?select=id,display_name&id=in.(${userIds.join(',')})`,
+          `${baseUrl}/rest/v1/rpc/get_public_profiles`,
           {
+            method: 'POST',
             headers: {
               'apikey': apiKey,
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json',
             },
+            body: JSON.stringify({ _ids: [chainData.started_by] }),
             signal: controller.signal,
           }
         );
         const profiles = profileRes.ok ? await profileRes.json() : [];
-        const profileMap = new Map(profiles.map((p: any) => [p.id, p.display_name || 'Anonymous']));
+        const profileMap = new Map((profiles || []).map((p: any) => [p.id, p.display_name || 'Anonymous']));
+
+        // current_holder display: if user is the holder, we can show their name;
+        // otherwise show a generic label (no email exposure).
+        const isCurrentUserHolder = !!user && session && chainData.is_holder_uuid;
 
         let receivedCompliment: string | undefined;
-        if (user && chainData.current_holder === user.id && session) {
+        if (user && session && isCurrentUserHolder) {
           const linksRes = await fetch(
             `${baseUrl}/rest/v1/chain_links?select=link_id,passed_to,sent_compliment,passed_at&chain_id=eq.${chainId}&order=passed_at.desc&limit=5`,
             {
@@ -464,11 +469,19 @@ const ChainPage = () => {
         }
 
         return {
-          ...chainData,
+          chain_id: chainData.chain_id,
+          chain_name: chainData.chain_name,
+          share_count: chainData.share_count,
+          tier: chainData.tier,
+          expires_at: chainData.expires_at,
+          started_by: chainData.started_by,
+          current_holder: user && isCurrentUserHolder ? user.id : '',
+          status: chainData.status,
+          created_at: chainData.created_at,
           started_by_display_name: profileMap.get(chainData.started_by) || 'Anonymous',
-          current_holder_display_name: uuidRegex.test(chainData.current_holder)
-            ? profileMap.get(chainData.current_holder) || 'Anonymous'
-            : chainData.current_holder,
+          current_holder_display_name: user && isCurrentUserHolder
+            ? (profileMap.get(user.id) || 'You')
+            : 'A chain holder',
           received_compliment: receivedCompliment,
         };
       } catch (err: any) {
