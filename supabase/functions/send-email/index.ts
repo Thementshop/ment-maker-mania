@@ -80,7 +80,7 @@ function getSubject(emailType: string, data: TemplateData): string {
 }
 
 // ─── Shared brand assets ───
-const BRAND_LOGO = 'https://ment-maker-mania.lovable.app/images/ment-shop-logo.png';
+const BRAND_LOGO = 'https://cjnukzmjenfvuopooumb.supabase.co/storage/v1/object/public/email-assets/ment-shop-logo.png';
 const BRAND_DARK = '#1a1a1a';        // body text
 const BRAND_GREEN = '#58fc59';       // Screamin' Green accent
 const BRAND_GREEN_DARK = '#2d8a2e';  // darker green for text on white
