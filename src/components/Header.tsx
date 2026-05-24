@@ -32,54 +32,43 @@ const Header = ({ worldCount }: HeaderProps) => {
   return (
     <>
       <header className="site-header sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-md">
-        {/* Desktop layout (md and up) — unchanged */}
-        <div className="header-desktop-layout container hidden h-16 items-center justify-between md:flex">
-          <div className="flex items-center gap-2">
-            <Link to="/" className="flex items-center gap-2" aria-label="The Ment Shop home">
-              <img src={mentShopLogo} alt="The Ment Shop" className="h-12 w-auto object-contain" />
-            </Link>
-          </div>
+        {/* Desktop layout (md and up) */}
+        <div className="header-desktop-layout container relative hidden h-24 items-center justify-between md:flex">
+          <Link to="/" className="flex items-center gap-2" aria-label="The Ment Shop home">
+            <img src={mentShopLogo} alt="The Ment Shop" className="h-20 w-auto object-contain" />
+          </Link>
 
-          {/* Center Nav */}
-          <nav className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setIsHowItWorksOpen(true)}
-              className="font-display text-sm font-semibold text-foreground hover:text-primary transition-colors px-4 py-2 rounded-full hover:bg-primary/10"
+          {/* Center: World Kindness Tracker */}
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="world-tracker absolute left-1/2 -translate-x-1/2 flex items-center gap-2 rounded-full px-4 py-2 text-mint-light"
+          >
+            <motion.span
+              className="text-2xl"
+              animate={{ rotate: 360 }}
+              transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
             >
-              How it works
-            </motion.button>
-          </nav>
-
-          <div className="flex items-center gap-4">
-            <motion.div
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="world-tracker flex items-center gap-2 rounded-full px-4 py-2 text-mint-light"
+              🌍
+            </motion.span>
+            <motion.span
+              key={worldCount}
+              initial={{ scale: 1.2, color: '#FFD740' }}
+              animate={{ scale: 1, color: '#FFFFFF' }}
+              className="font-display font-bold"
             >
-              <motion.span
-                className="text-2xl"
-                animate={{ rotate: 360 }}
-                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-              >
-                🌍
-              </motion.span>
-              <motion.span
-                key={worldCount}
-                initial={{ scale: 1.2, color: '#FFD740' }}
-                animate={{ scale: 1, color: '#FFFFFF' }}
-                className="font-display font-bold"
-              >
-                {formattedCount}
-              </motion.span>
-            </motion.div>
+              {formattedCount}
+            </motion.span>
+          </motion.div>
 
+          {/* Right: Avatar with "How It Works" centered below */}
+          <div className="flex flex-col items-center gap-1.5">
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setIsSettingsOpen(true)}
-              className="relative flex items-center gap-2 group"
+              className="relative flex items-center group"
+              aria-label="Open account settings"
             >
               <Avatar className="h-9 w-9 border-2 border-mint transition-colors group-hover:border-primary">
                 <AvatarImage src={profile?.avatar_url || undefined} />
@@ -94,6 +83,15 @@ const Header = ({ worldCount }: HeaderProps) => {
               >
                 <Settings className="h-4 w-4 text-primary" />
               </motion.div>
+            </motion.button>
+
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setIsHowItWorksOpen(true)}
+              className="whitespace-nowrap rounded-full px-2 py-0.5 text-center text-xs font-semibold font-display text-foreground hover:text-primary transition-colors"
+            >
+              How It Works
             </motion.button>
           </div>
         </div>
