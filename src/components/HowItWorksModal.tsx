@@ -22,7 +22,7 @@ const steps = [
   {
     icon: <Heart className="w-12 h-12 text-candy-pink fill-candy-pink" />,
     title: "Pass it forward",
-    description: "Received a Ment? Pass the kindness to someone new within 48 hours and that mint is yours to keep in your jar forever. Life got wonderfully busy? One tap of a Pause Token adds another 48 hours to your clock."
+    description: "Received a Ment? Pass the kindness to someone new and earn another mint for your jar. No rush — do it whenever the moment feels right."
   },
   {
     icon: <img src={unwrappedMint} alt="Mint" className="w-16 h-16 object-contain" />,
@@ -32,7 +32,7 @@ const steps = [
   {
     icon: <Trophy className="w-12 h-12 text-candy-yellow" />,
     title: "Start a Chain",
-    description: "Send a Ment to multiple people at once and watch kindness travel further than you ever expected. Starting a chain earns you 5 mints instantly — and if life gets wonderfully busy, one tap of a Pause Token adds another 24 hours to your clock so that sweet little chain can keep going."
+    description: "Send a Ment to multiple people at once and watch kindness travel further than you ever expected. Starting a chain earns you 5 mints instantly. Each person in the chain has 48 hours to pass it forward — and if life gets wonderfully busy, one tap of a Pause Token adds another 48 hours to your clock so that sweet little chain can keep going."
   }
 ];
 
