@@ -100,46 +100,24 @@ const Header = ({ worldCount }: HeaderProps) => {
 
         {/* Mobile layout */}
         <div className="md:hidden w-full overflow-hidden px-3 py-2">
-          <div className="grid w-full grid-cols-[minmax(0,1fr)_2.25rem] items-center gap-x-3 gap-y-2">
+          <div className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3">
+            {/* Left: Logo (2x size) */}
             <Link
               to="/"
-              className="flex min-w-0 max-w-full items-center overflow-hidden"
+              className="flex shrink-0 items-center"
               aria-label="The Ment Shop home"
             >
-              <img src={mentShopLogo} alt="The Ment Shop" className="h-10 w-auto object-contain" />
+              <img src={mentShopLogo} alt="The Ment Shop" className="h-20 w-auto object-contain" />
             </Link>
 
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setIsSettingsOpen(true)}
-              className="flex h-9 w-9 shrink-0 items-center justify-center"
-              aria-label="Open account settings"
-            >
-              <Avatar className="h-9 w-9 shrink-0 border-2 border-mint">
-                <AvatarImage src={profile?.avatar_url || undefined} />
-                <AvatarFallback className="bg-mint font-display text-primary-foreground">
-                  {getInitials(resolvedName)}
-                </AvatarFallback>
-              </Avatar>
-            </motion.button>
-          </div>
-
-          <div className="mt-2 grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2">
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setIsHowItWorksOpen(true)}
-              className="min-w-0 max-w-full overflow-hidden text-ellipsis whitespace-nowrap rounded-full px-2 py-1 text-left text-[14px] leading-none font-semibold text-foreground font-display"
-            >
-              How it works
-            </motion.button>
-
+            {/* Center: World Kindness Tracker */}
             <motion.div
               whileTap={{ scale: 0.98 }}
-              className="flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1 world-tracker"
+              className="flex shrink-0 items-center justify-self-center gap-1 whitespace-nowrap rounded-full px-3 py-1.5 world-tracker"
               aria-label={`World Kindness Tracker ${formattedCount}`}
             >
               <motion.span
-                className="text-sm leading-none"
+                className="text-base leading-none"
                 animate={{ rotate: 360 }}
                 transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
               >
@@ -154,9 +132,35 @@ const Header = ({ worldCount }: HeaderProps) => {
                 {formattedCount}
               </motion.span>
             </motion.div>
+
+            {/* Right: Avatar with "How it works" below */}
+            <div className="flex flex-col items-end gap-1.5">
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setIsSettingsOpen(true)}
+                className="flex h-9 w-9 shrink-0 items-center justify-center"
+                aria-label="Open account settings"
+              >
+                <Avatar className="h-9 w-9 shrink-0 border-2 border-mint">
+                  <AvatarImage src={profile?.avatar_url || undefined} />
+                  <AvatarFallback className="bg-mint font-display text-primary-foreground">
+                    {getInitials(resolvedName)}
+                  </AvatarFallback>
+                </Avatar>
+              </motion.button>
+
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setIsHowItWorksOpen(true)}
+                className="whitespace-nowrap rounded-full px-2 py-0.5 text-[12px] leading-none font-semibold text-foreground font-display hover:text-primary"
+              >
+                How it works
+              </motion.button>
+            </div>
           </div>
         </div>
       </header>
+
 
       <HowItWorksModal 
         isOpen={isHowItWorksOpen} 
