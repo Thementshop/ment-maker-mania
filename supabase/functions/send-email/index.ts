@@ -80,19 +80,18 @@ function getSubject(emailType: string, data: TemplateData): string {
 }
 
 // ─── Shared brand assets ───
-const MINT_IMG = 'https://ment-maker-mania.lovable.app/images/mint-candy.png';
+const BRAND_LOGO = 'https://ment-maker-mania.lovable.app/images/ment-shop-logo.png';
 const BRAND_DARK = '#1a1a1a';        // body text
 const BRAND_GREEN = '#58fc59';       // Screamin' Green accent
 const BRAND_GREEN_DARK = '#2d8a2e';  // darker green for text on white
 const PAGE_BG = '#ffffff';           // clean white page background
 const CARD_BG = '#ffffff';
 
-// ─── Header (white with hero mint image) ───
+// ─── Header (white with brand logo) ───
 function brandHeader(eyebrow: string): string {
   return `
   <tr><td style="background-color:${CARD_BG};padding:40px 20px 24px;text-align:center;border-bottom:3px solid ${BRAND_GREEN};word-wrap:break-word;">
-    <img src="${MINT_IMG}" width="120" height="120" alt="The Ment Shop" style="display:block;margin:0 auto 18px;width:120px;height:120px;max-width:100%;">
-    <h1 style="color:${BRAND_DARK};margin:0;font-size:24px;font-weight:800;letter-spacing:-0.3px;word-wrap:break-word;">THE MENT SHOP</h1>
+    <img src="${BRAND_LOGO}" width="200" height="200" alt="The Ment Shop" style="display:block;margin:0 auto 12px;width:200px;height:auto;max-width:80%;">
     <p style="color:${BRAND_GREEN_DARK};margin:8px 0 0;font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;word-wrap:break-word;">${escapeHtml(eyebrow)}</p>
   </td></tr>`;
 }
