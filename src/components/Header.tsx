@@ -133,8 +133,8 @@ const Header = ({ worldCount }: HeaderProps) => {
               </motion.span>
             </motion.div>
 
-            {/* Right: Avatar with "How it works" below */}
-            <div className="flex flex-col items-end gap-1.5">
+            {/* Right: Avatar with "How It Works" centered below */}
+            <div className="flex flex-col items-center gap-1.5">
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setIsSettingsOpen(true)}
@@ -152,9 +152,9 @@ const Header = ({ worldCount }: HeaderProps) => {
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setIsHowItWorksOpen(true)}
-                className="whitespace-nowrap rounded-full px-2 py-0.5 text-[12px] leading-none font-semibold text-foreground font-display hover:text-primary"
+                className="whitespace-nowrap rounded-full px-2 py-0.5 text-center text-[12px] leading-none font-semibold text-foreground font-display hover:text-primary"
               >
-                How it works
+                How It Works
               </motion.button>
             </div>
           </div>
