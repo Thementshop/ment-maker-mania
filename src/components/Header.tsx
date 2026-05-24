@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
-import unwrappedMint from '@/assets/unwrapped-mint.png';
+import mentShopLogo from '@/assets/ment-shop-logo.png';
 import HowItWorksModal from './HowItWorksModal';
 import AccountSettingsModal from './AccountSettingsModal';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -35,11 +35,8 @@ const Header = ({ worldCount }: HeaderProps) => {
         {/* Desktop layout (md and up) — unchanged */}
         <div className="header-desktop-layout container hidden h-16 items-center justify-between md:flex">
           <div className="flex items-center gap-2">
-            <Link to="/" className="flex items-center gap-2">
-              <img src={unwrappedMint} alt="Mint" className="h-10 w-10 object-contain" />
-              <span className="font-display text-lg font-bold text-ring">
-                The Ment Shop
-              </span>
+            <Link to="/" className="flex items-center gap-2" aria-label="The Ment Shop home">
+              <img src={mentShopLogo} alt="The Ment Shop" className="h-12 w-auto object-contain" />
             </Link>
           </div>
 
@@ -106,13 +103,10 @@ const Header = ({ worldCount }: HeaderProps) => {
           <div className="grid w-full grid-cols-[minmax(0,1fr)_2.25rem] items-center gap-x-3 gap-y-2">
             <Link
               to="/"
-              className="grid min-w-0 max-w-full grid-cols-[2rem_minmax(0,1fr)] items-center gap-2 overflow-hidden"
+              className="flex min-w-0 max-w-full items-center overflow-hidden"
               aria-label="The Ment Shop home"
             >
-              <img src={unwrappedMint} alt="Mint" className="h-8 w-8 min-w-8 object-contain" />
-              <span className="block min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-[14px] leading-none font-bold text-ring font-display">
-                The Ment Shop
-              </span>
+              <img src={mentShopLogo} alt="The Ment Shop" className="h-10 w-auto object-contain" />
             </Link>
 
             <motion.button
