@@ -478,9 +478,9 @@ const ChainPage = () => {
           current_holder: user && isCurrentUserHolder ? user.id : '',
           status: chainData.status,
           created_at: chainData.created_at,
-          started_by_display_name: profileMap.get(chainData.started_by) || 'Anonymous',
+          started_by_display_name: (profileMap.get(chainData.started_by) as string) || 'Anonymous',
           current_holder_display_name: user && isCurrentUserHolder
-            ? (profileMap.get(user.id) || 'You')
+            ? ((profileMap.get(user.id) as string) || 'You')
             : 'A chain holder',
           received_compliment: receivedCompliment,
         };
