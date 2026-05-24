@@ -659,6 +659,32 @@ export type Database = {
       }
       contains_blocked_word: { Args: { _text: string }; Returns: boolean }
       extend_chain_timer: { Args: { _chain_id: string }; Returns: Json }
+      get_chain_for_reveal: {
+        Args: { _chain_id: string }
+        Returns: {
+          chain_id: string
+          chain_name: string
+          created_at: string
+          expires_at: string
+          is_holder_uuid: boolean
+          links_count: number
+          share_count: number
+          started_by: string
+          status: string
+          tier: string
+        }[]
+      }
+      get_ment_for_reveal: {
+        Args: { _ment_id: string }
+        Returns: {
+          category: string
+          compliment_text: string
+          id: string
+          recipient_expires_at: string
+          sender_id: string
+          sent_at: string
+        }[]
+      }
       get_participated_chain_ids: {
         Args: { _user_email?: string; _user_id: string }
         Returns: string[]
@@ -668,6 +694,27 @@ export type Database = {
         Returns: {
           compliment_text: string
           sent_count: number
+        }[]
+      }
+      get_public_profiles: {
+        Args: { _ids: string[] }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          id: string
+        }[]
+      }
+      get_top_chains: {
+        Args: { _limit?: number; _since?: string }
+        Returns: {
+          chain_id: string
+          chain_name: string
+          created_at: string
+          links_count: number
+          share_count: number
+          started_by: string
+          status: string
+          tier: string
         }[]
       }
       get_user_id_by_email: { Args: { _email: string }; Returns: string }
