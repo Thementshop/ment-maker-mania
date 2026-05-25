@@ -1,38 +1,41 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Heart, Send, Trophy, Globe, Pause } from 'lucide-react';
-import unwrappedMint from '@/assets/unwrapped-mint.png';
-import wrappedMint from '@/assets/wrapped-mint.png';
+import { X, Heart } from 'lucide-react';
+import mintIcon from '@/assets/mint-icon.png';
 
 interface HowItWorksModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+const stepIcon = (
+  <img src={mintIcon} alt="Mint" className="w-12 h-12 object-contain rounded-full" />
+);
+
 const steps = [
   {
-    icon: <Send className="w-12 h-12 text-primary" />,
+    icon: stepIcon,
     title: "Send a Ment",
-    description: "Pick a compliment, wrap it up like the sweetest little mint candy, and send it to someone who deserves a brighter day. Every send earns you a mint for your jar."
+    description: "Choose a compliment (or write your own), we'll wrap it up in the prettiest little mint, and off it goes to make someone's whole entire day. Oh, and every send earns you a mint. The universe absolutely notices — and honestly your Kindness Jar just did a tiny little happy dance."
   },
   {
-    icon: <img src={wrappedMint} alt="Wrapped Mint" className="w-16 h-16 object-contain" />,
-    title: "They unwrap something wonderful",
-    description: "Your recipient gets a notification that someone is thinking of them right now. They tap to unwrap their mint and find your compliment waiting inside."
+    icon: stepIcon,
+    title: "They Unwrap Something Wonderful",
+    description: "That special someone you chose will get a little notification that says someone is thinking of them right now. Just that. The anticipation builds, they tap the mint, it unwraps — and inside is a compliment handpicked by you that might just become the sweetest thing that happens to them all week."
   },
   {
-    icon: <Heart className="w-12 h-12 text-candy-pink fill-candy-pink" />,
-    title: "Pass it forward",
-    description: "Received a Ment? Pass the kindness to someone new and earn another mint for your jar. No rush — do it whenever the moment feels right."
+    icon: stepIcon,
+    title: "Pass It Forward",
+    description: "That mint you just received? Send one right back or surprise someone completely new — your call, wonderful human. Every pass forward earns another mint for your jar. No timer, no pressure. Kindness doesn't need a deadline to be extraordinary."
   },
   {
-    icon: <img src={unwrappedMint} alt="Mint" className="w-16 h-16 object-contain" />,
-    title: "Watch your jar grow",
-    description: "Every mint you earn fills your Kindness Jar a little more. The more kindness you spread, the more your jar transforms. One mint becomes five, five becomes twenty-five — and the journey has only just begun."
+    icon: stepIcon,
+    title: "Watch Your Jar Grow",
+    description: "Your Kindness Jar keeps track of every sweet thing you do. Watch it fill up mint by mint and honestly we are going to need a moment at every single milestone. One becomes five, five becomes twenty-five, and somewhere along the way you realize — this jar is basically a trophy for being an incredible human."
   },
   {
-    icon: <Trophy className="w-12 h-12 text-candy-yellow" />,
+    icon: stepIcon,
     title: "Start a Chain",
-    description: "Send a Ment to multiple people at once and watch kindness travel further than you ever expected. Starting a chain earns you 5 mints instantly. Each person in the chain has 48 hours to pass it forward — and if life gets wonderfully busy, one tap of a Pause Token adds another 48 hours to your clock so that sweet little chain can keep going."
+    description: "Start a Ment Chain and set something extraordinary in motion. Five mints land in your jar instantly — the universe's way of saying thank you for being this kind. Every person in the chain has 48 hours to keep the sweetness moving, and if anyone needs a little breathing room, a Pause Token adds 48 more. Watch it travel. Watch it grow. The universe is absolutely watching and it is SO proud."
   }
 ];
 
