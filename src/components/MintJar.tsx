@@ -1,7 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { getCurrentTier, getNextTier, getMintsToNextTier } from '@/utils/jarTiers';
-import { getCurrentLevel, getLevelProgress, getMentsToNextLevel } from '@/store/gameStore';
-import { Progress } from '@/components/ui/progress';
+import { getCurrentLevel } from '@/store/gameStore';
 import { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 
@@ -9,6 +8,17 @@ interface MintJarProps {
   jarCount: number;
   totalSent: number;
 }
+
+const MILESTONES = [2, 3, 4, 5, 25, 50, 100];
+
+const getNextMilestoneLabel = (count: number): string | null => {
+  if (count >= 100) return null;
+  const next = MILESTONES.find(m => m > count);
+  return next ? `Next milestone: ${next} mints` : null;
+};
+
+const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
+
 
 const getJarWithMintsImage = (count: number, emptyImage: string): string => {
   if (count === 0) return emptyImage;
