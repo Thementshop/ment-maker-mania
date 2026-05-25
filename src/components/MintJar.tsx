@@ -55,7 +55,7 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
     <div className="flex flex-col items-center w-full rounded-none">
       {/* Level name with personality */}
       <p className="font-bold text-foreground text-center mb-2 text-lg">
-        Level {currentLevel.level}: {currentLevel.name}
+        Level {currentLevel.level}
       </p>
 
       {/* Jar Display - Hero visual */}
@@ -83,7 +83,7 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
         animate={{ scale: 1 }}
         transition={{ type: 'spring', stiffness: 300 }}
       >
-        {jarCount} {jarCount === 1 ? 'Mint' : 'Ments'}
+        {jarCount} {jarCount === 1 ? 'Mint' : 'Mints'}
       </motion.p>
 
       {/* Level progress bar */}
