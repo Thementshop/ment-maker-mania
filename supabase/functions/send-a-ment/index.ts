@@ -74,6 +74,13 @@ Deno.serve(async (req) => {
       console.error('[SEND-A-MENT] Mint transaction error:', mintTransactionError);
     }
 
+    // Award +1 mint to recipient (if they have an account). Fire-and-forget.
+    adminClient.rpc('award_mint_to_email', { _email: recipient_email })
+      .then(({ error }: { error: unknown }) => {
+        if (error) console.warn('[SEND-A-MENT] Recipient mint award failed:', error);
+      });
+
+
     // Keep legacy user game state counters in sync for the existing UI/store
     const { data: gameState } = await adminClient
       .from('user_game_state')
