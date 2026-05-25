@@ -41,22 +41,22 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
 
   // Slot-machine spin on initial load only (not on subsequent increments).
   const [displayCount, setDisplayCount] = useState(jarCount < 2 ? jarCount : 0);
-  const initialAnimDone = useRef(false);
-  const initialTargetRef = useRef(jarCount);
+  const spinPlayedRef = useRef(false);
 
   useEffect(() => {
-    if (initialAnimDone.current) {
-      // After first animation completes, just track jarCount exactly.
+    // Once a spin has played, just mirror jarCount.
+    if (spinPlayedRef.current) {
       setDisplayCount(jarCount);
       return;
     }
+    // No spin needed for 0 or 1 — just display directly. Don't lock spinPlayedRef
+    // so that if jarCount later becomes >= 2 (e.g. after async load), we still spin.
     if (jarCount < 2) {
       setDisplayCount(jarCount);
-      initialAnimDone.current = true;
       return;
     }
     // Run the spin once toward the first observed jarCount >= 2.
-    initialTargetRef.current = jarCount;
+    spinPlayedRef.current = true;
     const target = jarCount;
     const duration = 1500;
     const start = performance.now();
@@ -69,13 +69,11 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
         raf = requestAnimationFrame(tick);
       } else {
         setDisplayCount(target);
-        initialAnimDone.current = true;
       }
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [jarCount >= 2]);
+  }, [jarCount]);
 
   const [showTierUp, setShowTierUp] = useState(false);
   const previousTierRef = useRef(currentTier.tier);
