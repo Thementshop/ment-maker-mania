@@ -1,7 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { getCurrentTier, getNextTier, getMintsToNextTier } from '@/utils/jarTiers';
-import { getCurrentLevel, getLevelProgress, getMentsToNextLevel } from '@/store/gameStore';
-import { Progress } from '@/components/ui/progress';
+import { getCurrentLevel } from '@/store/gameStore';
 import { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 
@@ -9,6 +8,17 @@ interface MintJarProps {
   jarCount: number;
   totalSent: number;
 }
+
+const MILESTONES = [2, 3, 4, 5, 25, 50, 100];
+
+const getNextMilestoneLabel = (count: number): string | null => {
+  if (count >= 100) return null;
+  const next = MILESTONES.find(m => m > count);
+  return next ? `Next milestone: ${next} mints` : null;
+};
+
+const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
+
 
 const getJarWithMintsImage = (count: number, emptyImage: string): string => {
   if (count === 0) return emptyImage;
@@ -27,11 +37,49 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
   const nextTier = getNextTier(jarCount);
   const mintsToNext = getMintsToNextTier(jarCount);
   const currentLevel = getCurrentLevel(jarCount);
-  const levelProgress = getLevelProgress(jarCount);
-  const mentsToNextLevel = getMentsToNextLevel(jarCount);
+  const nextMilestoneLabel = getNextMilestoneLabel(jarCount);
+
+  // Slot-machine spin on initial load only (not on subsequent increments).
+  const [displayCount, setDisplayCount] = useState(jarCount < 2 ? jarCount : 0);
+  const initialAnimDone = useRef(false);
+  const initialTargetRef = useRef(jarCount);
+
+  useEffect(() => {
+    if (initialAnimDone.current) {
+      // After first animation completes, just track jarCount exactly.
+      setDisplayCount(jarCount);
+      return;
+    }
+    if (jarCount < 2) {
+      setDisplayCount(jarCount);
+      initialAnimDone.current = true;
+      return;
+    }
+    // Run the spin once toward the first observed jarCount >= 2.
+    initialTargetRef.current = jarCount;
+    const target = jarCount;
+    const duration = 1500;
+    const start = performance.now();
+    let raf = 0;
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = easeOutCubic(t);
+      setDisplayCount(Math.round(eased * target));
+      if (t < 1) {
+        raf = requestAnimationFrame(tick);
+      } else {
+        setDisplayCount(target);
+        initialAnimDone.current = true;
+      }
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jarCount >= 2]);
 
   const [showTierUp, setShowTierUp] = useState(false);
   const previousTierRef = useRef(currentTier.tier);
+
 
   useEffect(() => {
     const newTier = getCurrentTier(jarCount).tier;
@@ -75,30 +123,22 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
         </div>
       </div>
 
-      {/* Mint count - simple */}
-      <motion.p
-        key={jarCount}
-        className="font-bold text-primary text-center text-3xl opacity-100 rounded-none border-0 border-none shadow-none"
-        initial={{ scale: 1.2 }}
-        animate={{ scale: 1 }}
-        transition={{ type: 'spring', stiffness: 300 }}
-      >
-        {jarCount} {jarCount === 1 ? 'Mint' : 'Mints'}
-      </motion.p>
+      {/* Mint count - with slot-machine spin on initial load */}
+      <p className="font-bold text-primary text-center text-3xl tabular-nums">
+        {displayCount} {displayCount === 1 ? 'Mint' : 'Mints'}
+      </p>
 
-      {/* Level progress bar */}
-      {currentLevel.level < 25 ? (
-        <div className="w-full max-w-xs mt-2 space-y-1">
-          <Progress value={levelProgress} className="h-2.5" />
-          <p className="text-xs text-muted-foreground text-center">
-            {mentsToNextLevel} more to Level {currentLevel.level + 1}
-          </p>
-        </div>
+      {/* Next milestone hint */}
+      {nextMilestoneLabel ? (
+        <p className="text-xs text-muted-foreground text-center mt-2">
+          {nextMilestoneLabel}
+        </p>
       ) : (
         <p className="text-xs text-primary text-center font-semibold mt-2">
-          🎉 Max Level Reached!
+          Your jar is overflowing with kindness!
         </p>
       )}
+
 
       {/* Tier-Up Celebration Modal */}
       <AnimatePresence>

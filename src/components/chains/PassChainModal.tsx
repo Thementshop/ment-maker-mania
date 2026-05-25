@@ -429,17 +429,17 @@ const PassChainModal = ({
       useGameStore.setState({ jarCount: newJarCount });
       useGameStore.getState().bumpRefresh();
 
-      // 6b. Award +1 mint to recipient (fire-and-forget, non-blocking)
+      // 6b. Award +1 mint to recipient (fire-and-forget, server-side)
       try {
-        const rpcUrl = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/rpc/award_mint_to_email`;
-        fetch(rpcUrl, {
+        const fnUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/award-receive-mint`;
+        fetch(fnUrl, {
           method: 'POST',
           headers: {
             'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ _email: recipient.trim() }),
+          body: JSON.stringify({ recipient_email: recipient.trim() }),
         }).then(res => {
           console.log('[PassChain] Recipient mint award response:', res.status);
         }).catch(err => {
@@ -448,6 +448,7 @@ const PassChainModal = ({
       } catch (e) {
         console.warn('[PassChain] Recipient mint award error:', e);
       }
+
 
       // 7. Check for Legendary milestone (100 shares)
       if (newShareCount === 100 && chain.started_by === user.id) {

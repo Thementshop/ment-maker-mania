@@ -172,6 +172,17 @@ Deno.serve(async (req) => {
       console.log('Creator awarded +5 mints, new jar:', newJarCount, 'total_sent:', newTotalSent);
     }
 
+    // The chain_links INSERT trigger already recorded +1 mint per recipient (N rows)
+    // in mint_transactions for the starter. Top up so the starter's canonical total
+    // for "starting a chain" is +5 mints regardless of recipient count.
+    const topUp = 5 - recipientList.length;
+    if (topUp > 0) {
+      const { error: topUpErr } = await adminClient
+        .from('mint_transactions')
+        .insert({ user_id: userId, amount: topUp, reason: 'start_chain_bonus' });
+      if (topUpErr) console.warn('Start-chain mint top-up failed:', topUpErr);
+    }
+
     const responsePayload = { chain: newChain, success: true, newJarCount, newTotalSent };
 
     // Award +1 mint to each recipient who has an account (fire-and-forget)
