@@ -37,11 +37,49 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
   const nextTier = getNextTier(jarCount);
   const mintsToNext = getMintsToNextTier(jarCount);
   const currentLevel = getCurrentLevel(jarCount);
-  const levelProgress = getLevelProgress(jarCount);
-  const mentsToNextLevel = getMentsToNextLevel(jarCount);
+  const nextMilestoneLabel = getNextMilestoneLabel(jarCount);
+
+  // Slot-machine spin on initial load only (not on subsequent increments).
+  const [displayCount, setDisplayCount] = useState(jarCount < 2 ? jarCount : 0);
+  const initialAnimDone = useRef(false);
+  const initialTargetRef = useRef(jarCount);
+
+  useEffect(() => {
+    if (initialAnimDone.current) {
+      // After first animation completes, just track jarCount exactly.
+      setDisplayCount(jarCount);
+      return;
+    }
+    if (jarCount < 2) {
+      setDisplayCount(jarCount);
+      initialAnimDone.current = true;
+      return;
+    }
+    // Run the spin once toward the first observed jarCount >= 2.
+    initialTargetRef.current = jarCount;
+    const target = jarCount;
+    const duration = 1500;
+    const start = performance.now();
+    let raf = 0;
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = easeOutCubic(t);
+      setDisplayCount(Math.round(eased * target));
+      if (t < 1) {
+        raf = requestAnimationFrame(tick);
+      } else {
+        setDisplayCount(target);
+        initialAnimDone.current = true;
+      }
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jarCount >= 2]);
 
   const [showTierUp, setShowTierUp] = useState(false);
   const previousTierRef = useRef(currentTier.tier);
+
 
   useEffect(() => {
     const newTier = getCurrentTier(jarCount).tier;
