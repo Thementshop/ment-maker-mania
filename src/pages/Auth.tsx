@@ -53,7 +53,7 @@ const Auth = () => {
     
     setIsSubmitting(true);
     
-    const { error } = await signUp(email, password, displayName);
+    const { error, hasSession } = await signUp(email, password, displayName);
     
     if (error) {
       toast({
@@ -62,18 +62,35 @@ const Auth = () => {
         variant: 'destructive',
       });
       setIsSubmitting(false);
-    } else {
-      // Mark this as a fresh signup so the homepage can show the special
-      // "we've been waiting for you" onboarding when unclaimed Ments exist.
-      sessionStorage.setItem('justSignedUp', '1');
-      // Ensure onboarding auto-opens for the new account.
-      localStorage.removeItem('hasSeenOnboarding');
-      setIsSettingUp(true);
-      toast({
-        title: 'Welcome to The Ment Shop!',
-        description: 'Setting up your mint jar...',
-      });
+      return;
     }
+
+    // Mark this as a fresh signup so the homepage can show the special
+    // "we've been waiting for you" onboarding when unclaimed Ments exist.
+    sessionStorage.setItem('justSignedUp', '1');
+    // Ensure onboarding auto-opens for the new account.
+    localStorage.removeItem('hasSeenOnboarding');
+
+    if (!hasSession) {
+      // No session returned (e.g. email confirmation enabled). Attempt an
+      // immediate sign-in so the user isn't stuck on the setup spinner.
+      const { error: signInError } = await signIn(email, password);
+      if (signInError) {
+        toast({
+          title: 'Almost there!',
+          description: 'Please check your email to confirm your account, then sign in.',
+        });
+        setIsSubmitting(false);
+        setIsLoginMode(true);
+        return;
+      }
+    }
+
+    setIsSettingUp(true);
+    toast({
+      title: 'Welcome to The Ment Shop!',
+      description: 'Setting up your mint jar...',
+    });
   };
 
   const handleLogin = async (e: React.FormEvent) => {
