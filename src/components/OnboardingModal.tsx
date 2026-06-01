@@ -7,6 +7,10 @@ import unwrappedMint from '@/assets/unwrapped-mint.png';
 interface OnboardingModalProps {
   isOpen: boolean;
   onClose: () => void;
+  /** Total mints in the jar when onboarding opens (signup mint + any unclaimed Ments credited). */
+  mintCount?: number;
+  /** True when this onboarding is shown right after a fresh signup. */
+  isNewSignup?: boolean;
 }
 
 const screens = [
