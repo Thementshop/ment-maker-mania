@@ -227,7 +227,12 @@ const Index = () => {
       <StartChainModal isOpen={isStartChainOpen} onClose={() => setIsStartChainOpen(false)} onSuccess={() => {}} />
       
       <LevelUpModal isOpen={showLevelUp} onClose={() => setShowLevelUp(false)} totalSent={totalSent} bonusMints={levelUpBonus} />
-      <OnboardingModal isOpen={showOnboarding} onClose={() => setShowOnboarding(false)} />
+      <OnboardingModal
+        isOpen={showOnboarding}
+        onClose={() => setShowOnboarding(false)}
+        mintCount={liveJarCount}
+        isNewSignup={sessionStorage.getItem('justSignedUp') === '1'}
+      />
       <Footer />
     </div>
   );

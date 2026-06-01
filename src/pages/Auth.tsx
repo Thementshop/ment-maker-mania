@@ -63,6 +63,11 @@ const Auth = () => {
       });
       setIsSubmitting(false);
     } else {
+      // Mark this as a fresh signup so the homepage can show the special
+      // "we've been waiting for you" onboarding when unclaimed Ments exist.
+      sessionStorage.setItem('justSignedUp', '1');
+      // Ensure onboarding auto-opens for the new account.
+      localStorage.removeItem('hasSeenOnboarding');
       setIsSettingUp(true);
       toast({
         title: 'Welcome to The Ment Shop!',
