@@ -477,6 +477,8 @@ export type Database = {
       sent_ments: {
         Row: {
           category: string
+          claimed_at: string | null
+          claimed_by: string | null
           compliment_text: string
           id: string
           personal_note: string | null
@@ -488,6 +490,8 @@ export type Database = {
         }
         Insert: {
           category: string
+          claimed_at?: string | null
+          claimed_by?: string | null
           compliment_text: string
           id?: string
           personal_note?: string | null
@@ -499,6 +503,8 @@ export type Database = {
         }
         Update: {
           category?: string
+          claimed_at?: string | null
+          claimed_by?: string | null
           compliment_text?: string
           id?: string
           personal_note?: string | null
