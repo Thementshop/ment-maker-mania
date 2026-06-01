@@ -36,15 +36,16 @@ const screens = [
   },
   {
     emoji: '💚',
-    title: 'Earn Mints & Level Up!',
-    description: 'Your Kindness Jar keeps track of every sweet thing you do. Watch it fill up mint by mint — one becomes five, five becomes twenty-five — and level your jar all the way from "Ment Maker" to "Ment Legend". Every milestone is basically a trophy for being an incredible human.',
+    title: 'Earn Mints & Grow Your Jar',
+    description: 'Your Kindness Jar keeps track of every sweet thing you do AND every sweet thing done for you. Watch it fill up mint by mint — one becomes five, five becomes twenty-five — and somewhere along the way you realize this jar is basically a trophy for being an incredible human.',
     icon: <img src={unwrappedMint} alt="Mint" className="h-12 w-12 object-contain" />,
     color: 'from-green-500/20 to-green-500/10',
     steps: [
-      '+1 mint every time you send a ment',
+      '+1 mint every time you send a Ment',
+      '+1 mint every time you receive a Ment',
+      'Pass a received Ment forward and earn a bonus mint on top',
       '+5 mints instantly for starting a chain',
-      'Bonus mints at every level up',
-      'Unlock new jar tiers as you grow',
+      'Your mints are yours forever — kindness never leaves your jar',
     ],
   },
   {
