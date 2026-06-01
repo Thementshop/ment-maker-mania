@@ -22,18 +22,6 @@ const screens = [
     color: 'from-primary/20 to-primary/10',
   },
   {
-    emoji: '🔗',
-    title: 'How Chains Work',
-    description: 'Start a chain by picking a compliment and sending it to up to 3 people. Each person has 48 hours to pass it forward!',
-    icon: <Link2 className="h-12 w-12 text-orange-500" />,
-    color: 'from-orange-500/20 to-orange-500/10',
-    steps: [
-      '1. Pick a compliment',
-      '2. Send to up to 3 people',
-      '3. They pass it forward within 48 hours',
-    ],
-  },
-  {
     emoji: '💌',
     title: 'Send A Ment',
     description: 'Want something simpler? Send a single compliment — no timer, no chain, no pressure. Just kindness!',
@@ -50,6 +38,18 @@ const screens = [
       '+1 mint for sending a ment',
       '+5 mints for starting a chain',
       'Bonus mints at each level up!',
+    ],
+  },
+  {
+    emoji: '🔗',
+    title: 'How Chains Work',
+    description: 'Start a chain by picking a compliment and sending it to up to 3 people. Each person has 48 hours to pass it forward!',
+    icon: <Link2 className="h-12 w-12 text-orange-500" />,
+    color: 'from-orange-500/20 to-orange-500/10',
+    steps: [
+      '1. Pick a compliment',
+      '2. Send to up to 3 people',
+      '3. They pass it forward within 48 hours',
     ],
   },
 ];
