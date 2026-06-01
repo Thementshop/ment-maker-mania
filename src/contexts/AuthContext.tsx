@@ -14,7 +14,7 @@ interface AuthContextType {
   session: Session | null;
   profile: Profile | null;
   isLoading: boolean;
-  signUp: (email: string, password: string, displayName?: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, displayName?: string) => Promise<{ error: Error | null; hasSession: boolean }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   updateProfile: (displayName: string) => Promise<{ error: Error | null }>;
@@ -181,7 +181,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, []);
 
   const signUp = async (email: string, password: string, displayName?: string) => {
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -197,7 +197,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         },
       },
     });
-    return { error: error as Error | null };
+    return { error: error as Error | null, hasSession: !!data?.session };
   };
 
   const signIn = async (email: string, password: string) => {
