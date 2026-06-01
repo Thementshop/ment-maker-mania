@@ -54,7 +54,7 @@ const screens = [
   },
 ];
 
-const OnboardingModal = ({ isOpen, onClose }: OnboardingModalProps) => {
+const OnboardingModal = ({ isOpen, onClose, mintCount = 0, isNewSignup = false }: OnboardingModalProps) => {
   const [currentScreen, setCurrentScreen] = useState(0);
 
   const handleNext = () => {
@@ -73,11 +73,23 @@ const OnboardingModal = ({ isOpen, onClose }: OnboardingModalProps) => {
 
   const handleFinish = () => {
     localStorage.setItem('hasSeenOnboarding', 'true');
+    sessionStorage.removeItem('justSignedUp');
     setCurrentScreen(0);
     onClose();
   };
 
-  const screen = screens[currentScreen];
+  // When a new signup had unclaimed Ments waiting, replace the first welcome
+  // screen with the special "we've been waiting for you" message.
+  const hasUnclaimed = isNewSignup && mintCount >= 2;
+  const baseScreen = screens[currentScreen];
+  const screen =
+    currentScreen === 0 && hasUnclaimed
+      ? {
+          ...baseScreen,
+          description: `Someone already sent you kindness before you even arrived — and your jar has ${mintCount} mints waiting inside. The universe clearly has plans for you. 💚`,
+        }
+      : baseScreen;
+
 
   return (
     <AnimatePresence>
