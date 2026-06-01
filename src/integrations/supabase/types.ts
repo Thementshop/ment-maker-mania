@@ -484,6 +484,7 @@ export type Database = {
           personal_note: string | null
           recipient_email: string | null
           recipient_expires_at: string | null
+          recipient_phone: string | null
           recipient_type: string
           sender_id: string
           sent_at: string | null
@@ -497,6 +498,7 @@ export type Database = {
           personal_note?: string | null
           recipient_email?: string | null
           recipient_expires_at?: string | null
+          recipient_phone?: string | null
           recipient_type: string
           sender_id: string
           sent_at?: string | null
@@ -510,6 +512,7 @@ export type Database = {
           personal_note?: string | null
           recipient_email?: string | null
           recipient_expires_at?: string | null
+          recipient_phone?: string | null
           recipient_type?: string
           sender_id?: string
           sent_at?: string | null
