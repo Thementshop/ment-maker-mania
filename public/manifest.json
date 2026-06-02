@@ -3,10 +3,11 @@
   "short_name": "Ment Shop",
   "description": "Spread kindness, collect mints! A gamified compliment app.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#FFFFFF",
-  "theme_color": "#2ECC71",
-  "orientation": "portrait-primary",
+  "background_color": "#3FAA22",
+  "theme_color": "#3FAA22",
+  "orientation": "portrait",
   "icons": [
     {
       "src": "/icon-192.png",
