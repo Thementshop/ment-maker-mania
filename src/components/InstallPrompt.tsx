@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { X, Share, Plus } from "lucide-react";
+import { X, Share, Plus, MoreVertical } from "lucide-react";
 import brandMint from "@/assets/brand-mint.png";
 
-const DISMISS_KEY = "tms-a2hs-dismissed";
+const DISMISS_KEY = "tms-a2hs-dismissed-at";
+const DISMISS_DAYS = 30;
 
 // Minimal typing for the non-standard beforeinstallprompt event.
 interface BeforeInstallPromptEvent extends Event {
@@ -16,39 +17,67 @@ const isStandalone = () =>
   // iOS Safari exposes navigator.standalone
   (window.navigator as unknown as { standalone?: boolean }).standalone === true;
 
-const isIos = () =>
-  /iphone|ipad|ipod/i.test(window.navigator.userAgent) &&
-  !(window as unknown as { MSStream?: unknown }).MSStream;
+type Platform = "ios-safari" | "ios-other" | "android" | "unsupported";
+
+const detectPlatform = (): Platform => {
+  const ua = window.navigator.userAgent;
+  const isIos =
+    /iphone|ipad|ipod/i.test(ua) &&
+    !(window as unknown as { MSStream?: unknown }).MSStream;
+
+  if (isIos) {
+    // Chrome (CriOS), Edge (EdgiOS), Firefox (FxiOS) etc. expose their own
+    // tokens; anything else on iOS is the Safari engine.
+    const isOtherIosBrowser = /crios|edgios|fxios|opt\//i.test(ua);
+    return isOtherIosBrowser ? "ios-other" : "ios-safari";
+  }
+
+  if (/android/i.test(ua)) return "android";
+
+  return "unsupported";
+};
+
+const wasRecentlyDismissed = () => {
+  const raw = localStorage.getItem(DISMISS_KEY);
+  if (!raw) return false;
+  const dismissedAt = Number(raw);
+  if (!Number.isFinite(dismissedAt)) return false;
+  const ageMs = Date.now() - dismissedAt;
+  return ageMs < DISMISS_DAYS * 24 * 60 * 60 * 1000;
+};
 
 const InstallPrompt = () => {
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(null);
-  const [showIosHint, setShowIosHint] = useState(false);
+  const [platform, setPlatform] = useState<Platform>("unsupported");
+  const [show, setShow] = useState(false);
 
   useEffect(() => {
+    // Already installed → never nudge.
     if (isStandalone()) return;
-    if (localStorage.getItem(DISMISS_KEY) === "1") return;
+    if (wasRecentlyDismissed()) return;
 
-    // Android / Chrome — capture the install prompt for a custom button.
+    const detected = detectPlatform();
+    setPlatform(detected);
+
+    // Android / Chromium — capture the native install prompt for a one-tap button.
     const onBeforeInstall = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
     };
     window.addEventListener("beforeinstallprompt", onBeforeInstall);
 
-    // iOS Safari has no install event — show a gentle instructional banner.
-    if (isIos()) {
-      setShowIosHint(true);
-    }
+    // Show on any platform we have real instructions for.
+    if (detected !== "unsupported") setShow(true);
 
     return () =>
       window.removeEventListener("beforeinstallprompt", onBeforeInstall);
   }, []);
 
   const dismiss = () => {
-    localStorage.setItem(DISMISS_KEY, "1");
+    localStorage.setItem(DISMISS_KEY, String(Date.now()));
     setDeferredPrompt(null);
-    setShowIosHint(false);
+    setShow(false);
   };
 
   const handleAndroidInstall = async () => {
@@ -61,11 +90,9 @@ const InstallPrompt = () => {
     }
   };
 
-  const visible = Boolean(deferredPrompt) || showIosHint;
-
   return (
     <AnimatePresence>
-      {visible && (
+      {show && (
         <motion.div
           initial={{ y: 120, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -84,14 +111,15 @@ const InstallPrompt = () => {
 
             <div className="min-w-0 flex-1">
               <p className="font-display text-sm font-bold text-foreground">
-                Keep a little kindness one tap away
+                Want a little kindness one tap away?
               </p>
 
-              {deferredPrompt ? (
+              {/* Android with native prompt available → delightful one-tap button */}
+              {platform === "android" && deferredPrompt ? (
                 <>
                   <p className="mt-0.5 text-xs text-muted-foreground">
-                    Add The Ment Shop to your home screen so a sweet moment is
-                    always within reach.
+                    Pop The Ment Shop on your home screen so a sweet moment is
+                    always within reach. Totally optional — only if you'd like.
                   </p>
                   <button
                     onClick={handleAndroidInstall}
@@ -101,12 +129,36 @@ const InstallPrompt = () => {
                     Add The Ment Shop
                   </button>
                 </>
-              ) : (
+              ) : platform === "android" ? (
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  Pop us on your home screen: tap{" "}
+                  Here's how to add us: tap the three-dot menu{" "}
+                  <MoreVertical className="inline h-3.5 w-3.5 -translate-y-0.5 text-primary" />{" "}
+                  in the top corner, then{" "}
+                  <span className="font-semibold text-foreground">
+                    "Add to Home Screen"
+                  </span>{" "}
+                  or{" "}
+                  <span className="font-semibold text-foreground">
+                    "Install app."
+                  </span>{" "}
+                  Sweet. 💚
+                </p>
+              ) : platform === "ios-other" ? (
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Here's how to add us: tap the Share icon{" "}
                   <Share className="inline h-3.5 w-3.5 -translate-y-0.5 text-primary" />{" "}
-                  <span className="font-semibold text-foreground">Share</span>,
-                  then{" "}
+                  in the address bar at the top, then{" "}
+                  <span className="font-semibold text-foreground">
+                    "Add to Home Screen."
+                  </span>{" "}
+                  Sweet. 💚
+                </p>
+              ) : (
+                // iOS Safari (default)
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Here's how to add us: tap the Share icon{" "}
+                  <Share className="inline h-3.5 w-3.5 -translate-y-0.5 text-primary" />{" "}
+                  at the bottom of the screen, then{" "}
                   <span className="font-semibold text-foreground">
                     "Add to Home Screen."
                   </span>{" "}
