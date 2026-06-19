@@ -144,14 +144,8 @@ const MentPage = () => {
 
   const handleUnwrap = () => {
     setUnwrapped(true);
-    setTimeout(() => {
-      confetti({
-        particleCount: 120,
-        spread: 80,
-        origin: { y: 0.5 },
-        colors: ['#58fc59', '#FF6B9D', '#4FC3F7', '#FFD740', '#B39DDB'],
-      });
-    }, 800);
+    // Surface CTAs only after the reveal video + text have fully settled.
+    window.setTimeout(() => setRevealComplete(true), 8200);
   };
 
   const categoryInfo = ment
