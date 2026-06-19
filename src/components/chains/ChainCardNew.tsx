@@ -134,7 +134,7 @@ const ChainCardNew = ({
     try {
       const success = await onUsePauseToken(chain.chain_id);
       if (success) {
-        toast.success('Timer extended! ⏰ You now have 48 more hours.');
+        toast.success('Timer extended! You now have 48 more hours.');
         await fetchPauseTokens();
         onChainPassed?.();
       } else {
@@ -169,7 +169,7 @@ const ChainCardNew = ({
           <div className="w-full px-4 pt-3 flex items-center justify-between gap-2 z-10">
             <span className="text-lg font-extrabold text-destructive tracking-tight">YOUR TURN!</span>
             <span className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-semibold ${timerColorClass}`}>
-              ⏳ {countdown.formattedTime}
+              {countdown.formattedTime}
             </span>
           </div>
         )}
@@ -228,7 +228,7 @@ const ChainCardNew = ({
                     countdown.hours < 2 ? 'text-destructive' :
                     countdown.hours < 12 ? 'text-yellow-600' : 'text-muted-foreground'
                   }`}>
-                    ⏳ {countdown.formattedTime} remaining
+                    {countdown.formattedTime} remaining
                   </span>
                   {countdown.hours < 12 && (
                     <Button

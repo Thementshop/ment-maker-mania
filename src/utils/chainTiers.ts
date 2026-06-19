@@ -55,8 +55,8 @@ export const visualTierConfig: Record<VisualTier, {
   },
   'rising-star': {
     label: 'Rising Star',
-    emoji: '⭐',
-    badge: 'Rising Star! ⭐',
+    emoji: '',
+    badge: 'Rising Star!',
     cardClass: 'chain-rising-star',
     showSocialShare: true,
   },
