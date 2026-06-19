@@ -334,6 +334,7 @@ const MentPage = () => {
     );
   }
 
+  return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6" style={{ background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 50%, #f0fdf4 100%)' }}>
       <motion.div
         initial={{ opacity: 0, y: 30 }}
