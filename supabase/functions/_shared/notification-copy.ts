@@ -15,7 +15,7 @@ export const REVEAL_SENDER_IN_NOTIFICATION = false;
 export const NOTIFICATION_COPY = {
   single_ment: {
     // Used for: email subject, SMS text, WhatsApp preview, push title
-    subject: 'Someone is thinking of you right now 💚',
+    subject: 'Someone is thinking of you right now',
     // Used for: email headline + body, SMS/WhatsApp message body
     body: 'Someone thought of you and wrapped something kind just for you.',
     // Short CTA copy
