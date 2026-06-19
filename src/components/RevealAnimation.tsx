@@ -152,6 +152,7 @@ const RevealAnimation = ({
   const [showSenderNow, setShowSenderNow] = useState(false);
   const [fontSizePx, setFontSizePx] = useState<number | null>(null);
   const [isWide, setIsWide] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
   const text = (complimentText || '').trim();
   const displayText = preventOrphans(text);
@@ -161,6 +162,15 @@ const RevealAnimation = ({
 
   // Funny/slang (Caveat) glow swallows the strokes → reduce glow blur ~30%.
   const glowScale = fontKey === 'caveat' ? 0.7 : 1;
+
+  // ─── Respect prefers-reduced-motion ───
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setPrefersReducedMotion(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
 
   // ─── Preload ONLY the one needed font (no font flash at 3.9s) ───
   useEffect(() => {
@@ -219,6 +229,11 @@ const RevealAnimation = ({
 
   // ─── Start playback + drive reveal timing off the video clock ───
   useEffect(() => {
+    if (prefersReducedMotion) {
+      setShowText(true);
+      setShowSenderNow(true);
+      return;
+    }
     const v = videoRef.current;
     if (!v) return;
 
@@ -251,22 +266,24 @@ const RevealAnimation = ({
       cancelAnimationFrame(raf);
       fallbackTimers.forEach((t) => clearTimeout(t));
     };
-  }, []);
+  }, [prefersReducedMotion]);
 
   // Metallic green foil finish: dark crisp edge for definition on the bright
   // near-white video, plus a restrained outer glow that lets the foil gradient
   // (bright highlight → mid green → deeper green) remain the star.
   const textShadow = [
     // Deep dark-green edge for strong contrast / readability.
-    '0 0 1px rgba(12,50,4,0.98)',
-    '0 0 2px rgba(12,50,4,0.92)',
-    '0 1px 1px rgba(8,35,2,0.75)',
-    '0 2px 2px rgba(8,35,2,0.45)',
+    '0 0 1px rgba(10,42,3,0.99)',
+    '0 0 2px rgba(10,42,3,0.96)',
+    '0 0 3px rgba(10,42,3,0.90)',
+    '0 1px 1px rgba(6,28,2,0.80)',
+    '0 2px 2px rgba(6,28,2,0.50)',
     // Brighter mid-green halo tight against the letterform.
-    '0 0 3px rgba(47,143,23,0.85)',
+    '0 0 4px rgba(47,143,23,0.90)',
     // Subtle but readable outer glow.
-    `0 0 ${6 * glowScale}px rgba(88,252,89,0.45)`,
-    `0 0 ${12 * glowScale}px rgba(63,170,34,0.30)`,
+    `0 0 ${6 * glowScale}px rgba(88,252,89,0.48)`,
+    `0 0 ${12 * glowScale}px rgba(63,170,34,0.32)`,
+    `0 0 ${18 * glowScale}px rgba(63,170,34,0.18)`,
   ].join(', ');
 
   // Reflective metallic foil gradient: bright highlight → near-white sheen band
@@ -277,8 +294,16 @@ const RevealAnimation = ({
   return (
     <div
       className={`relative w-full overflow-hidden ${className}`}
-      style={{ height: '100dvh', backgroundColor: '#fbfbfb' }}
+      style={{ height: '100dvh', backgroundColor: '#ffffff' }}
     >
+      <style>{`
+        @keyframes foilSheen {
+          0% { background-position: 200% 0%; }
+          18% { background-position: -200% 0%; }
+          18.01% { background-position: 200% 0%; }
+          100% { background-position: 200% 0%; }
+        }
+      `}</style>
       {/* Reveal video — muted, inline, plays ONCE, holds final frame.
           Portrait/mobile → cover (fills screen). Wide → contain (whole mint
           visible, centered, soft near-white fill on the sides, no gray seam).
@@ -308,10 +333,15 @@ const RevealAnimation = ({
         >
           {showText && (
             <motion.h1
-              initial={{ opacity: 0, scale: 0.04, y: `${DRIFT_VH}vh`, filter: 'blur(14px)' }}
+              initial={
+                prefersReducedMotion
+                  ? { opacity: 1, scale: 1, y: '0vh', filter: 'blur(0px)' }
+                  : { opacity: 0, scale: 0.04, y: `${DRIFT_VH}vh`, filter: 'blur(14px)' }
+              }
               animate={{ opacity: 1, scale: 1, y: '0vh', filter: 'blur(0px)' }}
-              transition={{ duration: 1.9, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: prefersReducedMotion ? 0 : 1.9, ease: [0.16, 1, 0.3, 1] }}
               style={{
+                position: 'relative',
                 fontFamily: font.stack,
                 fontWeight: font.weight,
                 fontSize: fontSizePx ? `${fontSizePx}px` : fallbackFontSize(text.length),
@@ -319,7 +349,7 @@ const RevealAnimation = ({
                 letterSpacing: fontKey === 'caveat' ? '0.5px' : '0px',
                 textWrap: 'balance',
                 wordBreak: 'normal',
-                padding: '0.4em 0',
+                padding: '0.6em 0',
                 overflow: 'visible',
                 backgroundImage: foilGradient,
                 WebkitBackgroundClip: 'text',
@@ -331,6 +361,39 @@ const RevealAnimation = ({
               }}
             >
               {displayText}
+              {!prefersReducedMotion && (
+                <span
+                  aria-hidden="true"
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    display: 'block',
+                    fontFamily: 'inherit',
+                    fontWeight: 'inherit',
+                    fontSize: 'inherit',
+                    lineHeight: 'inherit',
+                    letterSpacing: 'inherit',
+                    textWrap: 'inherit',
+                    wordBreak: 'inherit',
+                    textAlign: 'center',
+                    padding: 'inherit',
+                    overflow: 'visible',
+                    backgroundImage:
+                      'linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.22) 42%, rgba(255,255,255,0.70) 50%, rgba(255,255,255,0.22) 58%, transparent 70%)',
+                    backgroundSize: '250% 100%',
+                    WebkitBackgroundClip: 'text',
+                    backgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    color: 'transparent',
+                    mixBlendMode: 'screen',
+                    animation: 'foilSheen 12s ease-in-out 0.8s infinite',
+                    pointerEvents: 'none',
+                    willChange: 'background-position',
+                  }}
+                >
+                  {displayText}
+                </span>
+              )}
             </motion.h1>
           )}
 
