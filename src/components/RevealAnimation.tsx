@@ -253,17 +253,20 @@ const RevealAnimation = ({
     };
   }, []);
 
-  // Metallic green foil finish: crisp darker-green edge + a SUBTLE outer glow
-  // (much less than the neon version) so the letters read as reflective foil
-  // rather than glowing. The reflective gradient itself lives in backgroundImage.
+  // Metallic green foil finish: dark crisp edge for definition on the bright
+  // near-white video, plus a restrained outer glow that lets the foil gradient
+  // (bright highlight → mid green → deeper green) remain the star.
   const textShadow = [
-    // Crisp thin darker-green edge to keep letters defined on light video.
-    '0 0 1px rgba(47,143,23,0.95)',
-    '0 1px 1px rgba(20,70,10,0.55)',
-    '0 0 1.5px rgba(47,143,23,0.8)',
-    // Subtle outer glow only.
-    `0 0 ${5 * glowScale}px rgba(88,252,89,0.35)`,
-    `0 0 ${10 * glowScale}px rgba(63,170,34,0.22)`,
+    // Deep dark-green edge for strong contrast / readability.
+    '0 0 1px rgba(12,50,4,0.98)',
+    '0 0 2px rgba(12,50,4,0.92)',
+    '0 1px 1px rgba(8,35,2,0.75)',
+    '0 2px 2px rgba(8,35,2,0.45)',
+    // Brighter mid-green halo tight against the letterform.
+    '0 0 3px rgba(47,143,23,0.85)',
+    // Subtle but readable outer glow.
+    `0 0 ${6 * glowScale}px rgba(88,252,89,0.45)`,
+    `0 0 ${12 * glowScale}px rgba(63,170,34,0.30)`,
   ].join(', ');
 
   // Reflective metallic foil gradient: bright highlight → near-white sheen band
