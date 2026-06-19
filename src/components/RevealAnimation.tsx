@@ -274,7 +274,7 @@ const RevealAnimation = ({
   return (
     <div
       className={`relative w-full overflow-hidden ${className}`}
-      style={{ height: '100dvh', backgroundColor: '#f4fff6' }}
+      style={{ height: '100dvh', backgroundColor: '#fbfbfb' }}
     >
       {/* Reveal video — muted, inline, plays ONCE, holds final frame.
           Portrait/mobile → cover (fills screen). Wide → contain (whole mint
