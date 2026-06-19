@@ -35,6 +35,8 @@ const MentPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [unwrapped, setUnwrapped] = useState(false);
+  // Reveal video + text settles by ~8s; only then do we surface the CTAs.
+  const [revealComplete, setRevealComplete] = useState(false);
   // After unwrap, logged-in private-link users get a one-tap choice:
   // resend the same compliment, or pick something new.
   const [showSendBackChoice, setShowSendBackChoice] = useState(false);
