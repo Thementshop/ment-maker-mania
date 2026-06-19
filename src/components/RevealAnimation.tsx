@@ -253,20 +253,28 @@ const RevealAnimation = ({
     };
   }, []);
 
-  // Glossy neon-green glass finish: layered glow following the letterforms only.
+  // Metallic green foil finish: crisp darker-green edge + a SUBTLE outer glow
+  // (much less than the neon version) so the letters read as reflective foil
+  // rather than glowing. The reflective gradient itself lives in backgroundImage.
   const textShadow = [
-    '0 0 2px rgba(63,170,34,0.95)',
-    '0 1px 2px rgba(10,55,10,0.55)',
-    `0 0 ${8 * glowScale}px rgba(88,252,89,0.95)`,
-    `0 0 ${18 * glowScale}px rgba(88,252,89,0.75)`,
-    `0 0 ${34 * glowScale}px rgba(88,252,89,0.55)`,
-    `0 0 ${54 * glowScale}px rgba(88,252,89,0.32)`,
+    // Crisp thin darker-green edge to keep letters defined on light video.
+    '0 0 1px rgba(47,143,23,0.95)',
+    '0 1px 1px rgba(20,70,10,0.55)',
+    '0 0 1.5px rgba(47,143,23,0.8)',
+    // Subtle outer glow only.
+    `0 0 ${5 * glowScale}px rgba(88,252,89,0.35)`,
+    `0 0 ${10 * glowScale}px rgba(63,170,34,0.22)`,
   ].join(', ');
+
+  // Reflective metallic foil gradient: bright highlight → near-white sheen band
+  // across the upper third → mid green → deeper green lower.
+  const foilGradient =
+    'linear-gradient(180deg, #7be65c 0%, #c9ffb8 14%, #ffffff 24%, #7be65c 38%, #3FAA22 64%, #2f8f17 100%)';
 
   return (
     <div
       className={`relative w-full overflow-hidden ${className}`}
-      style={{ height: '100dvh', backgroundColor: '#f4fff6' }}
+      style={{ height: '100dvh', backgroundColor: '#fbfbfb' }}
     >
       {/* Reveal video — muted, inline, plays ONCE, holds final frame.
           Portrait/mobile → cover (fills screen). Wide → contain (whole mint
@@ -283,7 +291,7 @@ const RevealAnimation = ({
         style={{
           objectFit: isWide ? 'contain' : 'cover',
           objectPosition: 'center',
-          filter: 'brightness(1.06) contrast(1.04)',
+          filter: 'brightness(1.13) contrast(1.05)',
         }}
       />
 
@@ -310,8 +318,7 @@ const RevealAnimation = ({
                 wordBreak: 'normal',
                 padding: '0.4em 0',
                 overflow: 'visible',
-                backgroundImage:
-                  'linear-gradient(180deg, #ffffff 0%, #dcffde 16%, #58fc59 44%, #58fc59 66%, #3FAA22 100%)',
+                backgroundImage: foilGradient,
                 WebkitBackgroundClip: 'text',
                 backgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
