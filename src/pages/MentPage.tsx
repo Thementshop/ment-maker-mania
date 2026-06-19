@@ -5,9 +5,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import wrappedMint from '@/assets/wrapped-mint.png';
 import unwrappedMint from '@/assets/unwrapped-mint.png';
 import brandMint from '@/assets/brand-mint.png';
-import confetti from 'canvas-confetti';
+
 import { supabase } from '@/integrations/supabase/client';
 import { AuthContext } from '@/contexts/AuthContext';
+import RevealAnimation from '@/components/RevealAnimation';
 
 interface MentData {
   compliment_text: string;
@@ -34,6 +35,8 @@ const MentPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [unwrapped, setUnwrapped] = useState(false);
+  // Reveal video + text settles by ~8s; only then do we surface the CTAs.
+  const [revealComplete, setRevealComplete] = useState(false);
   // After unwrap, logged-in private-link users get a one-tap choice:
   // resend the same compliment, or pick something new.
   const [showSendBackChoice, setShowSendBackChoice] = useState(false);
@@ -141,14 +144,8 @@ const MentPage = () => {
 
   const handleUnwrap = () => {
     setUnwrapped(true);
-    setTimeout(() => {
-      confetti({
-        particleCount: 120,
-        spread: 80,
-        origin: { y: 0.5 },
-        colors: ['#58fc59', '#FF6B9D', '#4FC3F7', '#FFD740', '#B39DDB'],
-      });
-    }, 800);
+    // Surface CTAs only after the reveal video + text have fully settled.
+    window.setTimeout(() => setRevealComplete(true), 8200);
   };
 
   const categoryInfo = ment
@@ -185,6 +182,154 @@ const MentPage = () => {
         >
           Join The Ment Shop →
         </Link>
+      </div>
+    );
+  }
+
+  // ─── Reveal experience: video + animated compliment, CTAs after it settles ───
+  if (unwrapped && ment) {
+    return (
+      <div className="relative" style={{ minHeight: '100dvh' }}>
+        <RevealAnimation
+          complimentText={ment.compliment_text}
+          category={ment.category}
+          senderName={ment.sender_name}
+          showSender
+        />
+
+        <AnimatePresence>
+          {revealComplete && (
+            <motion.div
+              key="reveal-ctas"
+              className="fixed inset-x-0 bottom-0 z-40 flex flex-col items-center gap-3 p-6 pb-8"
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, ease: 'easeOut' }}
+              style={{
+                background:
+                  'linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.85) 35%, rgba(255,255,255,0.97) 100%)',
+              }}
+            >
+              <div className="w-full max-w-md space-y-3">
+                {isShareMode ? (
+                  <Link
+                    to={isLoggedIn ? '/' : '/auth'}
+                    className="block w-full rounded-xl px-6 py-3 font-semibold text-white text-center transition-all hover:scale-[1.02]"
+                    style={{ background: 'linear-gradient(135deg, #58fc59, #3dd83e)' }}
+                  >
+                    Join The Ment Shop 💚
+                  </Link>
+                ) : isLoggedIn ? (
+                  <>
+                    <button
+                      onClick={() => setShowSendBackChoice(true)}
+                      className="block w-full rounded-xl px-6 py-3 font-semibold text-white text-center transition-all hover:scale-[1.02]"
+                      style={{ background: 'linear-gradient(135deg, #58fc59, #3dd83e)' }}
+                    >
+                      Send a Ment Back to {ment.sender_name} 💚
+                    </button>
+                    <button
+                      onClick={() => {
+                        sessionStorage.setItem('openSendMent', '1');
+                        navigate('/');
+                      }}
+                      className="block w-full rounded-xl px-6 py-3 font-semibold text-center transition-all hover:scale-[1.02] border-2 bg-white"
+                      style={{ borderColor: '#58fc59', color: '#166534' }}
+                    >
+                      Choose someone new
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      to="/auth"
+                      className="block w-full rounded-xl px-6 py-3 font-semibold text-white text-center transition-all hover:scale-[1.02]"
+                      style={{ background: 'linear-gradient(135deg, #58fc59, #3dd83e)' }}
+                    >
+                      Create Free Account
+                    </Link>
+                    <Link
+                      to="/auth?mode=signin"
+                      className="block w-full text-center text-sm transition-colors hover:underline"
+                      style={{ color: '#166534' }}
+                    >
+                      Already have an account? Sign in
+                    </Link>
+                  </>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Quick "Send Back" choice sheet (logged-in private-link recipients). */}
+        <AnimatePresence>
+          {showSendBackChoice && (
+            <motion.div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowSendBackChoice(false)}
+            >
+              <motion.div
+                onClick={(e) => e.stopPropagation()}
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl"
+              >
+                <h2 className="font-display text-xl font-bold text-center mb-1" style={{ color: '#166534' }}>
+                  Pass it forward 💚
+                </h2>
+                <p className="text-center text-sm text-muted-foreground mb-5">
+                  Send the same kindness, or pick something fresh.
+                </p>
+                <div
+                  className="rounded-2xl p-4 mb-3"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(88,252,89,0.08), rgba(88,252,89,0.15))',
+                    border: '2px solid rgba(88,252,89,0.3)',
+                  }}
+                >
+                  <p className="text-foreground text-base leading-relaxed font-semibold italic mb-4">
+                    "{ment.compliment_text}"
+                  </p>
+                  <button
+                    onClick={() => {
+                      sessionStorage.setItem('openSendMent', '1');
+                      sessionStorage.setItem('sendMentPrefillCompliment', ment.compliment_text);
+                      sessionStorage.setItem('sendMentPrefillCategory', ment.category);
+                      sessionStorage.setItem('sendMentSenderName', ment.sender_name);
+                      navigate('/');
+                    }}
+                    className="block w-full rounded-xl px-6 py-3 font-semibold text-white text-center transition-all hover:scale-[1.02]"
+                    style={{ background: 'linear-gradient(135deg, #58fc59, #3dd83e)' }}
+                  >
+                    Send this same Ment 💚
+                  </button>
+                </div>
+                <button
+                  onClick={() => {
+                    sessionStorage.setItem('openSendMent', '1');
+                    sessionStorage.setItem('sendMentSenderName', ment.sender_name);
+                    navigate('/');
+                  }}
+                  className="block w-full rounded-xl px-6 py-3 font-semibold text-center transition-all hover:scale-[1.02] border-2"
+                  style={{ borderColor: '#58fc59', color: '#166534' }}
+                >
+                  Choose something new instead →
+                </button>
+                <button
+                  onClick={() => setShowSendBackChoice(false)}
+                  className="mt-3 w-full text-center text-xs text-muted-foreground hover:text-foreground"
+                >
+                  Cancel
+                </button>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     );
   }
