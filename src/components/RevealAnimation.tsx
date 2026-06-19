@@ -318,8 +318,7 @@ const RevealAnimation = ({
                 wordBreak: 'normal',
                 padding: '0.4em 0',
                 overflow: 'visible',
-                backgroundImage:
-                  'linear-gradient(180deg, #ffffff 0%, #dcffde 16%, #58fc59 44%, #58fc59 66%, #3FAA22 100%)',
+                backgroundImage: foilGradient,
                 WebkitBackgroundClip: 'text',
                 backgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
