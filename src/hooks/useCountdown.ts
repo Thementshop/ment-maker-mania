@@ -57,7 +57,7 @@ export const useCountdown = (
       seconds.toString().padStart(2, '0')
     ].join(':');
 
-    const percentageRemaining = totalDurationMs 
+    const percentageRemaining = totalDurationMs
       ? Math.min(100, Math.max(0, (timeLeft / totalDurationMs) * 100))
       : 0;
 
@@ -109,7 +109,7 @@ export const useMultipleCountdowns = (
   useEffect(() => {
     const calculateAll = () => {
       const newCountdowns = new Map<string, CountdownResult>();
-      
+
       items.forEach(item => {
         if (!item.expiresAt) {
           newCountdowns.set(item.id, {
@@ -124,8 +124,8 @@ export const useMultipleCountdowns = (
           return;
         }
 
-        const expiryDate = typeof item.expiresAt === 'string' 
-          ? new Date(item.expiresAt) 
+        const expiryDate = typeof item.expiresAt === 'string'
+          ? new Date(item.expiresAt)
           : item.expiresAt;
         const now = new Date();
         const timeLeft = Math.max(0, expiryDate.getTime() - now.getTime());
@@ -141,7 +141,7 @@ export const useMultipleCountdowns = (
           seconds.toString().padStart(2, '0')
         ].join(':');
 
-        const percentageRemaining = item.totalDurationMs 
+        const percentageRemaining = item.totalDurationMs
           ? Math.min(100, Math.max(0, (timeLeft / item.totalDurationMs) * 100))
           : 0;
 

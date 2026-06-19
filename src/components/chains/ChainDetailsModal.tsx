@@ -38,7 +38,7 @@ interface ChainDetailsModalProps {
 
 function formatTimeAgo(date: string): string {
   const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
-  
+
   if (seconds < 60) return 'Just now';
   if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
   if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
@@ -50,11 +50,11 @@ const ChainDetailsModal = ({ chain, isOpen, onClose, getChainLinks }: ChainDetai
   const [links, setLinks] = useState<ChainLink[]>([]);
   const [loading, setLoading] = useState(true);
   const channelRef = useRef<RealtimeChannel | null>(null);
-  
+
   useEffect(() => {
     if (isOpen) {
       fetchChainLinks();
-      
+
       // Subscribe to real-time updates for this chain's links
       const channel = supabase
         .channel(`chain_links_${chain.chain_id}`)
@@ -72,10 +72,10 @@ const ChainDetailsModal = ({ chain, isOpen, onClose, getChainLinks }: ChainDetai
           }
         )
         .subscribe();
-      
+
       channelRef.current = channel;
     }
-    
+
     // Cleanup subscription when modal closes
     return () => {
       if (channelRef.current) {
@@ -84,7 +84,7 @@ const ChainDetailsModal = ({ chain, isOpen, onClose, getChainLinks }: ChainDetai
       }
     };
   }, [isOpen, chain.chain_id]);
-  
+
   // Profile name resolution cache
   const [profileMap, setProfileMap] = useState<Map<string, string>>(new Map());
 
@@ -97,7 +97,7 @@ const ChainDetailsModal = ({ chain, isOpen, onClose, getChainLinks }: ChainDetai
       } else {
         const accessToken = session?.access_token;
         if (!accessToken) throw new Error('Not authenticated');
-        
+
         const response = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/chain_links?select=*&chain_id=eq.${chain.chain_id}&order=passed_at.asc`,
           {
@@ -112,7 +112,7 @@ const ChainDetailsModal = ({ chain, isOpen, onClose, getChainLinks }: ChainDetai
         fetchedLinks = await response.json();
       }
       setLinks(fetchedLinks || []);
-      
+
       // Resolve display names for all UUIDs in links
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       const userIds = new Set<string>();
@@ -124,7 +124,7 @@ const ChainDetailsModal = ({ chain, isOpen, onClose, getChainLinks }: ChainDetai
       if (chain.started_by && uuidRegex.test(chain.started_by)) {
         userIds.add(chain.started_by);
       }
-      
+
       if (userIds.size > 0) {
         const accessToken = session?.access_token;
         if (accessToken) {
@@ -160,9 +160,9 @@ const ChainDetailsModal = ({ chain, isOpen, onClose, getChainLinks }: ChainDetai
 
   const tier = chain.tier || getChainTier(chain.share_count);
   const config = tierConfig[tier as keyof typeof tierConfig] || tierConfig.small;
-  
+
   if (!isOpen) return null;
-  
+
   return (
     <AnimatePresence>
       <motion.div
@@ -218,14 +218,14 @@ const ChainDetailsModal = ({ chain, isOpen, onClose, getChainLinks }: ChainDetai
               </Button>
             </div>
           </div>
-          
+
           {/* Chain Flow Timeline */}
           <div className="p-6 overflow-y-auto max-h-[50vh]">
             <h3 className="text-sm font-semibold text-muted-foreground mb-4 flex items-center gap-2">
               <ArrowRight className="h-4 w-4" />
               Chain Flow
             </h3>
-            
+
             {loading ? (
               <div className="space-y-4">
                 {[1, 2, 3].map(i => (
@@ -252,7 +252,7 @@ const ChainDetailsModal = ({ chain, isOpen, onClose, getChainLinks }: ChainDetai
                     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
                       {index + 1}
                     </div>
-                    
+
                     {/* Content */}
                     <div className="flex-1 bg-muted/50 rounded-lg p-3">
                       <p className="text-sm font-medium text-foreground">
@@ -291,7 +291,7 @@ const ChainDetailsModal = ({ chain, isOpen, onClose, getChainLinks }: ChainDetai
               </div>
             )}
           </div>
-          
+
         </motion.div>
       </motion.div>
     </AnimatePresence>

@@ -15,14 +15,14 @@ interface OnboardingModalProps {
 
 const screens = [
   {
-    emoji: '💚',
+    emoji: '',
     title: 'WE HAVE BEEN WAITING FOR YOU',
-    description: "Your Kindness Jar is here, your very first mint is inside, and honestly the universe is already a little shinier. Go make someone's day. 💚",
+    description: "Your Kindness Jar is here, your very first mint is inside, and honestly the universe is already a little shinier. Go make someone's day.",
     icon: <Heart className="h-12 w-12 text-primary" />,
     color: 'from-primary/20 to-primary/10',
   },
   {
-    emoji: '💌',
+    emoji: '',
     title: 'Send A Ment',
     description: "Choose a compliment (or write your own), we'll wrap it up in the prettiest little mint, and off it goes to make someone's whole entire day. Every send earns you a mint, and your Kindness Jar does a tiny happy dance.",
     icon: <Send className="h-12 w-12 text-pink-500" />,
@@ -35,7 +35,7 @@ const screens = [
     ],
   },
   {
-    emoji: '💚',
+    emoji: '',
     title: 'Earn Mints & Grow Your Jar',
     description: 'Your Kindness Jar keeps track of every sweet thing you do AND every sweet thing done for you. Watch it fill up mint by mint — one becomes five, five becomes twenty-five — and somewhere along the way you realize this jar is basically a trophy for being an incredible human.',
     icon: <img src={unwrappedMint} alt="Mint" className="h-12 w-12 object-contain" />,
@@ -49,7 +49,7 @@ const screens = [
     ],
   },
   {
-    emoji: '🔗',
+    emoji: '',
     title: 'How Chains Work',
     description: "Ready for something bigger? Start a Ment Chain and set kindness in motion. Five mints land in your jar instantly, then each person has 48 hours to keep the sweetness moving forward. Need breathing room? A Pause Token adds 48 more. Watch it travel and grow.",
     icon: <Link2 className="h-12 w-12 text-orange-500" />,
@@ -95,7 +95,7 @@ const OnboardingModal = ({ isOpen, onClose, mintCount = 0, isNewSignup = false }
     currentScreen === 0 && hasUnclaimed
       ? {
           ...baseScreen,
-          description: `Someone already sent you kindness before you even arrived — and your jar has ${mintCount} mints waiting inside. The universe clearly has plans for you. 💚`,
+          description: `Someone already sent you kindness before you even arrived — and your jar has ${mintCount} mints waiting inside. The universe clearly has plans for you.`,
         }
       : baseScreen;
 
@@ -192,7 +192,7 @@ const OnboardingModal = ({ isOpen, onClose, mintCount = 0, isNewSignup = false }
                 )}
                 <Button onClick={handleNext} className="flex-1">
                   {currentScreen === screens.length - 1 ? (
-                    'Get Started! 💚'
+                    'Get Started!'
                   ) : (
                     <>
                       Next

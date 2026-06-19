@@ -42,20 +42,20 @@ const contactSchema = z.string().min(1, 'Please enter a name').max(100);
 const ChainPassModal = ({ isOpen, onClose, chain, receivedCompliment }: ChainPassModalProps) => {
   const { toast } = useToast();
   const { passChain } = useMentChains();
-  
+
   // Step management
   const [step, setStep] = useState<'choice' | 'recipient' | 'category' | 'compliment' | 'sending' | 'success'>('choice');
   const [passChoice, setPassChoice] = useState<PassChoice>('custom');
-  
+
   // Recipient state
   const [recipientType, setRecipientType] = useState<RecipientType>('contact');
   const [recipientValue, setRecipientValue] = useState('');
   const [recipientError, setRecipientError] = useState('');
-  
+
   // Compliment state
   const [selectedCategory, setSelectedCategory] = useState<ComplimentCategory | null>(null);
   const [selectedCompliment, setSelectedCompliment] = useState('');
-  
+
   const resetModal = useCallback(() => {
     setStep('choice');
     setPassChoice('custom');
@@ -96,7 +96,7 @@ const ChainPassModal = ({ isOpen, onClose, chain, receivedCompliment }: ChainPas
 
   const handleRecipientNext = () => {
     if (!validateRecipient()) return;
-    
+
     if (passChoice === 'share') {
       // Skip compliment selection, use received compliment
       setSelectedCompliment(receivedCompliment);
@@ -118,7 +118,7 @@ const ChainPassModal = ({ isOpen, onClose, chain, receivedCompliment }: ChainPas
 
   const handleSend = async (compliment: string) => {
     setStep('sending');
-    
+
     try {
       const success = await passChain(
         chain.chain_id,
@@ -129,7 +129,7 @@ const ChainPassModal = ({ isOpen, onClose, chain, receivedCompliment }: ChainPas
 
       if (success) {
         setStep('success');
-        
+
         // Fire confetti!
         confetti({
           particleCount: 100,
@@ -196,10 +196,10 @@ const ChainPassModal = ({ isOpen, onClose, chain, receivedCompliment }: ChainPas
 
       {/* Choice Options */}
       <RadioGroup value={passChoice} onValueChange={(v) => setPassChoice(v as PassChoice)} className="space-y-3">
-        <label 
+        <label
           className={`flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-            passChoice === 'share' 
-              ? 'border-primary bg-primary/5' 
+            passChoice === 'share'
+              ? 'border-primary bg-primary/5'
               : 'border-border hover:border-primary/50'
           }`}
         >
@@ -210,15 +210,15 @@ const ChainPassModal = ({ isOpen, onClose, chain, receivedCompliment }: ChainPas
               <span className="font-semibold">Share this Ment</span>
             </div>
             <p className="text-sm text-muted-foreground mt-1">
-              Keep the vibe going 🔗 Forward the same compliment you received
+              Keep the vibe going Forward the same compliment you received
             </p>
           </div>
         </label>
 
-        <label 
+        <label
           className={`flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-            passChoice === 'custom' 
-              ? 'border-primary bg-primary/5' 
+            passChoice === 'custom'
+              ? 'border-primary bg-primary/5'
               : 'border-border hover:border-primary/50'
           }`}
         >
@@ -230,7 +230,7 @@ const ChainPassModal = ({ isOpen, onClose, chain, receivedCompliment }: ChainPas
               <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">Recommended</span>
             </div>
             <p className="text-sm text-muted-foreground mt-1">
-              Make it personal 💚 Pick a new compliment to send
+              Make it personal Pick a new compliment to send
             </p>
           </div>
         </label>
@@ -412,7 +412,7 @@ const ChainPassModal = ({ isOpen, onClose, chain, receivedCompliment }: ChainPas
         <Send className="h-10 w-10 text-primary" />
       </motion.div>
       <p className="mt-4 text-lg font-semibold">Passing the chain...</p>
-      <p className="text-sm text-muted-foreground">Spreading kindness ✨</p>
+      <p className="text-sm text-muted-foreground">Spreading kindness</p>
     </motion.div>
   );
 
@@ -430,13 +430,13 @@ const ChainPassModal = ({ isOpen, onClose, chain, receivedCompliment }: ChainPas
       >
         <Check className="h-10 w-10 text-primary-foreground" />
       </motion.div>
-      
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
       >
-        <h3 className="text-xl font-bold text-foreground mb-2">Chain Passed! 🎉</h3>
+        <h3 className="text-xl font-bold text-foreground mb-2">Chain Passed!</h3>
         <p className="text-muted-foreground">
           You've added a new link to the chain
         </p>

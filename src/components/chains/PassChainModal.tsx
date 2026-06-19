@@ -36,20 +36,20 @@ const restApi = async (
     };
     const opts: RequestInit = { method, headers };
     if (body) opts.body = JSON.stringify(body);
-    
+
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10000);
     opts.signal = controller.signal;
-    
+
     const res = await fetch(url, opts);
     clearTimeout(timeout);
-    
+
     if (!res.ok) {
       const errText = await res.text();
       console.error(`[PassChain REST] ${method} ${table} failed:`, res.status, errText);
       return { data: null, error: { message: errText, status: res.status } };
     }
-    
+
     const text = await res.text();
     const data = text ? JSON.parse(text) : null;
     return { data, error: null };
@@ -88,7 +88,7 @@ const PassChainModal = ({
 }: PassChainModalProps) => {
   const { user, session } = useAuth();
   const { toast } = useToast();
-  
+
   const [step, setStep] = useState<'choice' | 'forward' | 'choose'>('choice');
   const [recipient, setRecipient] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -260,7 +260,7 @@ const PassChainModal = ({
     try {
       // Get session token - use context session, refresh via REST if expired
       let token = session?.access_token;
-      
+
       if (token) {
         // Check if token is expired or expiring within 30s
         try {
@@ -286,7 +286,7 @@ const PassChainModal = ({
           }
         } catch { /* decode failed, use token as-is */ }
       }
-      
+
       if (!token) throw new Error('No auth session');
 
       console.log('[PassChain] Starting pass via REST API for chain:', chain.chain_id);
@@ -318,13 +318,13 @@ const PassChainModal = ({
           body: JSON.stringify({ _chain_id: chain.chain_id, _identifier: recipientLower }),
           signal: AbortSignal.timeout(10000),
         });
-        
+
         if (participantResp.ok) {
           const isParticipant = await participantResp.json();
           console.log('[PassChain] Participant check result:', { recipient: recipientLower, isParticipant });
-          
+
           if (isParticipant === true) {
-            setError("This person is already part of this chain! Choose someone new to spread the kindness further 💚");
+            setError("This person is already part of this chain! Choose someone new to spread the kindness further");
             setLoading(false);
             isSubmitting.current = false;
             return;
@@ -355,7 +355,7 @@ const PassChainModal = ({
       if (recipientChains && recipientChains.length >= 3) {
         toast({
           title: "Recipient at capacity",
-          description: `${recipient} has 3 active chains and can't receive more right now. Try someone else! 💚`,
+          description: `${recipient} has 3 active chains and can't receive more right now. Try someone else!`,
           variant: "destructive"
         });
         setLoading(false);
@@ -465,10 +465,10 @@ const PassChainModal = ({
       // (Queued chain promotion removed.)
 
       // 9. Success!
-      console.log('[PassChain] ✅ Chain passed successfully!');
+      console.log('[PassChain] Chain passed successfully!');
       toast({
-        title: "Chain passed! 🔗 +1 mint! 📤",
-        description: "1 mint added to your jar for passing it forward 💚"
+        title: "Chain passed! +1 mint!",
+        description: "1 mint added to your jar for passing it forward"
       });
 
       onSuccess();
@@ -492,8 +492,7 @@ const PassChainModal = ({
       <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-center">
-            Pass It Forward 🔗
-          </DialogTitle>
+            Pass It Forward </DialogTitle>
         </DialogHeader>
 
         <AnimatePresence mode="wait">
@@ -516,7 +515,7 @@ const PassChainModal = ({
                 className="w-full p-4 rounded-2xl border-2 border-primary/30 hover:border-primary bg-primary/5 hover:bg-primary/10 transition-all text-left"
               >
                 <p className="font-semibold text-foreground">Share this Ment</p>
-                <p className="text-sm text-muted-foreground">Keep the vibe going 🔗</p>
+                <p className="text-sm text-muted-foreground">Keep the vibe going</p>
                 <p className="text-sm text-primary mt-2 italic line-clamp-2">
                   "{receivedCompliment}"
                 </p>
@@ -528,7 +527,7 @@ const PassChainModal = ({
                 className="w-full p-4 rounded-2xl border-2 border-primary bg-primary hover:bg-primary/90 transition-all text-left text-primary-foreground"
               >
                 <p className="font-semibold">Choose your own</p>
-                <p className="text-sm opacity-90">Make it personal 💚</p>
+                <p className="text-sm opacity-90">Make it personal</p>
               </button>
 
               <Button

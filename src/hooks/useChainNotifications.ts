@@ -47,21 +47,21 @@ export const useChainNotifications = () => {
         },
         (payload) => {
           const newData = payload.new as ChainPayload;
-          
+
           // Only notify if user started this chain
           if (newData.started_by !== user.id) return;
-          
+
           const previousCount = previousCounts.current.get(newData.chain_id) || 0;
-          
+
           // Check if links_count increased (chain was passed)
           if (newData.links_count > previousCount && newData.status === 'active') {
             const chainShortId = newData.chain_id.slice(-4).toUpperCase();
-            
+
             toast({
-              title: "🔥 Chain Passed!",
+              title: "Chain Passed!",
               description: `Chain #${chainShortId} now has ${newData.links_count} links!`,
             });
-            
+
             // Update the stored count
             previousCounts.current.set(newData.chain_id, newData.links_count);
           }

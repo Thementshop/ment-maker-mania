@@ -38,8 +38,8 @@ const Footer = () => {
               <h3 className="font-display font-bold text-lg text-foreground">About</h3>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed flex flex-wrap items-center gap-1">
-              The Ment Shop is the candy store of compliments! We're on a mission to spread kindness 
-              across the world, one sweet ment at a time. Every compliment you send adds to our 
+              The Ment Shop is the candy store of compliments! We're on a mission to spread kindness
+              across the world, one sweet ment at a time. Every compliment you send adds to our
               global kindness counter and makes someone's day a little brighter.
               <img src={brandMint} alt="" className="inline-block h-4 w-4 object-contain align-middle" />
             </p>
@@ -92,7 +92,7 @@ const Footer = () => {
               <h3 className="font-display font-bold text-lg text-foreground">Advertise with Us</h3>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Partner with The Ment Shop to reach our community of kindness enthusiasts. 
+              Partner with The Ment Shop to reach our community of kindness enthusiasts.
               Align your brand with positivity and make a meaningful impact together.
             </p>
             <a
@@ -100,7 +100,7 @@ const Footer = () => {
               target="_blank"
               rel="noopener noreferrer"
               onClick={handleEmailClick('info@mentshop.com')}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 
+              className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20
                          rounded-full text-sm font-semibold text-primary transition-colors hover:scale-[1.02] active:scale-[0.98]"
             >
               {copied === 'info@mentshop.com' ? <Check className="w-4 h-4" /> : <Megaphone className="w-4 h-4" />}

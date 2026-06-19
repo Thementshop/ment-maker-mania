@@ -52,7 +52,7 @@ const HowItWorksModal = ({ isOpen, onClose }: HowItWorksModalProps) => {
             onClick={onClose}
             className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
           />
-          
+
           {/* Modal */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -72,7 +72,7 @@ const HowItWorksModal = ({ isOpen, onClose }: HowItWorksModalProps) => {
               >
                 <X className="w-5 h-5 text-muted-foreground" />
               </motion.button>
-              
+
               <div className="flex items-center gap-3">
                 <motion.div
                   animate={{ rotate: [0, 10, -10, 0] }}
@@ -90,7 +90,7 @@ const HowItWorksModal = ({ isOpen, onClose }: HowItWorksModalProps) => {
                 </div>
               </div>
             </div>
-            
+
             {/* Steps */}
             <div className="overflow-y-auto flex-1 p-6">
               <div className="space-y-6">
@@ -106,15 +106,15 @@ const HowItWorksModal = ({ isOpen, onClose }: HowItWorksModalProps) => {
                     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
                       <span className="font-display font-bold text-primary">{index + 1}</span>
                     </div>
-                    
+
                     {/* Icon */}
-                    <motion.div 
+                    <motion.div
                       className="flex-shrink-0 w-20 h-20 rounded-2xl bg-background/50 flex items-center justify-center shadow-sm"
                       whileHover={{ scale: 1.05, rotate: 5 }}
                     >
                       {step.icon}
                     </motion.div>
-                    
+
                     {/* Content */}
                     <div className="flex-1 pt-1">
                       <h3 className="font-display font-bold text-lg text-foreground mb-1">
@@ -128,18 +128,17 @@ const HowItWorksModal = ({ isOpen, onClose }: HowItWorksModalProps) => {
                 ))}
               </div>
             </div>
-            
+
             {/* Footer CTA */}
             <div className="p-6 border-t border-border/30 bg-background/50">
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={onClose}
-                className="w-full py-3 px-6 bg-gradient-to-r from-mint to-mint-dark rounded-full 
+                className="w-full py-3 px-6 bg-gradient-to-r from-mint to-mint-dark rounded-full
                            font-display font-bold text-white shadow-mint hover:shadow-lg transition-shadow"
               >
-                Start Spreading Kindness! 💚
-              </motion.button>
+                Start Spreading Kindness! </motion.button>
             </div>
           </motion.div>
         </>

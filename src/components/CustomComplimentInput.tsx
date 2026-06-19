@@ -38,9 +38,9 @@ const CustomComplimentInput = ({ onSelect }: CustomComplimentInputProps) => {
   }, [value]);
 
   const containsBlocked = (text: string): string | null => {
-    const normalized = ' ' + text.toLowerCase().replace(/[^a-z0-9 ]/g, ' ') + ' ';
+    const normalized = '' + text.toLowerCase().replace(/[^a-z0-9 ]/g, '') + '';
     for (const w of blockedWords) {
-      if (normalized.includes(' ' + w + ' ')) return w;
+      if (normalized.includes('' + w + '')) return w;
     }
     return null;
   };
@@ -52,7 +52,7 @@ const CustomComplimentInput = ({ onSelect }: CustomComplimentInputProps) => {
     setChecking(true);
     // Client-side check first
     if (containsBlocked(trimmed)) {
-      setError("Let's keep it kind! 💚 Try rephrasing your compliment to spread positivity.");
+      setError("Let's keep it kind! Try rephrasing your compliment to spread positivity.");
       setChecking(false);
       return;
     }
@@ -68,7 +68,7 @@ const CustomComplimentInput = ({ onSelect }: CustomComplimentInputProps) => {
         | { data: boolean | null; error: unknown };
       setChecking(false);
       if (result?.data === true) {
-        setError("Let's keep it kind! 💚 Try rephrasing your compliment to spread positivity.");
+        setError("Let's keep it kind! Try rephrasing your compliment to spread positivity.");
         return;
       }
       onSelect(trimmed);

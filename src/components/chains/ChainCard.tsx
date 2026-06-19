@@ -33,16 +33,16 @@ const EIGHT_HOURS_MS = 8 * 60 * 60 * 1000;
 
 const getTimerColor = (hoursLeft: number, minutesLeft: number): string => {
   const totalMinutes = hoursLeft * 60 + minutesLeft;
-  
+
   if (totalMinutes >= 360) return 'text-primary'; // >= 6 hours (green)
   if (totalMinutes >= 60) return 'text-yellow-500'; // 1-6 hours
   if (totalMinutes >= 10) return 'text-orange-500'; // 10min - 1 hour
   return 'text-red-500'; // < 10 minutes
 };
 
-const ChainCard = ({ 
-  chain, 
-  onShare, 
+const ChainCard = ({
+  chain,
+  onShare,
   onViewDetails,
   onPauseUsed
 }: ChainCardProps) => {
@@ -51,19 +51,19 @@ const ChainCard = ({
   const countdown = useCountdown(chain.expires_at, EIGHT_HOURS_MS);
   const { pauseTokens, usePauseToken, refetch } = usePauseTokens();
   const [isPausing, setIsPausing] = useState(false);
-  
+
   const timerColor = getTimerColor(countdown.hours, countdown.minutes);
 
   const handleShare = () => {
     const chainUrl = `${getShareBaseUrl()}/chain/${chain.chain_id}`;
     navigator.clipboard.writeText(chainUrl).catch(() => {});
     toast({
-      title: "Link copied! 🔗",
+      title: "Link copied!",
       description: "Share this link with anyone",
     });
     if (navigator.share) {
       navigator.share({
-        title: `Join this Kindness Chain! 💚`,
+        title: `Join this Kindness Chain!`,
         text: `Check out this Ment Chain with ${chain.links_count} links!`,
         url: chainUrl
       }).catch(() => {});
@@ -82,7 +82,7 @@ const ChainCard = ({
 
     setIsPausing(true);
     const success = await usePauseToken(chain.chain_id);
-    
+
     if (success) {
       confetti({
         particleCount: 60,
@@ -141,12 +141,12 @@ const ChainCard = ({
             Ment Chain {formatChainId(chain.chain_id)}
           </span>
         </div>
-        
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               className="h-8 w-8 rounded-full bg-primary/10 hover:bg-primary/20"
             >
               <MoreHorizontal className="h-4 w-4 text-primary" />
@@ -163,10 +163,10 @@ const ChainCard = ({
       {/* Stats Row */}
       <div className="flex justify-between items-center px-5 py-2">
         <div className="flex items-center gap-2">
-          <span className="text-xl">🏆</span>
+          <span className="text-xl"></span>
           <span className="text-lg font-bold text-foreground">{chain.links_count} Links</span>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <span className="text-xl">⏳</span>
           <span className={`text-lg font-bold ${timerColor}`}>
@@ -178,9 +178,9 @@ const ChainCard = ({
 
       {/* Chain Image Section */}
       <div className="relative mx-4 my-2 rounded-2xl overflow-hidden bg-gradient-to-b from-green-100/50 to-green-200/30 border border-green-200/50">
-        <img 
-          src={mentChainCardBg} 
-          alt="Ment Chain" 
+        <img
+          src={mentChainCardBg}
+          alt="Ment Chain"
           className="w-full h-auto object-contain"
         />
       </div>
@@ -189,9 +189,7 @@ const ChainCard = ({
       <div className="flex justify-between items-center px-5 py-3">
         <div className="flex flex-col">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center">
-              👤
-            </span>
+            <span className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center"> </span>
             <span>
               Started by <span className="font-semibold text-foreground">YOU</span>
             </span>
@@ -202,14 +200,13 @@ const ChainCard = ({
             </span>
           )}
         </div>
-        
+
         <Button
           variant="outline"
           size="sm"
           className="rounded-full px-4 bg-green-50 border-green-200 hover:bg-green-100"
           onClick={handleShare}
-        >
-          🌿 Share...
+        > Share...
           <ChevronRight className="h-4 w-4 ml-1" />
         </Button>
       </div>
@@ -223,7 +220,7 @@ const ChainCard = ({
               <Flame className="h-4 w-4 text-orange-500" />
               <span className="font-semibold text-foreground text-sm">Don't Break The Chain!</span>
             </div>
-            <span className="text-lg">🌿</span>
+            <span className="text-lg"></span>
           </div>
 
           {/* Use Pause Token Button */}

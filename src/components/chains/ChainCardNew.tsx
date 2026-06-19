@@ -50,11 +50,11 @@ const getTimerColor = (hours: number, minutes: number): string => {
   return 'bg-red-500 text-white animate-pulse';
 };
 
-const ChainCardNew = ({ 
-  chain, 
+const ChainCardNew = ({
+  chain,
   isYourTurn,
   currentUserId,
-  onShare, 
+  onShare,
   onViewDetails,
   onChainPassed,
   onUsePauseToken,
@@ -115,7 +115,7 @@ const ChainCardNew = ({
     // Check for milestone after passing
     const newCount = chain.share_count + 1;
     if (isMilestone(newCount) && chain.started_by === currentUserId) {
-      toast.success(`🎉 Your chain reached ${newCount} shares! Share this milestone?`);
+      toast.success(`Your chain reached ${newCount} shares! Share this milestone?`);
       setTimeout(() => setShowSocialModal(true), 1500);
     }
     onChainPassed?.();
@@ -147,7 +147,7 @@ const ChainCardNew = ({
     }
   };
 
-  const receivedCompliment = chain.received_compliment || "You're amazing and the world is better with you in it! 💚";
+  const receivedCompliment = chain.received_compliment || "You're amazing and the world is better with you in it!";
 
   return (
     <>
@@ -155,8 +155,8 @@ const ChainCardNew = ({
         className={`relative w-full rounded-2xl overflow-hidden shadow-lg border transition-all ${tierInfo.cardClass} ${
           visualTier === 'ultimate'
             ? 'bg-gradient-to-b from-yellow-50 via-orange-50 to-white border-yellow-400'
-            : chain.tier === 'legendary' 
-              ? 'bg-gradient-to-b from-emerald-50 to-white border-emerald-300 shadow-emerald-200/50' 
+            : chain.tier === 'legendary'
+              ? 'bg-gradient-to-b from-emerald-50 to-white border-emerald-300 shadow-emerald-200/50'
               : 'bg-white border-border'
         }`}
         initial={{ opacity: 0, y: 10 }}
@@ -167,7 +167,7 @@ const ChainCardNew = ({
         {/* YOUR TURN header banner */}
         {isYourTurn && chain.status === 'active' && (
           <div className="w-full px-4 pt-3 flex items-center justify-between gap-2 z-10">
-            <span className="text-lg font-extrabold text-destructive tracking-tight">🎯 YOUR TURN!</span>
+            <span className="text-lg font-extrabold text-destructive tracking-tight">YOUR TURN!</span>
             <span className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-semibold ${timerColorClass}`}>
               ⏳ {countdown.formattedTime}
             </span>
@@ -184,9 +184,9 @@ const ChainCardNew = ({
         {/* Mint Circle Graphic */}
         <div className="flex justify-center pt-6 pb-4 px-6">
           <div className="w-40 h-40">
-            <MintCircleGraphic 
-              shareCount={chain.share_count} 
-              tier={chain.tier} 
+            <MintCircleGraphic
+              shareCount={chain.share_count}
+              tier={chain.tier}
             />
           </div>
         </div>
@@ -209,15 +209,14 @@ const ChainCardNew = ({
         {visualTier === 'ultimate' && (
           <div className="text-center mt-1">
             <span className="text-sm font-bold text-yellow-700">
-              {chain.share_count.toLocaleString()} people touched! 🌍
-            </span>
+              {chain.share_count.toLocaleString()} people touched! </span>
           </div>
         )}
 
         {/* Current Status */}
         <div className="text-center mt-2 px-4 pb-2">
           {chain.status === 'broken' ? (
-            <span className="text-sm text-primary font-medium">💚 Chain Completed</span>
+            <span className="text-sm text-primary font-medium">Chain Completed</span>
           ) : isYourTurn ? null : (
             <div className="space-y-2">
               <span className="text-sm text-muted-foreground block">
@@ -226,7 +225,7 @@ const ChainCardNew = ({
               {chain.started_by === currentUserId && chain.status === 'active' && (
                 <div className="flex flex-col items-center gap-1.5">
                   <span className={`text-xs flex items-center gap-1 ${
-                    countdown.hours < 2 ? 'text-destructive' : 
+                    countdown.hours < 2 ? 'text-destructive' :
                     countdown.hours < 12 ? 'text-yellow-600' : 'text-muted-foreground'
                   }`}>
                     ⏳ {countdown.formattedTime} remaining
@@ -237,10 +236,9 @@ const ChainCardNew = ({
                       size="sm"
                       className="h-7 text-xs text-primary hover:text-primary/80"
                       onClick={() => {
-                        toast.success(`Nudge sent to @${chain.current_holder_display_name || 'the current holder'}! 👋`);
+                        toast.success(`Nudge sent to @${chain.current_holder_display_name || 'the current holder'}!`);
                       }}
-                    >
-                      👋 Send Nudge
+                    > Send Nudge
                     </Button>
                   )}
                 </div>
@@ -289,7 +287,7 @@ const ChainCardNew = ({
               >
                 View Chain History
               </Button>
-              
+
               {/* Pause Token Button */}
               {pauseTokens > 0 ? (
                 <Button
@@ -314,7 +312,7 @@ const ChainCardNew = ({
             </>
           ) : (
             <>
-              <Button 
+              <Button
                 variant="outline"
                 className="w-full rounded-full"
                 onClick={() => setShowDetailsModal(true)}
@@ -336,7 +334,7 @@ const ChainCardNew = ({
               onClick={() => setShowSocialModal(true)}
             >
               <Share2 className="h-4 w-4 mr-2" />
-              {visualTier === 'ultimate' ? 'SHARE YOUR LEGACY! 📱' : 'Share Your Contribution 📱'}
+              {visualTier === 'ultimate' ? 'SHARE YOUR LEGACY!' : 'Share Your Contribution'}
             </Button>
           )}
         </div>

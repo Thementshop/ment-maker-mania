@@ -113,12 +113,12 @@ const Store = () => {
 
         if (mintChanged) {
           confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#58fc59', '#3ed83f'] });
-          toast({ title: '25 mints added to your jar! 💚' });
+          toast({ title: '25 mints added to your jar!' });
           break;
         }
         if (unlimitedChanged || tokensChanged) {
           confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#FFD700', '#58fc59'] });
-          toast({ title: 'Your Pause Tokens have been added! 💚' });
+          toast({ title: 'Your Pause Tokens have been added!' });
           break;
         }
         await new Promise((r) => setTimeout(r, 1200));
@@ -149,14 +149,14 @@ const Store = () => {
 
     if (priceId === 'mint_boost') {
       confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#58fc59', '#3ed83f'] });
-      toast({ title: '25 mints added in preview mode! 💚' });
+      toast({ title: '25 mints added in preview mode!' });
     } else {
       confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#FFD700', '#58fc59'] });
       toast({
         title:
           priceId === 'pause_tokens_unlimited_year'
-            ? 'Unlimited Pause Tokens enabled in preview mode! 💚'
-            : `${quantity ?? ''} Pause Tokens added in preview mode! 💚`.trim(),
+            ? 'Unlimited Pause Tokens enabled in preview mode!'
+            : `${quantity ?? ''} Pause Tokens added in preview mode!`.trim(),
       });
     }
   }, [loadProfile, refetch, toast]);
@@ -257,9 +257,7 @@ const Store = () => {
 
           <Card className="border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-card">
             <CardContent className="p-5 flex items-center gap-4">
-              <div className="flex-shrink-0 h-14 w-14 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-2xl shadow-md">
-                🍬
-              </div>
+              <div className="flex-shrink-0 h-14 w-14 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-2xl shadow-md"> </div>
               <div className="flex-1 min-w-0">
                 <div className="font-bold text-foreground leading-tight">Mint Boost — 25 Mints</div>
                 <div className="text-xs text-muted-foreground">Adds 25 mints to your jar</div>
@@ -272,7 +270,7 @@ const Store = () => {
                   if (mintBlocked) {
                     toast({
                       title: "You've already boosted your jar this month!",
-                      description: `Your next Mint Boost will be available on ${firstOfNextMonthLabel()}. Keep spreading kindness to earn more mints! 💚`,
+                      description: `Your next Mint Boost will be available on ${firstOfNextMonthLabel()}. Keep spreading kindness to earn more mints!`,
                     });
                     return;
                   }

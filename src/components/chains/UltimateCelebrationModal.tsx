@@ -52,9 +52,7 @@ const UltimateCelebrationModal = React.forwardRef<HTMLDivElement, UltimateCelebr
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-lg border-2 border-yellow-400 bg-gradient-to-b from-yellow-50 to-white">
         <DialogHeader>
-          <DialogTitle className="text-3xl font-extrabold text-center">
-            🏆 WORLD-CHANGER! 🏆
-          </DialogTitle>
+          <DialogTitle className="text-3xl font-extrabold text-center"> WORLD-CHANGER! </DialogTitle>
         </DialogHeader>
 
         <motion.div
@@ -63,9 +61,9 @@ const UltimateCelebrationModal = React.forwardRef<HTMLDivElement, UltimateCelebr
           transition={{ type: 'spring', duration: 0.6 }}
           className="space-y-4 text-center"
         >
-          <p className="text-6xl">🌍✨🎉</p>
+          <p className="text-6xl"></p>
           <p className="text-lg font-bold text-foreground">
-            Your chain "{chainName}" spread kindness to{' '}
+            Your chain "{chainName}" spread kindness to{''}
             <span className="text-primary text-2xl">{shareCount.toLocaleString()}+</span> people!
           </p>
           <p className="text-muted-foreground">
@@ -76,8 +74,7 @@ const UltimateCelebrationModal = React.forwardRef<HTMLDivElement, UltimateCelebr
             className="w-full rounded-full bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 text-white font-bold text-lg h-12 hover:opacity-90"
             onClick={onShareSocial}
           >
-            SHARE YOUR LEGACY! 📱
-          </Button>
+            SHARE YOUR LEGACY! </Button>
 
           <Button variant="ghost" className="w-full text-muted-foreground" onClick={onClose}>
             Continue

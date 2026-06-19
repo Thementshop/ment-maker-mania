@@ -32,7 +32,7 @@ const Auth = () => {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (password !== confirmPassword) {
       toast({
         title: 'Passwords do not match',
@@ -41,7 +41,7 @@ const Auth = () => {
       });
       return;
     }
-    
+
     if (password.length < 6) {
       toast({
         title: 'Password too short',
@@ -50,11 +50,11 @@ const Auth = () => {
       });
       return;
     }
-    
+
     setIsSubmitting(true);
-    
+
     const { error, hasSession } = await signUp(email, password, displayName);
-    
+
     if (error) {
       toast({
         title: 'Signup failed',
@@ -95,7 +95,7 @@ const Auth = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!email || !password) {
       toast({
         title: 'Missing fields',
@@ -104,11 +104,11 @@ const Auth = () => {
       });
       return;
     }
-    
+
     setIsSubmitting(true);
-    
+
     const { error } = await signIn(email, password);
-    
+
     if (error) {
       toast({
         title: 'Login failed',
@@ -165,7 +165,7 @@ const Auth = () => {
           src={unwrappedMint}
           alt="The Ment Shop"
           className="h-20 w-20 mx-auto mb-4"
-          animate={{ 
+          animate={{
             y: [0, -5, 0],
             rotate: [0, 5, -5, 0],
           }}
@@ -189,7 +189,7 @@ const Auth = () => {
           <h2 className="font-display text-xl font-bold text-center mb-6">
             {isLoginMode ? 'Welcome Back!' : 'Create Your Account'}
           </h2>
-          
+
           {isLoginMode ? (
             // Login Form
             <form onSubmit={handleLogin} className="space-y-4">
@@ -204,7 +204,7 @@ const Auth = () => {
                   required
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
                 <Input
@@ -216,7 +216,7 @@ const Auth = () => {
                   required
                 />
               </div>
-              
+
               <Button
                 type="submit"
                 className="w-full bg-mint hover:bg-mint/90 text-primary-foreground font-display"
@@ -238,7 +238,7 @@ const Auth = () => {
                   onChange={(e) => setDisplayName(e.target.value)}
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -250,7 +250,7 @@ const Auth = () => {
                   required
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
                 <Input
@@ -262,7 +262,7 @@ const Auth = () => {
                   required
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="confirm-password">Confirm Password</Label>
                 <Input
@@ -274,7 +274,7 @@ const Auth = () => {
                   required
                 />
               </div>
-              
+
               <Button
                 type="submit"
                 className="w-full bg-mint hover:bg-mint/90 text-primary-foreground font-display"
@@ -284,7 +284,7 @@ const Auth = () => {
               </Button>
             </form>
           )}
-          
+
           {/* Toggle between modes */}
           <div className="mt-6 text-center">
             <button
@@ -299,7 +299,7 @@ const Auth = () => {
               )}
             </button>
           </div>
-          
+
           <p className="text-xs text-muted-foreground text-center mt-4">
             Your session is saved automatically — no need to log in again!
           </p>

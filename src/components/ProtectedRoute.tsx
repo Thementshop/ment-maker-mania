@@ -10,7 +10,7 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const context = useContext(AuthContext);
-  
+
   // During HMR, context may be undefined briefly — treat as loading
   if (!context) {
     return (
@@ -24,7 +24,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       </div>
     );
   }
-  
+
   const { user, isLoading } = context;
 
   if (isLoading) {

@@ -12,10 +12,10 @@ import { useMentChains, MentChain } from '@/hooks/useMentChains';
 import { useBrokenChainNotification } from '@/hooks/useBrokenChainNotification';
 
 const tabs = [
-  { id: 'yourTurn', label: 'Your Turn', icon: '🎯' },
-  { id: 'active', label: 'Active', icon: '🔥' },
-  { id: 'ended', label: 'Chain Memories', icon: '💚' },
-  { id: 'leaderboard', label: 'Leaderboard', icon: '🏆' }
+  { id: 'yourTurn', label: 'Your Turn', icon: '' },
+  { id: 'active', label: 'Active', icon: '' },
+  { id: 'ended', label: 'Chain Memories', icon: '' },
+  { id: 'leaderboard', label: 'Leaderboard', icon: '' }
 ];
 
 const MEMORIES_PREVIEW_COUNT = 3;
@@ -42,16 +42,16 @@ function sortChains(chains: ChainData[], isHolderFn: (holder: string) => boolean
   return [...chains].sort((a, b) => {
     const aIsYourTurn = isHolderFn(a.current_holder);
     const bIsYourTurn = isHolderFn(b.current_holder);
-    
+
     if (aIsYourTurn && !bIsYourTurn) return -1;
     if (!aIsYourTurn && bIsYourTurn) return 1;
-    
+
     if (aIsYourTurn && bIsYourTurn) {
       const aTime = new Date(a.expires_at).getTime() - Date.now();
       const bTime = new Date(b.expires_at).getTime() - Date.now();
       return aTime - bTime;
     }
-    
+
     return b.share_count - a.share_count;
   });
 }
@@ -67,7 +67,7 @@ const ChainDashboard = () => {
   const currentUserEmail = user?.email || '';
 
   const isCurrentHolder = useCallback((holder: string) => {
-    return holder === currentUserId || 
+    return holder === currentUserId ||
       (currentUserEmail !== '' && holder.toLowerCase() === currentUserEmail.toLowerCase());
   }, [currentUserId, currentUserEmail]);
   // Fetch real chains from database
@@ -130,10 +130,10 @@ const ChainDashboard = () => {
       default:
         result = chainData;
     }
-    
-    console.log(`[MentChainsDebug][Dashboard] Tab="${activeTab}" filtered: ${result.length}/${chainData.length} chains`, 
+
+    console.log(`[MentChainsDebug][Dashboard] Tab="${activeTab}" filtered: ${result.length}/${chainData.length} chains`,
       result.map(c => c.chain_name));
-    
+
     if (activeTab === 'yourTurn') {
       console.log('[MentChainsDebug][Dashboard] YourTurn filter detail:', chainData.filter(c => c.status === 'active').map(c => ({
         name: c.chain_name,
@@ -142,7 +142,7 @@ const ChainDashboard = () => {
         currentUserId,
       })));
     }
-    
+
     return result;
   }, [activeTab, currentUserId, chainData]);
 
@@ -185,8 +185,7 @@ const ChainDashboard = () => {
       <div className="w-full">
         {/* Header with Start Chain button */}
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            🔥 Ment Chains
+          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2"> Ment Chains
           </h2>
           <Button
             onClick={handleStartChain}
@@ -196,7 +195,7 @@ const ChainDashboard = () => {
             Start Chain
           </Button>
         </div>
-        
+
         {/* Error message with retry */}
         <div className="text-center py-12">
           <p className="text-destructive font-medium">Failed to load chains</p>
@@ -204,7 +203,7 @@ const ChainDashboard = () => {
             Try Again
           </Button>
         </div>
-        
+
         {/* Start Chain Modal */}
         <StartChainModal
           isOpen={showStartModal}
@@ -219,8 +218,7 @@ const ChainDashboard = () => {
     <div className="w-full">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-          🔥 Ment Chains
+        <h2 className="text-2xl font-bold text-foreground flex items-center gap-2"> Ment Chains
         </h2>
         <Button
           onClick={handleStartChain}
@@ -267,7 +265,7 @@ const ChainDashboard = () => {
                 className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-muted/40 hover:bg-muted/70 transition-colors text-left"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <span className="text-lg shrink-0" aria-hidden>💚</span>
+                  <span className="text-lg shrink-0" aria-hidden></span>
                   <span className="font-semibold text-foreground truncate">{chain.chain_name}</span>
                 </div>
                 <span className="text-sm text-muted-foreground shrink-0">
@@ -291,7 +289,7 @@ const ChainDashboard = () => {
           </motion.div>
         ) : (
           <div className="text-center py-12">
-            <p className="text-5xl mb-4">💚</p>
+            <p className="text-5xl mb-4"></p>
             <p className="text-lg font-semibold text-foreground mb-2">No chain memories yet</p>
             <p className="text-muted-foreground">Completed chains will live here.</p>
           </div>
@@ -299,7 +297,7 @@ const ChainDashboard = () => {
       ) : (
         /* Chain Cards Grid */
         sortedChains.length > 0 ? (
-          <motion.div 
+          <motion.div
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -322,12 +320,11 @@ const ChainDashboard = () => {
         ) : (
           /* Empty State */
           <div className="text-center py-12">
-            <p className="text-5xl mb-4">🔗</p>
+            <p className="text-5xl mb-4"></p>
             <p className="text-lg font-semibold text-foreground mb-2">No chains yet!</p>
             <p className="text-muted-foreground mb-4">Start your first kindness chain or send a compliment</p>
             <div className="flex justify-center gap-3">
-              <Button onClick={handleStartChain} className="rounded-full">
-                🔗 Start Chain
+              <Button onClick={handleStartChain} className="rounded-full"> Start Chain
               </Button>
             </div>
           </div>

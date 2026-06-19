@@ -22,7 +22,7 @@ export interface GameState {
   /** Bumped after any send/pass to force homepage counters to refetch canonical sources. */
   refreshTick: number;
   bumpRefresh: () => void;
-  
+
   // Actions
   loadGameState: (userId: string, token?: string) => Promise<void>;
   sendMent: (mentData: { category: string; complimentText: string; recipientType: string; recipientValue?: string }) => Promise<{ leveledUp: boolean; bonusMints: number }>;
@@ -232,34 +232,34 @@ export const useGameStore = create<GameState>()((set, get) => ({
       set({ isLoading: false });
     }
   },
-  
+
   sendMent: async (mentData) => {
     const state = get();
     const userId = state.userId;
-    
+
     if (!userId) {
       return { leveledUp: false, bonusMints: 0 };
     }
-    
+
     const prevLevel = getCurrentLevel(state.totalSent);
     const newTotalSent = state.totalSent + 1;
     const newLevel = getCurrentLevel(newTotalSent);
-    
+
     let bonusMints = 0;
     const leveledUp = newLevel.level > prevLevel.level;
     if (leveledUp) {
       bonusMints = newLevel.reward;
     }
-    
+
     const newJarCount = state.jarCount + 1 + bonusMints;
-    
+
     // Optimistic update
     set({
       jarCount: newJarCount,
       totalSent: newTotalSent,
       currentLevel: newLevel.level,
     });
-    
+
     try {
       // Update game state in database
       const { error: updateError } = await supabase
@@ -270,11 +270,11 @@ export const useGameStore = create<GameState>()((set, get) => ({
           current_level: newLevel.level,
         })
         .eq('user_id', userId);
-      
+
       if (updateError) {
         console.error('Error updating game state:', updateError);
       }
-      
+
       // Insert sent ment
       const { error: sentError } = await supabase
         .from('sent_ments')
@@ -284,15 +284,15 @@ export const useGameStore = create<GameState>()((set, get) => ({
           compliment_text: mentData.complimentText,
           recipient_type: mentData.recipientType,
         });
-      
+
       if (sentError) {
         console.error('Error inserting sent ment:', sentError);
       }
-      
+
       // Increment world counter (this will broadcast via realtime)
       const { data: newCount, error: counterError } = await supabase
         .rpc('increment_world_counter');
-      
+
       if (counterError) {
         console.error('Error incrementing world counter:', counterError);
       } else if (newCount) {
@@ -301,17 +301,17 @@ export const useGameStore = create<GameState>()((set, get) => ({
     } catch (error) {
       console.error('Error sending ment:', error);
     }
-    
+
     return { leveledUp, bonusMints };
   },
-  
+
   addPendingMent: async (ment) => {
     const userId = get().userId;
     if (!userId) return;
-    
+
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 48);
-    
+
     const { data, error } = await supabase
       .from('pending_ments')
       .insert({
@@ -325,12 +325,12 @@ export const useGameStore = create<GameState>()((set, get) => ({
       })
       .select()
       .single();
-    
+
     if (error) {
       console.error('Error adding pending ment:', error);
       return;
     }
-    
+
     set((state) => ({
       pendingMents: [
         ...state.pendingMents,
@@ -346,34 +346,34 @@ export const useGameStore = create<GameState>()((set, get) => ({
       ],
     }));
   },
-  
+
   passMent: async (id) => {
     const userId = get().userId;
     if (!userId) return;
-    
+
     const { error } = await supabase
       .from('pending_ments')
       .update({ status: 'passed' })
       .eq('id', id)
       .eq('user_id', userId);
-    
+
     if (error) {
       console.error('Error passing ment:', error);
       return;
     }
-    
+
     // Update jar count
     const newJarCount = get().jarCount + 1;
-    
+
     const { error: updateError } = await supabase
       .from('user_game_state')
       .update({ jar_count: newJarCount })
       .eq('user_id', userId);
-    
+
     if (updateError) {
       console.error('Error updating jar count:', updateError);
     }
-    
+
     set((state) => ({
       pendingMents: state.pendingMents.map((m) =>
         m.id === id ? { ...m, status: 'passed' as const } : m
@@ -381,30 +381,30 @@ export const useGameStore = create<GameState>()((set, get) => ({
       jarCount: newJarCount,
     }));
   },
-  
+
   expireMent: async (id) => {
     const userId = get().userId;
     if (!userId) return;
-    
+
     const { error } = await supabase
       .from('pending_ments')
       .delete()
       .eq('id', id)
       .eq('user_id', userId);
-    
+
     if (error) {
       console.error('Error deleting expired ment:', error);
       return;
     }
-    
+
     set((state) => ({
       pendingMents: state.pendingMents.filter((m) => m.id !== id),
     }));
   },
-  
+
   subscribeToWorldCounter: () => {
     if (worldCounterChannel) return;
-    
+
     worldCounterChannel = supabase
       .channel('world-counter-changes')
       .on(
@@ -421,14 +421,14 @@ export const useGameStore = create<GameState>()((set, get) => ({
       )
       .subscribe();
   },
-  
+
   unsubscribeFromWorldCounter: () => {
     if (worldCounterChannel) {
       supabase.removeChannel(worldCounterChannel);
       worldCounterChannel = null;
     }
   },
-  
+
   resetState: () => {
     set({
       ...initialState,

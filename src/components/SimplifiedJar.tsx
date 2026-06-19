@@ -55,8 +55,7 @@ const SimplifiedJar = ({ jarCount, totalSent }: SimplifiedJarProps) => {
         )}
 
         {currentLevel.level === 25 && (
-          <p className="text-xs text-primary text-center font-semibold">
-            🎉 Max Level Reached!
+          <p className="text-xs text-primary text-center font-semibold"> Max Level Reached!
           </p>
         )}
       </div>

@@ -31,7 +31,7 @@ const Index = () => {
     loadGameState,
     refreshTick,
   } = useGameStore();
-  
+
   const [isSendAMentOpen, setIsSendAMentOpen] = useState(false);
   const [isStartChainOpen, setIsStartChainOpen] = useState(false);
   const [showLevelUp, setShowLevelUp] = useState(false);
@@ -145,23 +145,22 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-mint flex flex-col">
       <Header worldCount={worldKindnessCount} />
-      
+
       <div className="w-full">
-        <img 
-          src={tmsBanner} 
-          alt="Welcome to The Ment Shop - The Candy Store of Compliments" 
+        <img
+          src={tmsBanner}
+          alt="Welcome to The Ment Shop - The Candy Store of Compliments"
           className="w-full max-h-[400px] object-contain object-center"
         />
       </div>
-      
+
       <main className="container flex-1 py-6 sm:py-8 pb-24 px-4">
         {/* TEMP: payment testing — remove after testing */}
         <div className="mb-4 flex justify-center">
           <Link
             to="/store"
             className="inline-flex items-center gap-2 rounded-full border-2 border-dashed border-primary bg-primary/10 px-5 py-2 font-display text-sm font-bold text-primary hover:bg-primary/20 transition-colors"
-          >
-            🧪 Open Store (test)
+          > Open Store (test)
           </Link>
         </div>
 
@@ -181,7 +180,7 @@ const Index = () => {
                 </p>
               </TooltipContent>
             </Tooltip>
-            
+
             {/* Center: Send A Ment (graphic button) */}
             <Tooltip>
               <TooltipTrigger asChild>
@@ -189,9 +188,9 @@ const Index = () => {
                   <SendMentSection onOpenModal={() => setIsSendAMentOpen(true)} lifetimeSent={liveMentsSent} />
                 </div>
               </TooltipTrigger>
-              <TooltipContent><p>Send a compliment to earn mints! ✨</p></TooltipContent>
+              <TooltipContent><p>Send a compliment to earn mints!</p></TooltipContent>
             </Tooltip>
-            
+
             {/* Right: Your Chains summary */}
             <Tooltip>
               <TooltipTrigger asChild>
@@ -199,7 +198,7 @@ const Index = () => {
                   <YourChainsCard onStartChain={() => setIsStartChainOpen(true)} />
                 </div>
               </TooltipTrigger>
-              <TooltipContent><p>Spread kindness in a BIG WAY 🔗</p></TooltipContent>
+              <TooltipContent><p>Spread kindness in a BIG WAY</p></TooltipContent>
             </Tooltip>
           </div>
         </TooltipProvider>
@@ -208,7 +207,7 @@ const Index = () => {
           <ChainDashboard />
         </section>
       </main>
-      
+
       {/* Send A Ment Modal (single, no chain) */}
       <SendAMentModal
         isOpen={isSendAMentOpen}
@@ -225,7 +224,7 @@ const Index = () => {
 
       {/* Start Chain Modal from card */}
       <StartChainModal isOpen={isStartChainOpen} onClose={() => setIsStartChainOpen(false)} onSuccess={() => {}} />
-      
+
       <LevelUpModal isOpen={showLevelUp} onClose={() => setShowLevelUp(false)} totalSent={totalSent} bonusMints={levelUpBonus} />
       <OnboardingModal
         isOpen={showOnboarding}

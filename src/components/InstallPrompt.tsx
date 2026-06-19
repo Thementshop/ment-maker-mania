@@ -131,39 +131,36 @@ const InstallPrompt = () => {
                 </>
               ) : platform === "android" ? (
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  Here's how to add us: tap the three-dot menu{" "}
-                  <MoreVertical className="inline h-3.5 w-3.5 -translate-y-0.5 text-primary" />{" "}
-                  in the top corner, then{" "}
+                  Here's how to add us: tap the three-dot menu{""}
+                  <MoreVertical className="inline h-3.5 w-3.5 -translate-y-0.5 text-primary" />{""}
+                  in the top corner, then{""}
                   <span className="font-semibold text-foreground">
                     "Add to Home Screen"
-                  </span>{" "}
-                  or{" "}
+                  </span>{""}
+                  or{""}
                   <span className="font-semibold text-foreground">
                     "Install app."
-                  </span>{" "}
-                  Sweet. 💚
-                </p>
+                  </span>{""}
+                  Sweet. </p>
               ) : platform === "ios-other" ? (
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  Here's how to add us: tap the Share icon{" "}
-                  <Share className="inline h-3.5 w-3.5 -translate-y-0.5 text-primary" />{" "}
-                  in the address bar at the top, then{" "}
+                  Here's how to add us: tap the Share icon{""}
+                  <Share className="inline h-3.5 w-3.5 -translate-y-0.5 text-primary" />{""}
+                  in the address bar at the top, then{""}
                   <span className="font-semibold text-foreground">
                     "Add to Home Screen."
-                  </span>{" "}
-                  Sweet. 💚
-                </p>
+                  </span>{""}
+                  Sweet. </p>
               ) : (
                 // iOS Safari (default)
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  Here's how to add us: tap the Share icon{" "}
-                  <Share className="inline h-3.5 w-3.5 -translate-y-0.5 text-primary" />{" "}
-                  at the bottom of the screen, then{" "}
+                  Here's how to add us: tap the Share icon{""}
+                  <Share className="inline h-3.5 w-3.5 -translate-y-0.5 text-primary" />{""}
+                  at the bottom of the screen, then{""}
                   <span className="font-semibold text-foreground">
                     "Add to Home Screen."
-                  </span>{" "}
-                  Sweet. 💚
-                </p>
+                  </span>{""}
+                  Sweet. </p>
               )}
             </div>
 

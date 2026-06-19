@@ -55,8 +55,7 @@ const ChainCompleteModal = ({
               </motion.div>
             </div>
             <DialogTitle className="text-center text-xl">
-              Your Chain Collected {totalShares} Compliments! 🎉
-            </DialogTitle>
+              Your Chain Collected {totalShares} Compliments! </DialogTitle>
             <p className="text-center text-muted-foreground text-sm mt-1">
               "{chainName}" has ended — here's what everyone said:
             </p>
@@ -97,20 +96,20 @@ const ChainCompleteModal = ({
               Chain ended when @{brokenByDisplayName || brokenBy.slice(0, 8)} ran out of time
             </p>
           )}
-          
+
           <div className="flex gap-2">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="flex-1"
               onClick={onClose}
             >
               Close
             </Button>
-            <Button 
+            <Button
               className="flex-1"
               onClick={() => {
                 // Copy all compliments to clipboard
-                const text = links.map(l => 
+                const text = links.map(l =>
                   `"${l.sent_compliment}" — @${l.passed_by_display_name || l.passed_by.slice(0, 8)}`
                 ).join('\n\n');
                 navigator.clipboard.writeText(text);

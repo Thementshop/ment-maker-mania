@@ -54,7 +54,7 @@ export const useBrokenChainNotification = () => {
     if (error || !brokenChains || brokenChains.length === 0) return;
 
     const chain = brokenChains[0];
-    
+
     // Skip if already viewed
     if (viewedBrokenChains.has(chain.chain_id)) return;
 
@@ -126,7 +126,7 @@ export const useBrokenChainNotification = () => {
     if (hoursSinceBroken < 1 && !localStorage.getItem(toastKey)) {
       localStorage.setItem(toastKey, 'true');
       toast.info(
-        `The "${chain.chain_name}" chain ended 💔 Don't worry, it happens to everyone!`,
+        `The "${chain.chain_name}" chain ended Don't worry, it happens to everyone!`,
         { duration: 5000 }
       );
     }

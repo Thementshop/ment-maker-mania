@@ -28,7 +28,7 @@ const ChainTierBadge: React.FC<ChainTierBadgeProps> = ({ visualTier, shareCount 
     >
       {tierInfo.badge}
       {visualTier === 'ultimate' && shareCount && (
-        <span className="ml-1">{shareCount.toLocaleString()} people touched! 🌍</span>
+        <span className="ml-1">{shareCount.toLocaleString()} people touched!</span>
       )}
     </Badge>
   );

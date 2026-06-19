@@ -76,9 +76,7 @@ const GlassJar = ({
         duration: 1.5,
         repeat: Infinity,
         delay: 0
-      }}>
-            ✨
-          </motion.span>
+      }}> </motion.span>
           <motion.span className="absolute -top-2 right-1/4 text-xl sparkle" animate={{
         opacity: [1, 0.5, 1],
         scale: [1, 0.8, 1]
@@ -86,9 +84,7 @@ const GlassJar = ({
         duration: 1.5,
         repeat: Infinity,
         delay: 0.5
-      }}>
-            ✨
-          </motion.span>
+      }}> </motion.span>
           <motion.span className="absolute top-1/4 -right-4 text-lg sparkle" animate={{
         opacity: [1, 0.5, 1],
         scale: [1, 0.8, 1]
@@ -96,9 +92,7 @@ const GlassJar = ({
         duration: 1.5,
         repeat: Infinity,
         delay: 1
-      }}>
-            ✨
-          </motion.span>
+      }}> </motion.span>
         </>}
 
       {/* Level 1 Jar - Use uploaded image */}
@@ -115,7 +109,7 @@ const GlassJar = ({
       }} />
           {/* Mints overlay - precisely positioned inside jar glass body */}
           <div className="absolute inset-0 pointer-events-none">
-            {/* 
+            {/*
               Jar anatomy (from uploaded image):
               - 0-15%: lid knob and top
               - 15-25%: neck/opening
@@ -152,10 +146,10 @@ const GlassJar = ({
     <div className={`glass-jar relative ${getJarHeight()} w-44 sm:w-52 rounded-3xl overflow-hidden`}>
           {/* Jar Lid */}
           <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-32 h-6 bg-gradient-to-b from-gray-300 to-gray-400 rounded-full shadow-md" />
-          
+
           {/* Jar Neck */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-28 h-8 bg-gradient-to-b from-white/60 to-transparent rounded-t-2xl" />
-          
+
           {/* Mints inside jar */}
           <div className="absolute inset-4 overflow-hidden">
             {mintPositions.map((pos, i) => <motion.img key={i} src={unwrappedMint} alt="Mint" className={`absolute ${mintSize} object-contain`} style={{
@@ -177,7 +171,7 @@ const GlassJar = ({
           delay: pos.delay
         }} />)}
           </div>
-          
+
           {/* Glass shine effect */}
           <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-transparent to-transparent pointer-events-none" />
           <div className="absolute top-4 left-4 w-8 h-16 bg-white/20 rounded-full blur-sm" />
