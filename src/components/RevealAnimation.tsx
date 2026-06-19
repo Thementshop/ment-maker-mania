@@ -340,7 +340,7 @@ const RevealAnimation = ({
                 wordBreak: 'normal',
                 padding: '0.6em 0',
                 overflow: 'visible',
-                color: '#58fc59',
+                color: '#2ee82e',
                 textShadow,
                 willChange: 'transform, opacity, filter',
               }}
@@ -361,8 +361,8 @@ const RevealAnimation = ({
                 fontFamily: "'Quicksand', sans-serif",
                 fontWeight: 600,
                 fontSize: 'clamp(1rem, 4.5vw, 1.6rem)',
-                color: '#3FAA22',
-                textShadow: '0 0 6px rgba(88,252,89,0.25)',
+                color: '#2ba61e',
+                textShadow: '0 0 6px rgba(88,252,89,0.35)',
                 willChange: 'transform, opacity',
               }}
             >
