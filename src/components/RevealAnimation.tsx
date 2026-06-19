@@ -291,7 +291,7 @@ const RevealAnimation = ({
         style={{
           objectFit: isWide ? 'contain' : 'cover',
           objectPosition: 'center',
-          filter: 'brightness(1.06) contrast(1.04)',
+          filter: 'brightness(1.13) contrast(1.05)',
         }}
       />
 
