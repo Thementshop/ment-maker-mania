@@ -174,10 +174,10 @@ const RevealAnimation = ({
         className="absolute inset-0 h-full w-full object-cover"
       />
 
-      {/* Compliment layer — upper-middle band (~30–55% height), centered. */}
+      {/* Compliment layer — upper-middle band, centered. */}
       <div
         className="pointer-events-none absolute left-0 right-0 flex items-center justify-center px-6 text-center"
-        style={{ top: '30%', height: '25%' }}
+        style={{ top: '38%' }}
       >
         {showText && (
           <motion.h1
@@ -188,13 +188,11 @@ const RevealAnimation = ({
               fontFamily: font.stack,
               fontWeight: font.weight,
               fontSize,
-              lineHeight: 1.12,
+              lineHeight: 1.35,
               letterSpacing: fontKey === 'caveat' ? '0.5px' : '0px',
               maxWidth: '92%',
-              display: '-webkit-box',
-              WebkitLineClamp: 3,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
+              padding: '0.8em 0',
+              overflow: 'visible',
               backgroundImage:
                 'linear-gradient(180deg, #ffffff 0%, #dcffde 16%, #58fc59 44%, #58fc59 66%, #3FAA22 100%)',
               WebkitBackgroundClip: 'text',
