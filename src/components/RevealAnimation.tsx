@@ -268,42 +268,27 @@ const RevealAnimation = ({
     };
   }, [prefersReducedMotion]);
 
-  // Metallic green foil finish: dark crisp edge for definition on the bright
-  // near-white video, plus a restrained outer glow that lets the foil gradient
-  // (bright highlight → mid green → deeper green) remain the star.
+  // Glossy neon-green glass finish: bright neon core, darker inner definition,
+  // crisp top-edge specular highlight, and a tight outer glow so letters stay
+  // sharp and legible without haze.
   const textShadow = [
-    // Deep dark-green edge for strong contrast / readability.
-    '0 0 1px rgba(10,42,3,0.99)',
-    '0 0 2px rgba(10,42,3,0.96)',
-    '0 0 3px rgba(10,42,3,0.90)',
-    '0 1px 1px rgba(6,28,2,0.80)',
-    '0 2px 2px rgba(6,28,2,0.50)',
-    // Brighter mid-green halo tight against the letterform.
-    '0 0 4px rgba(47,143,23,0.90)',
-    // Subtle but readable outer glow.
-    `0 0 ${6 * glowScale}px rgba(88,252,89,0.48)`,
-    `0 0 ${12 * glowScale}px rgba(63,170,34,0.32)`,
-    `0 0 ${18 * glowScale}px rgba(63,170,34,0.18)`,
+    // Darker green inner definition for depth / edge pop.
+    '0 0 1px rgba(47,143,23,0.95)',
+    '0 0 2px rgba(63,170,34,0.85)',
+    // Crisp bright white-green specular highlight along the top edge (glossy wet look).
+    '0 -1px 1px rgba(200,255,200,0.95)',
+    '0 -2px 2px rgba(180,255,180,0.55)',
+    // Tight neon outer glow — hugs the letters, no blur haze.
+    `0 0 ${3 * glowScale}px rgba(88,252,89,0.75)`,
+    `0 0 ${6 * glowScale}px rgba(88,252,89,0.45)`,
+    `0 0 ${10 * glowScale}px rgba(63,170,34,0.22)`,
   ].join(', ');
-
-  // Reflective metallic foil gradient: bright highlight → near-white sheen band
-  // across the upper third → mid green → deeper green lower.
-  const foilGradient =
-    'linear-gradient(180deg, #7be65c 0%, #c9ffb8 14%, #ffffff 24%, #7be65c 38%, #3FAA22 64%, #2f8f17 100%)';
 
   return (
     <div
       className={`relative w-full overflow-hidden ${className}`}
-      style={{ height: '100dvh', backgroundColor: '#ffffff' }}
+      style={{ height: '100dvh', backgroundColor: '#f7f7f7' }}
     >
-      <style>{`
-        @keyframes foilSheen {
-          0% { background-position: 200% 0%; }
-          18% { background-position: -200% 0%; }
-          18.01% { background-position: 200% 0%; }
-          100% { background-position: 200% 0%; }
-        }
-      `}</style>
       {/* Reveal video — muted, inline, plays ONCE, holds final frame.
           Portrait/mobile → cover (fills screen). Wide → contain (whole mint
           visible, centered, soft near-white fill on the sides, no gray seam).
@@ -319,7 +304,7 @@ const RevealAnimation = ({
         style={{
           objectFit: isWide ? 'contain' : 'cover',
           objectPosition: 'center',
-          filter: 'brightness(1.13) contrast(1.05)',
+          filter: 'brightness(1.20) contrast(1.05)',
         }}
       />
 
@@ -351,49 +336,12 @@ const RevealAnimation = ({
                 wordBreak: 'normal',
                 padding: '0.6em 0',
                 overflow: 'visible',
-                backgroundImage: foilGradient,
-                WebkitBackgroundClip: 'text',
-                backgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                color: 'transparent',
+                color: '#58fc59',
                 textShadow,
                 willChange: 'transform, opacity, filter',
               }}
             >
               {displayText}
-              {!prefersReducedMotion && (
-                <span
-                  aria-hidden="true"
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    display: 'block',
-                    fontFamily: 'inherit',
-                    fontWeight: 'inherit',
-                    fontSize: 'inherit',
-                    lineHeight: 'inherit',
-                    letterSpacing: 'inherit',
-                    textWrap: 'inherit',
-                    wordBreak: 'inherit',
-                    textAlign: 'center',
-                    padding: 'inherit',
-                    overflow: 'visible',
-                    backgroundImage:
-                      'linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.22) 42%, rgba(255,255,255,0.70) 50%, rgba(255,255,255,0.22) 58%, transparent 70%)',
-                    backgroundSize: '250% 100%',
-                    WebkitBackgroundClip: 'text',
-                    backgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    color: 'transparent',
-                    mixBlendMode: 'screen',
-                    animation: 'foilSheen 12s ease-in-out 0.8s infinite',
-                    pointerEvents: 'none',
-                    willChange: 'background-position',
-                  }}
-                >
-                  {displayText}
-                </span>
-              )}
             </motion.h1>
           )}
 
