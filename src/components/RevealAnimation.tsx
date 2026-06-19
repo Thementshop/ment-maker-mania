@@ -253,15 +253,23 @@ const RevealAnimation = ({
     };
   }, []);
 
-  // Glossy neon-green glass finish: layered glow following the letterforms only.
+  // Metallic green foil finish: crisp darker-green edge + a SUBTLE outer glow
+  // (much less than the neon version) so the letters read as reflective foil
+  // rather than glowing. The reflective gradient itself lives in backgroundImage.
   const textShadow = [
-    '0 0 2px rgba(63,170,34,0.95)',
-    '0 1px 2px rgba(10,55,10,0.55)',
-    `0 0 ${8 * glowScale}px rgba(88,252,89,0.95)`,
-    `0 0 ${18 * glowScale}px rgba(88,252,89,0.75)`,
-    `0 0 ${34 * glowScale}px rgba(88,252,89,0.55)`,
-    `0 0 ${54 * glowScale}px rgba(88,252,89,0.32)`,
+    // Crisp thin darker-green edge to keep letters defined on light video.
+    '0 0 1px rgba(47,143,23,0.95)',
+    '0 1px 1px rgba(20,70,10,0.55)',
+    '0 0 1.5px rgba(47,143,23,0.8)',
+    // Subtle outer glow only.
+    `0 0 ${5 * glowScale}px rgba(88,252,89,0.35)`,
+    `0 0 ${10 * glowScale}px rgba(63,170,34,0.22)`,
   ].join(', ');
+
+  // Reflective metallic foil gradient: bright highlight → near-white sheen band
+  // across the upper third → mid green → deeper green lower.
+  const foilGradient =
+    'linear-gradient(180deg, #7be65c 0%, #c9ffb8 14%, #ffffff 24%, #7be65c 38%, #3FAA22 64%, #2f8f17 100%)';
 
   return (
     <div
