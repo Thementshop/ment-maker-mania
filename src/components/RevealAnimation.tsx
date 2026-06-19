@@ -114,6 +114,11 @@ const RevealAnimation = ({
     const v = videoRef.current;
     if (!v) return;
 
+    const fallbackTimers: number[] = [];
+    let textShown = false;
+    let senderShown = false;
+    let raf = 0;
+
     v.play().catch(() => {
       // Autoplay blocked (rare — we're mounted on a user tap). Surface the text
       // on a wall-clock fallback so the recipient never sees a frozen screen.
@@ -122,10 +127,6 @@ const RevealAnimation = ({
       fallbackTimers.push(t1, t2);
     });
 
-    const fallbackTimers: number[] = [];
-    let textShown = false;
-    let senderShown = false;
-    let raf = 0;
 
     const tick = () => {
       const t = v.currentTime;
