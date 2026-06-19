@@ -92,7 +92,7 @@ const ChainCard = ({
       });
 
       toast({
-        title: "Pause token used! ⏸️",
+        title: "Pause token used!",
         description: "Added 48 hours to the chain timer",
       });
 
@@ -168,7 +168,6 @@ const ChainCard = ({
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-xl">⏳</span>
           <span className={`text-lg font-bold ${timerColor}`}>
             {formatTimeLeft()} left
           </span>

@@ -10,7 +10,7 @@ export const complimentCategories: ComplimentCategory[] = [
   {
     id: 'love',
     name: 'Love',
-    emoji: '️',
+    emoji: '',
     gradient: 'candy-card-love',
     compliments: [
       "You make my heart smile every single day",
@@ -66,10 +66,10 @@ export const complimentCategories: ComplimentCategory[] = [
   {
     id: 'sympathy',
     name: 'Sympathy',
-    emoji: '️',
+    emoji: '',
     gradient: 'candy-card-sympathy',
     compliments: [
-      "Thinking of you during this difficult time️",
+      "Thinking of you during this difficult time",
       "You're stronger than you know, and you're not alone",
       "Sending you comfort and peace",
       "Your feelings are valid, and I'm here for you",

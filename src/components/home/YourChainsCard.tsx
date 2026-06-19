@@ -14,7 +14,7 @@ const ChainTimer = ({ expiresAt }: ChainTimerProps) => {
 
   return (
     <span className={`text-xs font-medium ${isUrgent ? 'text-destructive' : 'text-muted-foreground'}`}>
-      ⏰ {hours}h {minutes}m left
+      {hours}h {minutes}m left
     </span>
   );
 };

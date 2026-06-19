@@ -501,8 +501,8 @@ const ChainPage = () => {
   const getTimerUrgency = () => {
     const totalMinutes = countdown.hours * 60 + countdown.minutes;
     if (totalMinutes < 10) return { color: 'text-red-500', bg: 'bg-red-500/10', animate: true, icon: '' };
-    if (totalMinutes < 120) return { color: 'text-orange-500', bg: 'bg-orange-500/10', animate: false, icon: '️' };
-    if (totalMinutes < 360) return { color: 'text-yellow-500', bg: 'bg-yellow-500/10', animate: false, icon: '⏳' };
+    if (totalMinutes < 120) return { color: 'text-orange-500', bg: 'bg-orange-500/10', animate: false, icon: '' };
+    if (totalMinutes < 360) return { color: 'text-yellow-500', bg: 'bg-yellow-500/10', animate: false, icon: '' };
     return { color: 'text-green-500', bg: 'bg-green-500/10', animate: false, icon: '' };
   };
 

@@ -130,7 +130,7 @@ const SendMentModal = ({ isOpen, onClose, onSend }: SendMentModalProps) => {
                 <div className="space-y-3">
                   {[
                     { type: 'contacts', icon: Users, label: 'Select from Contacts', emoji: '' },
-                    { type: 'email', icon: Mail, label: 'Enter Email Address', emoji: '️' },
+                    { type: 'email', icon: Mail, label: 'Enter Email Address', emoji: '' },
                     { type: 'phone', icon: Phone, label: 'Enter Phone Number', emoji: '' },
                   ].map((option) => (
                     <motion.button
