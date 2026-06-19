@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import revealVideo from '@/assets/reveal-video.mp4.asset.json';
 import revealPoster from '@/assets/reveal-poster.jpg.asset.json';
@@ -9,10 +9,12 @@ import revealPoster from '@/assets/reveal-poster.jpg.asset.json';
    ON TOP of the reveal video (no background of its own — the video shows
    through). Video plays once (no loop) and holds on its final frame.
 
-   Timing (relative to video playback):
-     3.9s → compliment begins (pinpoint → full size, fade + zoom + sharpen)
-     ~5.8s → compliment fully settled
-     6.4s → sender name fades in (if showSender)
+   Motion:
+     3.9s → compliment begins as a tiny pinpoint at the EXACT screen center
+            (over the mint/burst), then zooms forward AND drifts up to settle
+            in the upper-middle band (~40% of screen height).
+     6.4s → sender name fades in, reserved BELOW the full compliment block
+            (never overlaps, for 1/2/3-line compliments).
    ──────────────────────────────────────────────────────────────────────── */
 
 export interface RevealAnimationProps {
@@ -61,8 +63,8 @@ function fontKeyForCategory(category: string, isAllCaps: boolean): FontKey {
   return 'quicksand';
 }
 
-// Scale font size down gracefully so long compliments fit within ~3 lines.
-function complimentFontSize(len: number): string {
+// Fallback font size (used only until the auto-fitter measures the real text).
+function fallbackFontSize(len: number): string {
   if (len <= 24) return 'clamp(2.6rem, 11vw, 4.4rem)';
   if (len <= 50) return 'clamp(2.1rem, 9vw, 3.6rem)';
   if (len <= 90) return 'clamp(1.7rem, 7vw, 2.9rem)';
@@ -72,6 +74,71 @@ function complimentFontSize(len: number): string {
 
 const TEXT_START = 3.9; // seconds into video
 const SENDER_START = 6.4; // seconds into video
+const LINE_HEIGHT = 1.35;
+const MAX_LINES = 3;
+const MIN_FONT_PX = 16; // readability floor
+const DRIFT_VH = 10; // pinpoint at center (+10vh) → settles in upper-middle (−10vh = ~40%)
+
+// Keep the last two words together so a single word never sits alone on the
+// final line (orphan prevention). Works for any DB text, automatically.
+function preventOrphans(text: string): string {
+  const words = text.trim().split(/\s+/);
+  if (words.length < 2) return text;
+  return words.slice(0, -1).join(' ') + '\u00A0' + words[words.length - 1];
+}
+
+// Measure how many lines the text wraps to at a given size, then binary-search
+// the LARGEST font size that fits within MAX_LINES. Larger for short text,
+// smaller for long — all automatic, floored at MIN_FONT_PX.
+function fitFontSize(
+  text: string,
+  fontStack: string,
+  weight: number,
+  maxWidthPx: number,
+  maxPx: number,
+  minPx: number,
+): number {
+  if (typeof document === 'undefined' || maxWidthPx <= 0) return maxPx;
+
+  const meas = document.createElement('div');
+  Object.assign(meas.style, {
+    position: 'absolute',
+    visibility: 'hidden',
+    left: '-9999px',
+    top: '0',
+    width: `${maxWidthPx}px`,
+    fontFamily: fontStack,
+    fontWeight: String(weight),
+    lineHeight: String(LINE_HEIGHT),
+    whiteSpace: 'normal',
+    wordBreak: 'normal',
+    textWrap: 'balance',
+    textAlign: 'center',
+  } as CSSStyleDeclaration);
+  meas.textContent = text;
+  document.body.appendChild(meas);
+
+  const lineCountAt = (px: number): number => {
+    meas.style.fontSize = `${px}px`;
+    return Math.max(1, Math.round(meas.scrollHeight / (px * LINE_HEIGHT)));
+  };
+
+  let lo = minPx;
+  let hi = maxPx;
+  let best = minPx;
+  for (let i = 0; i < 14 && hi - lo > 0.5; i++) {
+    const mid = (lo + hi) / 2;
+    if (lineCountAt(mid) <= MAX_LINES) {
+      best = mid;
+      lo = mid;
+    } else {
+      hi = mid;
+    }
+  }
+
+  document.body.removeChild(meas);
+  return Math.max(minPx, Math.round(best));
+}
 
 const RevealAnimation = ({
   complimentText,
@@ -83,15 +150,17 @@ const RevealAnimation = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   const [showText, setShowText] = useState(false);
   const [showSenderNow, setShowSenderNow] = useState(false);
+  const [fontSizePx, setFontSizePx] = useState<number | null>(null);
+  const [isWide, setIsWide] = useState(false);
 
   const text = (complimentText || '').trim();
+  const displayText = preventOrphans(text);
   const isAllCaps = /[A-Z]/.test(text) && text === text.toUpperCase();
   const fontKey = fontKeyForCategory(category, isAllCaps);
   const font = FONTS[fontKey];
 
   // Funny/slang (Caveat) glow swallows the strokes → reduce glow blur ~30%.
   const glowScale = fontKey === 'caveat' ? 0.7 : 1;
-  const fontSize = complimentFontSize(text.length);
 
   // ─── Preload ONLY the one needed font (no font flash at 3.9s) ───
   useEffect(() => {
@@ -103,11 +172,50 @@ const RevealAnimation = ({
       link.href = `https://fonts.googleapis.com/css2?family=${font.param}&display=swap`;
       document.head.appendChild(link);
     }
-    // Warm the glyph cache so the very first paint at 3.9s is already crisp.
     if ('fonts' in document) {
       document.fonts.load(`${font.weight} 3rem '${font.name}'`, text).catch(() => {});
     }
   }, [fontKey, font.param, font.name, font.weight, text]);
+
+  // ─── Auto font-fit to ≤3 lines (waits for the font, recomputes on resize) ───
+  useLayoutEffect(() => {
+    let cancelled = false;
+
+    const compute = () => {
+      const vw = window.innerWidth;
+      // Text column is 92% wide, capped; subtract px-6 (24px each side) padding.
+      const maxWidth = Math.min(vw * 0.92, 680) - 48;
+      const maxPx = Math.min(vw * 0.14, 76);
+      const size = fitFontSize(displayText, font.stack, font.weight, maxWidth, maxPx, MIN_FONT_PX);
+      if (!cancelled) setFontSizePx(size);
+    };
+
+    if ('fonts' in document) {
+      document.fonts
+        .load(`${font.weight} 3rem '${font.name}'`, displayText)
+        .then(() => !cancelled && compute())
+        .catch(() => !cancelled && compute());
+    } else {
+      compute();
+    }
+
+    window.addEventListener('resize', compute);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('resize', compute);
+    };
+  }, [displayText, font.stack, font.weight, font.name]);
+
+  // ─── Detect wide/landscape vs. portrait for video fit (cover vs. contain) ───
+  useEffect(() => {
+    // Video is portrait 9:16 (~0.5625). When the viewport is at least this wide
+    // relative to its height, object-cover would zoom/crop the mint → use contain.
+    const mq = window.matchMedia('(min-aspect-ratio: 9 / 16)');
+    const update = () => setIsWide(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
 
   // ─── Start playback + drive reveal timing off the video clock ───
   useEffect(() => {
@@ -120,13 +228,10 @@ const RevealAnimation = ({
     let raf = 0;
 
     v.play().catch(() => {
-      // Autoplay blocked (rare — we're mounted on a user tap). Surface the text
-      // on a wall-clock fallback so the recipient never sees a frozen screen.
       const t1 = window.setTimeout(() => setShowText(true), TEXT_START * 1000);
       const t2 = window.setTimeout(() => setShowSenderNow(true), SENDER_START * 1000);
       fallbackTimers.push(t1, t2);
     });
-
 
     const tick = () => {
       const t = v.currentTime;
@@ -148,10 +253,10 @@ const RevealAnimation = ({
     };
   }, []);
 
-  // Glossy neon-green glass finish: layered glow + definition.
+  // Glossy neon-green glass finish: layered glow following the letterforms only.
   const textShadow = [
-    '0 0 2px rgba(63,170,34,0.95)', // darker-green inner definition
-    '0 1px 2px rgba(10,55,10,0.55)', // subtle depth
+    '0 0 2px rgba(63,170,34,0.95)',
+    '0 1px 2px rgba(10,55,10,0.55)',
     `0 0 ${8 * glowScale}px rgba(88,252,89,0.95)`,
     `0 0 ${18 * glowScale}px rgba(88,252,89,0.75)`,
     `0 0 ${34 * glowScale}px rgba(88,252,89,0.55)`,
@@ -161,9 +266,12 @@ const RevealAnimation = ({
   return (
     <div
       className={`relative w-full overflow-hidden ${className}`}
-      style={{ height: '100dvh', backgroundColor: '#eafff0' }}
+      style={{ height: '100dvh', backgroundColor: '#f4fff6' }}
     >
-      {/* Reveal video — muted, inline, plays ONCE, holds final frame. */}
+      {/* Reveal video — muted, inline, plays ONCE, holds final frame.
+          Portrait/mobile → cover (fills screen). Wide → contain (whole mint
+          visible, centered, soft near-white fill on the sides, no gray seam).
+          Subtle brightness/contrast lift (no blur → smooth playback). */}
       <video
         ref={videoRef}
         src={revealVideo.url}
@@ -171,55 +279,60 @@ const RevealAnimation = ({
         muted
         playsInline
         preload="auto"
-        className="absolute inset-0 h-full w-full object-cover"
+        className="absolute inset-0 h-full w-full"
+        style={{
+          objectFit: isWide ? 'contain' : 'cover',
+          objectPosition: 'center',
+          filter: 'brightness(1.06) contrast(1.04)',
+        }}
       />
 
-      {/* Compliment layer — upper-middle band, centered. */}
-      <div
-        className="pointer-events-none absolute left-0 right-0 flex items-center justify-center px-6 text-center"
-        style={{ top: '38%' }}
-      >
-        {showText && (
-          <motion.h1
-            initial={{ opacity: 0, scale: 0.04, y: '7.5vh', filter: 'blur(14px)' }}
-            animate={{ opacity: 1, scale: 1, y: '0vh', filter: 'blur(0px)' }}
-            transition={{ duration: 1.9, ease: [0.16, 1, 0.3, 1] }}
-            style={{
-              fontFamily: font.stack,
-              fontWeight: font.weight,
-              fontSize,
-              lineHeight: 1.35,
-              letterSpacing: fontKey === 'caveat' ? '0.5px' : '0px',
-              maxWidth: '92%',
-              padding: '0.8em 0',
-              overflow: 'visible',
-              backgroundImage:
-                'linear-gradient(180deg, #ffffff 0%, #dcffde 16%, #58fc59 44%, #58fc59 66%, #3FAA22 100%)',
-              WebkitBackgroundClip: 'text',
-              backgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              color: 'transparent',
-              textShadow,
-              willChange: 'transform, opacity, filter',
-            }}
-          >
-            {text}
-          </motion.h1>
-        )}
-      </div>
-
-      {/* Sender name — below the compliment, solid darker green, little glow. */}
-      {showSender && (
+      {/* Compliment + sender column — vertically centered, then lifted into the
+          upper-middle band. The pinpoint starts at TRUE screen center and zooms
+          forward/up. Sender space is reserved beneath the full compliment box. */}
+      <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
         <div
-          className="pointer-events-none absolute left-0 right-0 flex items-start justify-center px-6 text-center"
-          style={{ top: '57%' }}
+          className="flex flex-col items-center"
+          style={{ transform: `translateY(-${DRIFT_VH}vh)`, maxWidth: '92%' }}
         >
-          {showSenderNow && senderName && (
+          {showText && (
+            <motion.h1
+              initial={{ opacity: 0, scale: 0.04, y: `${DRIFT_VH}vh`, filter: 'blur(14px)' }}
+              animate={{ opacity: 1, scale: 1, y: '0vh', filter: 'blur(0px)' }}
+              transition={{ duration: 1.9, ease: [0.16, 1, 0.3, 1] }}
+              style={{
+                fontFamily: font.stack,
+                fontWeight: font.weight,
+                fontSize: fontSizePx ? `${fontSizePx}px` : fallbackFontSize(text.length),
+                lineHeight: LINE_HEIGHT,
+                letterSpacing: fontKey === 'caveat' ? '0.5px' : '0px',
+                textWrap: 'balance',
+                wordBreak: 'normal',
+                padding: '0.4em 0',
+                overflow: 'visible',
+                backgroundImage:
+                  'linear-gradient(180deg, #ffffff 0%, #dcffde 16%, #58fc59 44%, #58fc59 66%, #3FAA22 100%)',
+                WebkitBackgroundClip: 'text',
+                backgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                color: 'transparent',
+                textShadow,
+                willChange: 'transform, opacity, filter',
+              }}
+            >
+              {displayText}
+            </motion.h1>
+          )}
+
+          {/* Sender — always mounted (reserves its space) so it never reflows
+              into / overlaps the compliment when it fades in. */}
+          {showSender && senderName && (
             <motion.p
               initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
+              animate={showSenderNow ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 }}
               transition={{ duration: 0.7, ease: 'easeOut' }}
               style={{
+                marginTop: '0.9em',
                 fontFamily: "'Quicksand', sans-serif",
                 fontWeight: 600,
                 fontSize: 'clamp(1rem, 4.5vw, 1.6rem)',
@@ -232,7 +345,7 @@ const RevealAnimation = ({
             </motion.p>
           )}
         </div>
-      )}
+      </div>
     </div>
   );
 };
