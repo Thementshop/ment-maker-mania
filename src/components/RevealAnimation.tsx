@@ -268,20 +268,24 @@ const RevealAnimation = ({
     };
   }, [prefersReducedMotion]);
 
-  // Glossy neon-green glass finish: bright neon core, darker inner definition,
-  // crisp top-edge specular highlight, and a tight outer glow so letters stay
-  // sharp and legible without haze.
+  // Punchy neon-green glass finish: deeper green core for contrast against the
+  // bright near-white background, stronger dark inner edges for crisp definition,
+  // bright specular highlight, and a confident outer glow.
   const textShadow = [
-    // Darker green inner definition for depth / edge pop.
-    '0 0 1px rgba(47,143,23,0.95)',
-    '0 0 2px rgba(63,170,34,0.85)',
+    // Deep dark-green edge shadow for maximum contrast and crisp letterforms.
+    '0 0 1px rgba(12,60,4,0.98)',
+    '0 0 2px rgba(18,90,8,0.90)',
+    '0 0 3px rgba(24,120,12,0.80)',
+    // Mid-green inner glow for depth.
+    '0 0 4px rgba(47,143,23,0.95)',
+    '0 0 6px rgba(63,170,34,0.85)',
     // Crisp bright white-green specular highlight along the top edge (glossy wet look).
-    '0 -1px 1px rgba(200,255,200,0.95)',
-    '0 -2px 2px rgba(180,255,180,0.55)',
-    // Tight neon outer glow — hugs the letters, no blur haze.
-    `0 0 ${3 * glowScale}px rgba(88,252,89,0.75)`,
-    `0 0 ${6 * glowScale}px rgba(88,252,89,0.45)`,
-    `0 0 ${10 * glowScale}px rgba(63,170,34,0.22)`,
+    '0 -1px 1px rgba(220,255,220,0.95)',
+    '0 -2px 2px rgba(200,255,200,0.60)',
+    // Confident neon outer glow — hugs the letters without haze.
+    `0 0 ${3 * glowScale}px rgba(88,252,89,0.85)`,
+    `0 0 ${6 * glowScale}px rgba(88,252,89,0.55)`,
+    `0 0 ${10 * glowScale}px rgba(63,170,34,0.35)`,
   ].join(', ');
 
   return (
@@ -336,7 +340,7 @@ const RevealAnimation = ({
                 wordBreak: 'normal',
                 padding: '0.6em 0',
                 overflow: 'visible',
-                color: '#58fc59',
+                color: '#2ee82e',
                 textShadow,
                 willChange: 'transform, opacity, filter',
               }}
@@ -357,8 +361,8 @@ const RevealAnimation = ({
                 fontFamily: "'Quicksand', sans-serif",
                 fontWeight: 600,
                 fontSize: 'clamp(1rem, 4.5vw, 1.6rem)',
-                color: '#3FAA22',
-                textShadow: '0 0 6px rgba(88,252,89,0.25)',
+                color: '#2ba61e',
+                textShadow: '0 0 6px rgba(88,252,89,0.35)',
                 willChange: 'transform, opacity',
               }}
             >
