@@ -4,21 +4,21 @@ import { inspirationalQuotes } from '@/data/compliments';
 
 const InspirationalQuote = () => {
   const [quote, setQuote] = useState('');
-  
+
   useEffect(() => {
     // Pick a random quote
     const randomQuote = inspirationalQuotes[Math.floor(Math.random() * inspirationalQuotes.length)];
     setQuote(randomQuote);
-    
+
     // Change quote every 10 seconds
     const interval = setInterval(() => {
       const newQuote = inspirationalQuotes[Math.floor(Math.random() * inspirationalQuotes.length)];
       setQuote(newQuote);
     }, 10000);
-    
+
     return () => clearInterval(interval);
   }, []);
-  
+
   return (
     <motion.p
       key={quote}

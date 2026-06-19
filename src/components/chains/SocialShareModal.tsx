@@ -34,13 +34,13 @@ const SocialShareModal: React.FC<SocialShareModalProps> = ({
   const tierInfo = visualTierConfig[visualTier];
   const shareUrl = `${getShareBaseUrl()}/chain/${chainId}`;
   const shareText = milestone
-    ? `🎉 My kindness chain "${chainName}" just hit ${shareCount} shares! Join The Ment Shop and spread kindness!`
+    ? `My kindness chain "${chainName}" just hit ${shareCount} shares! Join The Ment Shop and spread kindness!`
     : `I'm part of a kindness chain with ${shareCount} shares! ${tierInfo.emoji} Join The Ment Shop!`;
 
   const handleCopyLink = async () => {
     try {
       await navigator.clipboard.writeText(shareUrl);
-      toast.success('Link copied! 🔗');
+      toast.success('Link copied!');
     } catch {
       try {
         const ta = document.createElement('textarea');
@@ -49,7 +49,7 @@ const SocialShareModal: React.FC<SocialShareModalProps> = ({
         ta.select();
         document.execCommand('copy');
         document.body.removeChild(ta);
-        toast.success('Link copied! 🔗');
+        toast.success('Link copied!');
       } catch {
         toast.error('Could not copy link');
       }
@@ -84,7 +84,7 @@ const SocialShareModal: React.FC<SocialShareModalProps> = ({
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-center">
             {milestone
-              ? `Your Chain Hit ${milestone} Shares! 🎉`
+              ? `Your Chain Hit ${milestone} Shares!`
               : `Share Your Impact ${tierInfo.emoji}`}
           </DialogTitle>
         </DialogHeader>
@@ -101,7 +101,7 @@ const SocialShareModal: React.FC<SocialShareModalProps> = ({
           </p>
 
           <p className="text-center text-xs text-muted-foreground italic">
-            (No mints earned — just bragging rights! 😎)
+            (No mints earned — just bragging rights!)
           </p>
 
           <div className="space-y-2">
@@ -110,8 +110,7 @@ const SocialShareModal: React.FC<SocialShareModalProps> = ({
               onClick={handleNativeShare}
             >
               <Share2 className="h-4 w-4 mr-2" />
-              Share on Social 📱
-            </Button>
+              Share on Social </Button>
 
             <Button
               variant="outline"

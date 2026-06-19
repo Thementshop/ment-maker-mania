@@ -41,7 +41,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  
+
 
   // Fetch user profile
   const fetchProfile = async (userId: string) => {
@@ -50,7 +50,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       .select('id, display_name, avatar_url')
       .eq('id', userId)
       .maybeSingle();
-    
+
     if (error) {
       console.error('Error fetching profile:', error);
       return null;
@@ -60,7 +60,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   useEffect(() => {
     let isSubscribed = true;
-    
+
     // Timeout to prevent infinite loading - 5 second safety net
     const authTimeout = setTimeout(() => {
       if (isSubscribed) {
@@ -94,7 +94,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     // Load game state - no debounce, just track to avoid duplicate concurrent calls
     const loadUserGameState = async (userId: string, token?: string) => {
       console.log('[MINT DEBUG] loadUserGameState ENTERED', { userId, hasToken: !!token });
-      
+
       try {
         console.log('[MINT DEBUG] Calling loadGameState...');
         await useGameStore.getState().loadGameState(userId, token);
@@ -110,14 +110,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       async (event, newSession) => {
         console.log('[MINT DEBUG] onAuthStateChange fired', { event, hasUser: !!newSession?.user });
         if (!isSubscribed) return;
-        
+
         setSession(newSession);
         setUser(newSession?.user ?? null);
-        
+
         // Set auth as complete FIRST - don't wait for game data
         setIsLoading(false);
         clearTimeout(authTimeout);
-        
+
         if (newSession?.user) {
           console.log('[MINT DEBUG] Auth user found, calling loadUserGameState from onAuthStateChange');
           // Set immediate fallback profile from user metadata
@@ -148,12 +148,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     supabase.auth.getSession().then(async ({ data: { session: existingSession } }) => {
       console.log('[MINT DEBUG] getSession returned', { hasUser: !!existingSession?.user });
       if (!isSubscribed) return;
-      
+
       setSession(existingSession);
       setUser(existingSession?.user ?? null);
       setIsLoading(false);
       clearTimeout(authTimeout);
-      
+
       if (existingSession?.user) {
         console.log('[MINT DEBUG] Existing session found, calling loadUserGameState from getSession');
         // Immediate fallback profile from metadata
@@ -215,16 +215,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const updateProfile = async (displayName: string) => {
     if (!user) return { error: new Error('Not authenticated') };
-    
+
     const { error } = await supabase
       .from('profiles')
       .update({ display_name: displayName })
       .eq('id', user.id);
-    
+
     if (!error) {
       setProfile(prev => prev ? { ...prev, display_name: displayName } : null);
     }
-    
+
     return { error: error as Error | null };
   };
 

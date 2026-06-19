@@ -34,8 +34,7 @@ const SendMentSection = ({ onOpenModal, lifetimeSent }: SendMentSectionProps) =>
           {lifetimeSent}
         </motion.span>
         <span className="text-xs font-semibold" style={{ color: '#166534' }}>
-          Ments sent 💚
-        </span>
+          Ments sent </span>
       </motion.div>
     </motion.div>
   );

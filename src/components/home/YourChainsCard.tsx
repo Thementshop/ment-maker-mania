@@ -11,7 +11,7 @@ interface ChainTimerProps {
 const ChainTimer = ({ expiresAt }: ChainTimerProps) => {
   const { hours, minutes } = useCountdown(expiresAt);
   const isUrgent = hours === 0 && minutes < 60;
-  
+
   return (
     <span className={`text-xs font-medium ${isUrgent ? 'text-destructive' : 'text-muted-foreground'}`}>
       ⏰ {hours}h {minutes}m left
@@ -30,13 +30,13 @@ const YourChainsCard = ({ onStartChain }: YourChainsCardProps) => {
   const { myTurnChains, activeChains } = useMemo(() => {
     const userId = user?.id || '';
     const userEmail = user?.email || '';
-    
+
     const active = chains.filter(c => c.status === 'active');
-    const myTurn = active.filter(c => 
-      c.current_holder === userId || 
+    const myTurn = active.filter(c =>
+      c.current_holder === userId ||
       (userEmail && c.current_holder.toLowerCase() === userEmail.toLowerCase())
     );
-    
+
     return { myTurnChains: myTurn, activeChains: active };
   }, [chains, user]);
 
@@ -51,16 +51,15 @@ const YourChainsCard = ({ onStartChain }: YourChainsCardProps) => {
         className="w-full flex justify-center mb-4 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg p-4"
         title="Spread kindness in a BIG WAY"
       >
-        <img 
-          src="/images/ment-chain.png" 
-          alt="Spread kindness in a BIG WAY" 
+        <img
+          src="/images/ment-chain.png"
+          alt="Spread kindness in a BIG WAY"
           title="Spread kindness in a BIG WAY"
           className="h-40 object-contain drop-shadow-md"
         />
       </div>
 
-      <h3 className="text-lg font-bold mb-2 flex items-center gap-2">
-        🔗 Your Chains
+      <h3 className="text-lg font-bold mb-2 flex items-center gap-2"> Your Chains
       </h3>
 
       <div className="flex-1 mb-3 space-y-2">
@@ -73,17 +72,14 @@ const YourChainsCard = ({ onStartChain }: YourChainsCardProps) => {
         ) : (
           <>
             {myTurnChains.length > 0 ? (
-              <p className="text-sm font-semibold text-destructive">
-                🔴 {myTurnChains.length} chain{myTurnChains.length !== 1 ? 's' : ''} waiting on you
+              <p className="text-sm font-semibold text-destructive"> {myTurnChains.length} chain{myTurnChains.length !== 1 ? 's' : ''} waiting on you
               </p>
             ) : (
-              <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
-                ✅ All caught up! No chains need your attention
+              <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400"> All caught up! No chains need your attention
               </p>
             )}
             {activeChains.length - myTurnChains.length > 0 && (
-              <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
-                🟢 {activeChains.length - myTurnChains.length} active chain{activeChains.length - myTurnChains.length !== 1 ? 's' : ''} going strong
+              <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400"> {activeChains.length - myTurnChains.length} active chain{activeChains.length - myTurnChains.length !== 1 ? 's' : ''} going strong
               </p>
             )}
           </>

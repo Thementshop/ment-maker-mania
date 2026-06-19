@@ -71,7 +71,7 @@ function getSubject(emailType: string, data: TemplateData): string {
       }
       return `1 hour left — don't let the ${data.chain_name} chain break`;
     case 'milestone':
-      return `Your ${data.chain_name} chain just hit ${data.milestone} shares 💚`;
+      return `Your ${data.chain_name} chain just hit ${data.milestone} shares`;
     case 'completed':
       return `Your ${data.chain_name} chain reached ${data.total_shares || 0} people`;
     default:
@@ -164,8 +164,7 @@ function buildChainReceivedEmail(data: TemplateData): string {
     </p>
     ${primaryCTA(data.chain_url, NOTIFICATION_COPY.chain_received.cta, 'No account needed to view.')}
     <p style="color:${BRAND_DARK};font-size:15px;line-height:1.6;margin:0 0 8px;text-align:center;font-weight:600;">
-      Savor your moment 💚
-    </p>
+      Savor your moment </p>
     <p style="color:#4b5563;font-size:14px;line-height:1.6;margin:0 0 20px;text-align:center;">
       This mint is yours to keep, forever. Pass the chain forward within 48 hours to keep the kindness going.
     </p>
@@ -225,7 +224,7 @@ function build1hrWarningBatchedEmail(data: TemplateData): string {
 function buildMilestoneEmail(data: TemplateData): string {
   const inner = `
     <div style="background:linear-gradient(135deg,${BRAND_GREEN},#22c55e);border-radius:12px;padding:24px 22px;margin:28px 0 24px;text-align:center;">
-      <p style="color:${BRAND_DARK};font-size:12px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;margin:0 0 8px;">Milestone Reached 💚</p>
+      <p style="color:${BRAND_DARK};font-size:12px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;margin:0 0 8px;">Milestone Reached</p>
       <p style="color:${BRAND_DARK};font-size:48px;font-weight:900;margin:0;line-height:1;letter-spacing:-2px;">${data.milestone}</p>
       <p style="color:${BRAND_DARK};font-size:13px;font-weight:700;margin:8px 0 0;">people reached</p>
     </div>
@@ -283,8 +282,7 @@ function buildMentReceivedEmail(data: TemplateData): string {
     </h2>
     ${primaryCTA(revealUrl, NOTIFICATION_COPY.single_ment.cta, 'No account needed to view.')}
     <p style="color:${BRAND_DARK};font-size:16px;line-height:1.6;margin:0 0 10px;text-align:center;font-weight:600;">
-      Savor your moment 💚
-    </p>
+      Savor your moment </p>
     <p style="color:#4b5563;font-size:14px;line-height:1.6;margin:0 0 32px;text-align:center;">
       This mint is yours to keep. Pass the kindness forward whenever the moment feels right to earn another mint for your jar.
     </p>

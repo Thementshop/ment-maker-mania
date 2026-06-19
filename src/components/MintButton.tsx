@@ -7,7 +7,7 @@ const MintButton = ({
   onClick
 }: MintButtonProps) => {
   return <div className="relative flex-col mx-[50px] flex items-center justify-center">
-      
+
       <motion.button onClick={onClick} className="relative flex items-center justify-center focus:outline-none focus-visible:ring-4 focus-visible:ring-mint/50 rounded-full w-40 h-40" whileHover={{
       scale: 1.05
     }} whileTap={{
@@ -28,7 +28,7 @@ const MintButton = ({
         ease: 'easeInOut'
       }} />
       </motion.button>
-      
+
       <motion.p className="mt-4 font-display text-xl font-bold text-mint" animate={{
       opacity: [0.8, 1, 0.8]
     }} transition={{

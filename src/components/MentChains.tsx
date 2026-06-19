@@ -17,14 +17,14 @@ const MentChains = () => {
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: `url(${mentChainBg})` }}
         />
-        
+
         {/* Gradient Overlay for readability */}
         <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/70 to-background/40" />
-        
+
         {/* Content */}
         <div className="relative z-10 flex flex-col items-center h-full p-4 text-center">
           {/* Title */}
-          <motion.div 
+          <motion.div
             className="flex items-center gap-2 mb-2"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -41,9 +41,7 @@ const MentChains = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
-          >
-            🔥 Don't Break The Chain! 🔥
-          </motion.p>
+          > Don't Break The Chain! </motion.p>
 
           {/* Leaderboard */}
           <motion.div
@@ -62,7 +60,7 @@ const MentChains = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
           >
-            <Button 
+            <Button
               onClick={() => setIsModalOpen(true)}
               className="w-full bg-orange-500 hover:bg-orange-600 text-white"
               size="sm"
@@ -75,9 +73,9 @@ const MentChains = () => {
       </div>
 
       {/* Start Chain Modal */}
-      <StartChainModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+      <StartChainModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
       />
     </>
   );

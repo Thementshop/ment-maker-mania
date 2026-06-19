@@ -26,7 +26,7 @@ const Header = ({ worldCount }: HeaderProps) => {
 
   const getInitials = (name: string | null) => {
     if (!name) return 'U';
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    return name.split('').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
   return (
@@ -48,9 +48,7 @@ const Header = ({ worldCount }: HeaderProps) => {
               className="text-2xl"
               animate={{ rotate: 360 }}
               transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-            >
-              🌍
-            </motion.span>
+            > </motion.span>
             <motion.span
               key={worldCount}
               initial={{ scale: 1.2, color: '#FFD740' }}
@@ -118,9 +116,7 @@ const Header = ({ worldCount }: HeaderProps) => {
                 className="text-base leading-none"
                 animate={{ rotate: 360 }}
                 transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-              >
-                🌍
-              </motion.span>
+              > </motion.span>
               <motion.span
                 key={worldCount}
                 initial={{ scale: 1.2, color: '#FFD740' }}
@@ -160,9 +156,9 @@ const Header = ({ worldCount }: HeaderProps) => {
       </header>
 
 
-      <HowItWorksModal 
-        isOpen={isHowItWorksOpen} 
-        onClose={() => setIsHowItWorksOpen(false)} 
+      <HowItWorksModal
+        isOpen={isHowItWorksOpen}
+        onClose={() => setIsHowItWorksOpen(false)}
       />
 
       <AccountSettingsModal

@@ -32,19 +32,19 @@ type RecipientType = 'contact' | 'email' | 'phone';
 const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) => {
   const { toast } = useToast();
   const { user, profile, session } = useAuth();
-  
+
   const [step, setStep] = useState<'name' | 'recipient' | 'pickCompliment' | 'sending' | 'success'>('name');
-  
+
   // Chain name state
   const [chainName, setChainName] = useState('');
   const [nameSuggestions, setNameSuggestions] = useState<string[]>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
-  
+
   // Multi-recipient state
   const [recipientType, setRecipientType] = useState<RecipientType>('contact');
   const [recipients, setRecipients] = useState<string[]>(['', '', '']);
   const [recipientErrors, setRecipientErrors] = useState<string[]>(['', '', '']);
-  
+
   // Per-recipient compliment state
   const [activeIndex, setActiveIndex] = useState(0); // which recipient we're currently picking for
   const [compliments, setCompliments] = useState<string[]>(['', '', '']);
@@ -72,7 +72,7 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
       setLoadingSuggestions(false);
     }
   };
-  
+
   const resetModal = useCallback(() => {
     setStep('name');
     setChainName('');
@@ -108,7 +108,7 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
 
   const validateAllRecipients = (): boolean => {
     const errors = recipients.map((r, i) => validateRecipient(r, i));
-    
+
     // Check for duplicates among non-empty values
     const trimmed = recipients.map(r => r.trim().toLowerCase());
     trimmed.forEach((val, i) => {
@@ -126,7 +126,7 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
         }
       });
     }
-    
+
     setRecipientErrors(errors);
     return errors.every(e => !e);
   };
@@ -189,11 +189,11 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
 
     try {
       let accessToken = session?.access_token;
-      
+
       if (!accessToken) {
         throw new Error('Please log in again to start a chain.');
       }
-      
+
       // Check if token is expired
       try {
         const payload = JSON.parse(atob(accessToken.split('.')[1]));
@@ -261,20 +261,20 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
       }
 
       setStep('success');
-      
+
       const recipientCount = validRecipients.length;
       toast({
-        title: "Chain Started! 🔥 +5 mints! 🎨",
+        title: "Chain Started! +5 mints!",
         description: `Your chain "${finalName}" has been sent to ${recipientCount} ${recipientCount === 1 ? 'person' : 'people'}! 5 mints added to your jar.`,
       });
 
       const { useGameStore } = await import('@/store/gameStore');
       const state = useGameStore.getState();
-      useGameStore.setState({ 
+      useGameStore.setState({
         jarCount: typeof result.newJarCount === 'number' ? result.newJarCount : state.jarCount + 5,
         totalSent: typeof result.newTotalSent === 'number' ? result.newTotalSent : state.totalSent + 1,
       });
-      
+
       confetti({
         particleCount: 100,
         spread: 70,
@@ -294,7 +294,7 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
       } else if (error.message) {
         message = error.message;
       }
-        
+
       toast({
         title: "Couldn't start chain",
         description: message,
@@ -395,8 +395,7 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
         </div>
         <h3 className="text-lg font-semibold">Who's first?</h3>
         <p className="text-sm text-muted-foreground mt-1">
-          Send to up to 3 people to boost chain survival! 🚀
-        </p>
+          Send to up to 3 people to boost chain survival! </p>
       </div>
 
       {/* Recipient Type Tabs */}
@@ -428,7 +427,7 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
         <Label>
           Send to (up to 3 people):
         </Label>
-        
+
         {recipients.map((recipient, index) => (
           <div key={index} className="space-y-1">
             <div className="flex gap-2 items-center">
@@ -479,10 +478,10 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back
         </Button>
-        <Button 
-          onClick={handleRecipientNext} 
-          className="flex-1" 
-          size="lg" 
+        <Button
+          onClick={handleRecipientNext}
+          className="flex-1"
+          size="lg"
           disabled={!recipients.some(r => r.trim())}
         >
           Choose Ment
@@ -609,7 +608,7 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
         <Send className="h-10 w-10 text-orange-500" />
       </motion.div>
       <p className="mt-4 text-lg font-semibold">Starting your chain...</p>
-      <p className="text-sm text-muted-foreground">Igniting the spark ✨</p>
+      <p className="text-sm text-muted-foreground">Igniting the spark</p>
     </motion.div>
   );
 
@@ -629,13 +628,13 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
         >
           <Check className="h-10 w-10 text-white" />
         </motion.div>
-        
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <h3 className="text-xl font-bold text-foreground mb-2">Chain Started! 🔥</h3>
+          <h3 className="text-xl font-bold text-foreground mb-2">Chain Started!</h3>
           <p className="text-muted-foreground">
             "{chainName || `@${displayName}'s Chain`}" sent to {recipientCount} {recipientCount === 1 ? 'person' : 'people'}!
           </p>

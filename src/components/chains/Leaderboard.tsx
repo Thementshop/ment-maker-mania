@@ -29,9 +29,9 @@ interface LeaderboardEntryProps {
 
 const getRankEmoji = (rank: number): string => {
   switch (rank) {
-    case 1: return '🥇';
-    case 2: return '🥈';
-    case 3: return '🥉';
+    case 1: return '';
+    case 2: return '';
+    case 3: return '';
     default: return `#${rank}`;
   }
 };
@@ -45,7 +45,7 @@ const getChainAge = (createdAt: string): string => {
 
 const getCardClassName = (rank: number, isYourChain: boolean): string => {
   if (isYourChain) return 'border-primary bg-primary/10';
-  
+
   switch (rank) {
     case 1: return 'border-yellow-400 bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20';
     case 2: return 'border-gray-400 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-700/50';
@@ -57,7 +57,7 @@ const getCardClassName = (rank: number, isYourChain: boolean): string => {
 function LeaderboardEntry({ chain, rank, isYourChain, onShareAchievement }: LeaderboardEntryProps) {
   const tier = chain.tier || getChainTier(chain.share_count || 0);
   const config = tierConfig[tier as keyof typeof tierConfig] || tierConfig.small;
-  
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -74,7 +74,7 @@ function LeaderboardEntry({ chain, rank, isYourChain, onShareAchievement }: Lead
             <span className="text-lg font-bold text-muted-foreground">{getRankEmoji(rank)}</span>
           )}
         </div>
-        
+
         {/* Chain Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
@@ -87,10 +87,10 @@ function LeaderboardEntry({ chain, rank, isYourChain, onShareAchievement }: Lead
               </span>
             )}
             {tier === 'legendary' && (
-              <span className="text-sm">✨</span>
+              <span className="text-sm"></span>
             )}
           </div>
-          
+
           <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground flex-wrap">
             <span className="flex items-center gap-1">
               <Link className="h-3.5 w-3.5" />
@@ -102,11 +102,11 @@ function LeaderboardEntry({ chain, rank, isYourChain, onShareAchievement }: Lead
             </span>
           </div>
         </div>
-        
+
         {/* Tier Badge */}
-        <div 
+        <div
           className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-lg"
-          style={{ 
+          style={{
             background: `linear-gradient(135deg, ${config.color}40, ${config.color}20)`,
             border: `2px solid ${config.color}`
           }}
@@ -114,7 +114,7 @@ function LeaderboardEntry({ chain, rank, isYourChain, onShareAchievement }: Lead
           {config.emoji}
         </div>
       </div>
-      
+
       {/* Share Achievement Button (only for your chains) */}
       {isYourChain && (
         <Button
@@ -143,7 +143,7 @@ const Leaderboard = () => {
 
   async function fetchTopChains(selectedPeriod: Period) {
     setLoading(true);
-    
+
     try {
       const startDate = {
         week: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
@@ -169,13 +169,11 @@ const Leaderboard = () => {
 
   function handleShareAchievement(chain: ChainWithProfile) {
     const rank = topChains.findIndex(c => c.chain_id === chain.chain_id) + 1;
-    
-    const shareText = `🎉 My chain "${chain.chain_name || 'Kindness Chain'}" hit #${rank} on The Ment Shop leaderboard with ${chain.share_count} shares!
 
-Join me in spreading kindness! 💚🍬
+    const shareText = `My chain "${chain.chain_name || 'Kindness Chain'}" hit #${rank} on The Ment Shop leaderboard with ${chain.share_count} shares!
 
-Download: https://thementshop.com`;
-    
+Join me in spreading kindness!Download: https://thementshop.com`;
+
     if (navigator.share) {
       navigator.share({
         title: 'Ment Shop Achievement',
@@ -201,7 +199,7 @@ Download: https://thementshop.com`;
         <Trophy className="h-6 w-6 text-primary" />
         <h2 className="text-2xl font-bold text-foreground">Top Chains</h2>
       </div>
-      
+
       {/* Period Filters */}
       <div className="flex justify-center gap-2 mb-6">
         {periods.map(p => (
@@ -218,7 +216,7 @@ Download: https://thementshop.com`;
           </button>
         ))}
       </div>
-      
+
       {/* Loading State */}
       {loading && (
         <div className="space-y-3">
@@ -227,7 +225,7 @@ Download: https://thementshop.com`;
           ))}
         </div>
       )}
-      
+
       {/* Leaderboard List */}
       {!loading && topChains.length > 0 && (
         <div className="space-y-3">
@@ -242,7 +240,7 @@ Download: https://thementshop.com`;
           ))}
         </div>
       )}
-      
+
       {/* Empty State */}
       {!loading && topChains.length === 0 && (
         <div className="text-center py-12">
@@ -251,8 +249,7 @@ Download: https://thementshop.com`;
             No chains in this time period yet.
           </p>
           <p className="text-sm text-muted-foreground">
-            Be the first to start one! 🔗
-          </p>
+            Be the first to start one! </p>
         </div>
       )}
     </div>

@@ -33,7 +33,7 @@ const MentChainsSection = ({ onStartNewChain }: MentChainsSectionProps) => {
   };
 
   const EmptyState = ({ icon: Icon, title, description }: { icon: any; title: string; description: string }) => (
-    <motion.div 
+    <motion.div
       className="flex flex-col items-center justify-center py-12 text-center"
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
@@ -44,7 +44,7 @@ const MentChainsSection = ({ onStartNewChain }: MentChainsSectionProps) => {
       <h3 className="text-lg font-semibold text-foreground mb-2">{title}</h3>
       <p className="text-sm text-muted-foreground max-w-xs">{description}</p>
       {activeTab === 'active' && onStartNewChain && (
-        <Button 
+        <Button
           className="mt-4"
           onClick={onStartNewChain}
         >
@@ -77,7 +77,7 @@ const MentChainsSection = ({ onStartNewChain }: MentChainsSectionProps) => {
               exit={{ opacity: 0, y: -20 }}
               transition={{ delay: index * 0.05 }}
             >
-              <ChainCard 
+              <ChainCard
                 chain={chain}
                 onShare={(id) => console.log('Share chain:', id)}
                 onViewDetails={(id) => console.log('View details:', id)}

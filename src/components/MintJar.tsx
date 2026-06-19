@@ -156,7 +156,7 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
               transition={{ type: 'spring', stiffness: 300, damping: 20 }}
               onClick={(e) => e.stopPropagation()}
             >
-              <span className="text-6xl">🎉</span>
+              <span className="text-6xl"></span>
               <h2 className="mt-4 font-display text-3xl font-bold">JAR UPGRADE!</h2>
               <p className="mt-2 text-lg opacity-90">
                 Your jar evolved to <strong>{currentTier.name}</strong>!
@@ -172,8 +172,7 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                Amazing! ✨
-              </motion.button>
+                Amazing! </motion.button>
             </motion.div>
           </motion.div>
         )}

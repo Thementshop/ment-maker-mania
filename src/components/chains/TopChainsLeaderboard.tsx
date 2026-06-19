@@ -6,11 +6,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 const getRankDisplay = (rank: number) => {
   switch (rank) {
     case 1:
-      return <span className="text-lg">🥇</span>;
+      return <span className="text-lg"></span>;
     case 2:
-      return <span className="text-lg">🥈</span>;
+      return <span className="text-lg"></span>;
     case 3:
-      return <span className="text-lg">🥉</span>;
+      return <span className="text-lg"></span>;
     default:
       return <span className="text-sm font-bold text-muted-foreground w-6 text-center">{rank}</span>;
   }
@@ -68,7 +68,7 @@ const TopChainsLeaderboard = () => {
         <Trophy className="h-4 w-4 text-primary" />
         <span className="text-sm font-semibold text-foreground">Top Chains Today</span>
       </div>
-      
+
       <div className="space-y-1.5">
         {topChains.map((chain, index) => (
           <motion.div

@@ -15,7 +15,7 @@ const CarouselDots = ({ api, count, className }: CarouselDotsProps) => {
     if (!api) return;
 
     setCurrentSlide(api.selectedScrollSnap());
-    
+
     const onSelect = () => {
       setCurrentSlide(api.selectedScrollSnap());
     };

@@ -239,7 +239,7 @@ const SendAMentModal = ({
 
       setStep('success');
       confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#58fc59', '#FF6B9D', '#4FC3F7', '#FFD740', '#B39DDB'] });
-      toast({ title: "Compliment sent! +1 mint earned 💚", description: `Your ment was sent to ${contact.contact_name}` });
+      toast({ title: "Compliment sent! +1 mint earned", description: `Your ment was sent to ${contact.contact_name}` });
       setTimeout(() => handleClose(), 2500);
     } catch (error: any) {
       window.clearTimeout(timeoutId);
@@ -282,8 +282,7 @@ const SendAMentModal = ({
             {/* Prefilled-compliment banner: shown above contact picker so user knows what they're sending */}
             {isPrefilled && (step === 'contact' || step === 'addContact' || step === 'delivery') && (
               <div className="mb-4 rounded-2xl border-2 px-4 py-3" style={{ borderColor: 'rgba(88,252,89,0.3)', background: 'linear-gradient(135deg, rgba(88,252,89,0.08), rgba(88,252,89,0.15))' }}>
-                <p className="text-xs font-semibold mb-1" style={{ color: '#166534' }}>
-                  💚 Sending this ment{prefilledSenderName ? ` (from ${prefilledSenderName})` : ''}
+                <p className="text-xs font-semibold mb-1" style={{ color: '#166534' }}> Sending this ment{prefilledSenderName ? ` (from ${prefilledSenderName})` : ''}
                 </p>
                 <p className="text-sm font-medium text-foreground italic">"{prefilledCompliment}"</p>
               </div>
@@ -326,7 +325,7 @@ const SendAMentModal = ({
                   >
                     <Phone className="h-6 w-6 text-primary" />
                     <div className="text-left">
-                      <div className="font-semibold text-foreground">📱 Text Message</div>
+                      <div className="font-semibold text-foreground">Text Message</div>
                       <div className="text-xs text-muted-foreground">{selectedContact.phone}</div>
                     </div>
                   </button>
@@ -342,7 +341,7 @@ const SendAMentModal = ({
                   >
                     <Mail className="h-6 w-6 text-primary" />
                     <div className="text-left">
-                      <div className="font-semibold text-foreground">📧 Email</div>
+                      <div className="font-semibold text-foreground">Email</div>
                       <div className="text-xs text-muted-foreground">{selectedContact.email}</div>
                     </div>
                   </button>
@@ -357,7 +356,7 @@ const SendAMentModal = ({
                 <div className="text-center">
                   <p className="text-sm text-muted-foreground mb-1">
                     Sending to <span className="font-medium text-foreground">{selectedContact?.contact_name}</span>
-                    {deliveryMethod === 'text' ? ` via 📱` : ` via 📧`}
+                    {deliveryMethod === 'text' ? ` via` : ` via`}
                   </p>
                   <h2 className="font-display text-2xl font-bold text-foreground">Choose Category</h2>
                 </div>
@@ -432,9 +431,7 @@ const SendAMentModal = ({
                   <img src={unwrappedMint} alt="Sent!" className="h-24 w-24 object-contain" />
                 </motion.div>
                 <motion.h2 className="mt-6 font-display text-2xl font-bold text-primary"
-                  initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}>
-                  🎊 Ment Delivered! 🎊
-                </motion.h2>
+                  initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}> Ment Delivered! </motion.h2>
                 <motion.p className="mt-2 text-muted-foreground"
                   initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }}>
                   +1 mint added to your jar!

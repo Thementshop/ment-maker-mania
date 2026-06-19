@@ -57,18 +57,18 @@ export const CHAIN_NAME_SUGGESTIONS = [
 export async function getAvailableChainNames(): Promise<string[]> {
   try {
     console.log('Fetching available chain names...');
-    
+
     // Fetch currently used names with timeout
-    const timeoutPromise = new Promise<never>((_, reject) => 
+    const timeoutPromise = new Promise<never>((_, reject) =>
       setTimeout(() => reject(new Error('Timeout fetching chain names')), 5000)
     );
-    
+
     const fetchPromise = supabase
       .from('used_chain_names')
       .select('chain_name');
-    
+
     const { data: usedNames, error } = await Promise.race([fetchPromise, timeoutPromise]) as Awaited<typeof fetchPromise>;
-    
+
     if (error) {
       console.error('Error fetching used names:', error);
       // Return random suggestions even if fetch fails
@@ -76,18 +76,18 @@ export async function getAvailableChainNames(): Promise<string[]> {
         .sort(() => Math.random() - 0.5)
         .slice(0, 3);
     }
-    
+
     console.log('Used names fetched:', usedNames?.length || 0, 'names in use');
     const usedSet = new Set(usedNames?.map((n) => n.chain_name) || []);
-    
+
     // Filter to only available names
     const available = CHAIN_NAME_SUGGESTIONS.filter(name => !usedSet.has(name));
-    
+
     // If all names are taken, return some defaults anyway
     if (available.length === 0) {
       return ["My Kindness Chain", "Spreading Joy", "Share the Love"];
     }
-    
+
     // Return 3 random suggestions
     return available
       .sort(() => Math.random() - 0.5)
@@ -104,25 +104,25 @@ export async function getAvailableChainNames(): Promise<string[]> {
 export async function isChainNameAvailable(name: string): Promise<boolean> {
   try {
     console.log('Checking name availability for:', name.trim());
-    
-    const timeoutPromise = new Promise<never>((_, reject) => 
+
+    const timeoutPromise = new Promise<never>((_, reject) =>
       setTimeout(() => reject(new Error('Timeout checking name availability')), 5000)
     );
-    
+
     const fetchPromise = supabase
       .from('used_chain_names')
       .select('chain_name')
       .eq('chain_name', name.trim())
       .maybeSingle();
-    
+
     const { data, error } = await Promise.race([fetchPromise, timeoutPromise]) as Awaited<typeof fetchPromise>;
-    
+
     if (error) {
       console.error('Error checking name availability:', error);
       // On error, optimistically assume available
       return true;
     }
-    
+
     console.log('Name availability check result:', data === null ? 'available' : 'taken');
     return data === null;
   } catch (err) {

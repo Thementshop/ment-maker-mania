@@ -20,12 +20,12 @@ const supabaseRest = async <T>(
         }
       }
     );
-    
+
     if (!response.ok) {
       const errorText = await response.text();
       return { data: null, error: { message: errorText } };
     }
-    
+
     const data = await response.json();
     return { data, error: null };
   } catch (err) {
@@ -118,10 +118,10 @@ export const useMentChains = (): UseMentChainsReturn => {
       // Claim any unclaimed chains (await with timeout so RLS works)
       const claimStart = Date.now();
       console.log(`[MentChainsDebug][${fetchDebugId}] Claim RPC starting...`);
-      
+
       const claimPromise = supabase.rpc('claim_chains_for_user', { claiming_user_id: user.id });
       let claimTimedOut = false;
-      
+
       const claimResult = await Promise.race([
         claimPromise.then(res => {
           if (claimTimedOut) {
@@ -171,7 +171,7 @@ export const useMentChains = (): UseMentChainsReturn => {
       } catch (e) {
         console.warn(`[MentChainsDebug][${fetchDebugId}] Participated RPC failed:`, e);
       }
-      
+
       console.log(`[MentChainsDebug][${fetchDebugId}] Participated in ${participatedChainIds.size} chains via RPC`);
 
       // Step 3: Fetch main chains
@@ -186,7 +186,7 @@ export const useMentChains = (): UseMentChainsReturn => {
       if (participatedChainIds.size > 0) {
         const mainChainIds = new Set((chainsResult.data || []).map(c => c.chain_id));
         const missingIds = [...participatedChainIds].filter(id => !mainChainIds.has(id));
-        
+
         if (missingIds.length > 0) {
           const partResult = await supabaseRest<MentChain[]>(
             'ment_chains',
@@ -205,7 +205,7 @@ export const useMentChains = (): UseMentChainsReturn => {
       // Merge main + participated chains
       const rawChains = [...(chainsResult.data || []), ...participatedChains];
       console.log(`[MentChainsDebug][${fetchDebugId}] Total chains: ${rawChains.length} (main: ${(chainsResult.data || []).length}, participated: ${participatedChains.length})`);
-      
+
       // Per-row diagnostics
       rawChains.forEach(chain => {
         const matchesStartedBy = chain.started_by === user.id;
@@ -233,7 +233,7 @@ export const useMentChains = (): UseMentChainsReturn => {
           `select=id,display_name&id=in.(${idsArray.join(',')})`,
           session.access_token
         );
-        
+
         (profilesResult.data || []).forEach(p => {
           profileMap.set(p.id, p.display_name || 'Anonymous');
         });
@@ -254,7 +254,7 @@ export const useMentChains = (): UseMentChainsReturn => {
           status: c.status,
         })),
       });
-      
+
       let complimentMap = new Map<string, string>();
       if (chainIds.length > 0) {
         const linksResult = await supabaseRest<{ chain_id: string; sent_compliment: string; passed_at: string }[]>(
@@ -287,11 +287,11 @@ export const useMentChains = (): UseMentChainsReturn => {
       const typedChains: MentChain[] = rawChains.map(chain => {
         const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
         const isCurrentHolderUuid = uuidRegex.test(chain.current_holder);
-        
+
         return {
           ...chain,
           started_by_display_name: profileMap.get(chain.started_by) || 'Anonymous',
-          current_holder_display_name: isCurrentHolderUuid 
+          current_holder_display_name: isCurrentHolderUuid
             ? (profileMap.get(chain.current_holder) || 'Anonymous')
             : chain.current_holder,
           received_compliment: complimentMap.get(chain.chain_id),
@@ -302,8 +302,8 @@ export const useMentChains = (): UseMentChainsReturn => {
 
       // Filter chains where it's the user's turn (by UUID or email)
       const yourTurn = typedChains.filter(
-        chain => (chain.current_holder === user.id || 
-          (userEmail && chain.current_holder.toLowerCase() === userEmail.toLowerCase())) && 
+        chain => (chain.current_holder === user.id ||
+          (userEmail && chain.current_holder.toLowerCase() === userEmail.toLowerCase())) &&
           chain.status === 'active'
       );
       setYourTurnChains(yourTurn);
@@ -468,7 +468,7 @@ export const useMentChains = (): UseMentChainsReturn => {
 
   const getChainLinks = useCallback(async (chainId: string): Promise<ChainLink[]> => {
     if (!session) return [];
-    
+
     try {
       const result = await supabaseRest<ChainLink[]>(
         'chain_links',
@@ -496,7 +496,7 @@ export const useMentChains = (): UseMentChainsReturn => {
         .single();
 
       if (gsError) throw gsError;
-      
+
       if (!gameState || gameState.pause_tokens < 1) {
         return false;
       }

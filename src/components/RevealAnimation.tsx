@@ -84,7 +84,7 @@ const DRIFT_VH = 10; // pinpoint at center (+10vh) → settles in upper-middle (
 function preventOrphans(text: string): string {
   const words = text.trim().split(/\s+/);
   if (words.length < 2) return text;
-  return words.slice(0, -1).join(' ') + '\u00A0' + words[words.length - 1];
+  return words.slice(0, -1).join('') + '\u00A0' + words[words.length - 1];
 }
 
 // Measure how many lines the text wraps to at a given size, then binary-search
@@ -308,7 +308,7 @@ const RevealAnimation = ({
         style={{
           objectFit: isWide ? 'contain' : 'cover',
           objectPosition: 'center',
-          filter: 'brightness(1.20) contrast(1.05)',
+          filter: 'brightness(1.35) contrast(1.05)',
         }}
       />
 

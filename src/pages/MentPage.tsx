@@ -217,8 +217,7 @@ const MentPage = () => {
                     className="block w-full rounded-xl px-6 py-3 font-semibold text-white text-center transition-all hover:scale-[1.02]"
                     style={{ background: 'linear-gradient(135deg, #58fc59, #3dd83e)' }}
                   >
-                    Join The Ment Shop 💚
-                  </Link>
+                    Join The Ment Shop </Link>
                 ) : isLoggedIn ? (
                   <>
                     <button
@@ -226,8 +225,7 @@ const MentPage = () => {
                       className="block w-full rounded-xl px-6 py-3 font-semibold text-white text-center transition-all hover:scale-[1.02]"
                       style={{ background: 'linear-gradient(135deg, #58fc59, #3dd83e)' }}
                     >
-                      Send a Ment Back to {ment.sender_name} 💚
-                    </button>
+                      Send a Ment Back to {ment.sender_name} </button>
                     <button
                       onClick={() => {
                         sessionStorage.setItem('openSendMent', '1');
@@ -280,8 +278,7 @@ const MentPage = () => {
                 className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl"
               >
                 <h2 className="font-display text-xl font-bold text-center mb-1" style={{ color: '#166534' }}>
-                  Pass it forward 💚
-                </h2>
+                  Pass it forward </h2>
                 <p className="text-center text-sm text-muted-foreground mb-5">
                   Send the same kindness, or pick something fresh.
                 </p>
@@ -306,8 +303,7 @@ const MentPage = () => {
                     className="block w-full rounded-xl px-6 py-3 font-semibold text-white text-center transition-all hover:scale-[1.02]"
                     style={{ background: 'linear-gradient(135deg, #58fc59, #3dd83e)' }}
                   >
-                    Send this same Ment 💚
-                  </button>
+                    Send this same Ment </button>
                 </div>
                 <button
                   onClick={() => {
@@ -360,8 +356,7 @@ const MentPage = () => {
               </motion.div>
 
               <h1 className="font-display text-2xl font-bold mt-6 mb-2" style={{ color: '#166534' }}>
-                You received a ment! 🎁
-              </h1>
+                You received a ment! </h1>
               <p className="text-muted-foreground text-sm mb-8">
                 Someone sent you a little kindness
               </p>
@@ -372,8 +367,7 @@ const MentPage = () => {
                 style={{ background: 'linear-gradient(135deg, #58fc59, #3dd83e)' }}
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
-              >
-                💚 Tap to Unwrap
+              > Tap to Unwrap
               </motion.button>
             </motion.div>
           ) : (
@@ -423,7 +417,7 @@ const MentPage = () => {
                 transition={{ delay: 0.8 }}
               >
                 {isShareMode ? (
-                  <>💚 A little kindness from <strong>{ment!.sender_name}</strong></>
+                  <>A little kindness from <strong>{ment!.sender_name}</strong></>
                 ) : isLoggedIn ? (
                   <>That mint just landed in your jar and it is SO proud to be there. Want to spread the sweetness? Send a Ment to someone who deserves a brighter day.</>
                 ) : (
@@ -446,16 +440,14 @@ const MentPage = () => {
                       className="block w-full rounded-xl px-6 py-3 font-semibold text-white text-center transition-all hover:scale-[1.02]"
                       style={{ background: 'linear-gradient(135deg, #58fc59, #3dd83e)' }}
                     >
-                      Join The Ment Shop 💚
-                    </Link>
+                      Join The Ment Shop </Link>
                   ) : (
                     <Link
                       to="/auth"
                       className="block w-full rounded-xl px-6 py-3 font-semibold text-white text-center transition-all hover:scale-[1.02]"
                       style={{ background: 'linear-gradient(135deg, #58fc59, #3dd83e)' }}
                     >
-                      Join The Ment Shop 💚
-                    </Link>
+                      Join The Ment Shop </Link>
                   )
                 ) : isLoggedIn ? (
                   // ─── Private link, logged in: send back / send new ───
@@ -465,8 +457,7 @@ const MentPage = () => {
                       className="block w-full rounded-xl px-6 py-3 font-semibold text-white text-center transition-all hover:scale-[1.02]"
                       style={{ background: 'linear-gradient(135deg, #58fc59, #3dd83e)' }}
                     >
-                      Send a Ment Back to {ment!.sender_name} 💚
-                    </button>
+                      Send a Ment Back to {ment!.sender_name} </button>
                     <button
                       onClick={() => {
                         sessionStorage.setItem('openSendMent', '1');
@@ -503,8 +494,7 @@ const MentPage = () => {
         </AnimatePresence>
       </motion.div>
 
-      <p className="mt-8 text-xs" style={{ color: '#6b7280' }}>
-        💚 Ment Shop – Spreading Kindness, One Compliment at a Time
+      <p className="mt-8 text-xs" style={{ color: '#6b7280' }}> Ment Shop – Spreading Kindness, One Compliment at a Time
       </p>
 
       {/* ── Quick "Send Back" choice screen ───────────────────────────────
@@ -527,8 +517,7 @@ const MentPage = () => {
               className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl"
             >
               <h2 className="font-display text-xl font-bold text-center mb-1" style={{ color: '#166534' }}>
-                Pass it forward 💚
-              </h2>
+                Pass it forward </h2>
               <p className="text-center text-sm text-muted-foreground mb-5">
                 Send the same kindness, or pick something fresh.
               </p>
@@ -555,8 +544,7 @@ const MentPage = () => {
                   className="block w-full rounded-xl px-6 py-3 font-semibold text-white text-center transition-all hover:scale-[1.02]"
                   style={{ background: 'linear-gradient(135deg, #58fc59, #3dd83e)' }}
                 >
-                  Send this same Ment 💚
-                </button>
+                  Send this same Ment </button>
               </div>
 
               <button

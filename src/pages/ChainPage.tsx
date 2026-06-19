@@ -59,7 +59,7 @@ const ChainBroken = ({ chain, onBack }: { chain: ChainData; onBack: () => void }
       animate={{ opacity: 1, y: 0 }}
       className="text-center space-y-6 max-w-md"
     >
-      <div className="text-6xl">💔</div>
+      <div className="text-6xl"></div>
       <h1 className="text-2xl font-bold">Chain Broken</h1>
       <p className="text-muted-foreground">
         This kindness chain "{chain.chain_name || 'Untitled'}" has ended after {chain.share_count} shares.
@@ -117,7 +117,7 @@ const CurrentHolderView = ({
       </motion.div>
 
       <div className="bg-muted/50 rounded-xl p-4 text-left">
-        <p className="text-sm text-muted-foreground mb-1">💚 From @{chain.started_by_display_name}:</p>
+        <p className="text-sm text-muted-foreground mb-1">From @{chain.started_by_display_name}:</p>
         <p className="italic text-foreground">
           "{chain.received_compliment || "You're amazing and the world is better with you in it!"}"
         </p>
@@ -287,7 +287,7 @@ const RevealView = ({
           >
             <Gift className="h-10 w-10 mx-auto text-primary/60 group-hover:text-primary transition-colors mb-3" />
             <p className="text-lg font-semibold text-foreground">Tap to reveal your compliment</p>
-            <p className="text-sm text-muted-foreground mt-1">A little kindness is waiting for you 💚</p>
+            <p className="text-sm text-muted-foreground mt-1">A little kindness is waiting for you</p>
           </motion.button>
         ) : (
           <AnimatePresence>
@@ -340,8 +340,7 @@ const RevealView = ({
               ) : (
                 <div className="space-y-4">
                   <p className="text-base font-medium text-foreground">
-                    Love this? Keep the kindness going! 🎁
-                  </p>
+                    Love this? Keep the kindness going! </p>
                   <Button
                     size="lg"
                     className="w-full rounded-full text-lg py-6"
@@ -356,8 +355,7 @@ const RevealView = ({
                     Already have an account? Sign In
                   </button>
                   <p className="text-xs text-muted-foreground">
-                    Join the chain and earn mints in your Kindness Jar! 🌿
-                  </p>
+                    Join the chain and earn mints in your Kindness Jar! </p>
                 </div>
               )}
             </motion.div>
@@ -502,10 +500,10 @@ const ChainPage = () => {
 
   const getTimerUrgency = () => {
     const totalMinutes = countdown.hours * 60 + countdown.minutes;
-    if (totalMinutes < 10) return { color: 'text-red-500', bg: 'bg-red-500/10', animate: true, icon: '🔥' };
-    if (totalMinutes < 120) return { color: 'text-orange-500', bg: 'bg-orange-500/10', animate: false, icon: '⚠️' };
+    if (totalMinutes < 10) return { color: 'text-red-500', bg: 'bg-red-500/10', animate: true, icon: '' };
+    if (totalMinutes < 120) return { color: 'text-orange-500', bg: 'bg-orange-500/10', animate: false, icon: '️' };
     if (totalMinutes < 360) return { color: 'text-yellow-500', bg: 'bg-yellow-500/10', animate: false, icon: '⏳' };
-    return { color: 'text-green-500', bg: 'bg-green-500/10', animate: false, icon: '✅' };
+    return { color: 'text-green-500', bg: 'bg-green-500/10', animate: false, icon: '' };
   };
 
   const urgency = getTimerUrgency();
@@ -516,19 +514,19 @@ const ChainPage = () => {
     const chainUrl = `${getShareBaseUrl()}/chain/${chainId}`;
     if (navigator.share) {
       navigator.share({
-        title: `Join "${chain?.chain_name || 'Kindness Chain'}" 💚`,
+        title: `Join "${chain?.chain_name || 'Kindness Chain'}"`,
         text: `I'm part of a kindness chain with ${chain?.share_count} shares!`,
         url: chainUrl,
       });
     } else {
       navigator.clipboard.writeText(chainUrl);
-      toast.success('Link copied! 🔗');
+      toast.success('Link copied!');
     }
   };
 
   const handlePassSuccess = () => {
     setShowPassModal(false);
-    toast.success('Chain passed! 🎉');
+    toast.success('Chain passed!');
     navigate('/#chains');
   };
 

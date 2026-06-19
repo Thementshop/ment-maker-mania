@@ -27,29 +27,29 @@ export const visualTierConfig: Record<VisualTier, {
 }> = {
   sprouting: {
     label: 'Sprouting',
-    emoji: '🌱',
+    emoji: '',
     badge: '',
     cardClass: 'chain-sprouting',
     showSocialShare: false,
   },
   growing: {
     label: 'Growing',
-    emoji: '💚',
-    badge: 'Growing! 💚',
+    emoji: '',
+    badge: 'Growing!',
     cardClass: 'chain-growing',
     showSocialShare: false,
   },
   thriving: {
     label: 'Thriving',
-    emoji: '✨',
-    badge: 'Thriving! ✨',
+    emoji: '',
+    badge: 'Thriving!',
     cardClass: 'chain-thriving',
     showSocialShare: true,
   },
   hot: {
     label: 'On Fire',
-    emoji: '🔥',
-    badge: 'On Fire! 🔥',
+    emoji: '',
+    badge: 'On Fire!',
     cardClass: 'chain-hot',
     showSocialShare: true,
   },
@@ -62,22 +62,22 @@ export const visualTierConfig: Record<VisualTier, {
   },
   epic: {
     label: 'Epic',
-    emoji: '💎',
-    badge: 'EPIC Chain! 💎',
+    emoji: '',
+    badge: 'EPIC Chain!',
     cardClass: 'chain-epic',
     showSocialShare: true,
   },
   legendary: {
     label: 'Legendary',
-    emoji: '🌟',
-    badge: 'LEGENDARY! 🌟',
+    emoji: '',
+    badge: 'LEGENDARY!',
     cardClass: 'chain-legendary-visual',
     showSocialShare: true,
   },
   ultimate: {
     label: 'World-Changer',
-    emoji: '🏆',
-    badge: '🏆 WORLD-CHANGER',
+    emoji: '',
+    badge: 'WORLD-CHANGER',
     cardClass: 'chain-ultimate',
     showSocialShare: true,
   },
@@ -90,8 +90,8 @@ export function isMilestone(shareCount: number): boolean {
 }
 
 export const tierConfig = {
-  small: { mintCount: 6, radius: 80, label: 'Small Chain', color: '#58fc59', emoji: '🌱' },
-  medium: { mintCount: 8, radius: 100, label: 'Medium Chain', color: '#3b82f6', emoji: '🌿' },
-  large: { mintCount: 10, radius: 120, label: 'Large Chain', color: '#a855f7', emoji: '🌳' },
-  legendary: { mintCount: 12, radius: 140, label: 'Legendary Chain', color: '#f59e0b', emoji: '✨' },
+  small: { mintCount: 6, radius: 80, label: 'Small Chain', color: '#58fc59', emoji: '' },
+  medium: { mintCount: 8, radius: 100, label: 'Medium Chain', color: '#3b82f6', emoji: '' },
+  large: { mintCount: 10, radius: 120, label: 'Large Chain', color: '#a855f7', emoji: '' },
+  legendary: { mintCount: 12, radius: 140, label: 'Legendary Chain', color: '#f59e0b', emoji: '' },
 };

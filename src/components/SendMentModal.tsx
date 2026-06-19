@@ -20,7 +20,7 @@ const SendMentModal = ({ isOpen, onClose, onSend }: SendMentModalProps) => {
   const [selectedCompliment, setSelectedCompliment] = useState<string>('');
   const [recipientType, setRecipientType] = useState<string>('');
   const [recipientValue, setRecipientValue] = useState<string>('');
-  
+
   const resetModal = () => {
     setStep('recipient');
     setSelectedCategory(null);
@@ -28,31 +28,31 @@ const SendMentModal = ({ isOpen, onClose, onSend }: SendMentModalProps) => {
     setRecipientType('');
     setRecipientValue('');
   };
-  
+
   const handleClose = () => {
     resetModal();
     onClose();
   };
-  
+
   const handleSelectRecipient = (type: string) => {
     setRecipientType(type);
     // For demo, skip to category selection
     setStep('category');
   };
-  
+
   const handleSelectCategory = (category: ComplimentCategory) => {
     setSelectedCategory(category);
     setStep('compliment');
   };
-  
+
   const handleSelectCompliment = (compliment: string) => {
     setSelectedCompliment(compliment);
     handleSend(compliment);
   };
-  
+
   const handleSend = (compliment: string) => {
     setStep('sending');
-    
+
     // Animate unwrapping
     setTimeout(() => {
       // Trigger confetti
@@ -62,34 +62,34 @@ const SendMentModal = ({ isOpen, onClose, onSend }: SendMentModalProps) => {
         origin: { y: 0.6 },
         colors: ['#58fc59', '#FF6B9D', '#4FC3F7', '#FFD740', '#B39DDB'],
       });
-      
+
       setStep('success');
-      
+
       // Call onSend with the ment data
       onSend({
         category: selectedCategory?.name || '',
         complimentText: compliment,
         recipientType: recipientType,
       });
-      
+
       // Auto close after success
       setTimeout(() => {
         handleClose();
       }, 2500);
     }, 2000);
   };
-  
+
   const backdropVariants = {
     hidden: { opacity: 0 },
     visible: { opacity: 1 },
   };
-  
+
   const modalVariants = {
     hidden: { opacity: 0, scale: 0.95, y: 20 },
     visible: { opacity: 1, scale: 1, y: 0 },
     exit: { opacity: 0, scale: 0.95, y: 20 },
   };
-  
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -118,7 +118,7 @@ const SendMentModal = ({ isOpen, onClose, onSend }: SendMentModalProps) => {
                 <X className="h-5 w-5" />
               </button>
             )}
-            
+
             {/* Step 1: Recipient Selection */}
             {step === 'recipient' && (
               <div className="space-y-6">
@@ -126,12 +126,12 @@ const SendMentModal = ({ isOpen, onClose, onSend }: SendMentModalProps) => {
                   <h2 className="font-display text-2xl font-bold text-foreground">Choose Recipient</h2>
                   <p className="mt-1 text-sm text-muted-foreground">Who will receive your ment?</p>
                 </div>
-                
+
                 <div className="space-y-3">
                   {[
-                    { type: 'contacts', icon: Users, label: 'Select from Contacts', emoji: '📱' },
-                    { type: 'email', icon: Mail, label: 'Enter Email Address', emoji: '✉️' },
-                    { type: 'phone', icon: Phone, label: 'Enter Phone Number', emoji: '📲' },
+                    { type: 'contacts', icon: Users, label: 'Select from Contacts', emoji: '' },
+                    { type: 'email', icon: Mail, label: 'Enter Email Address', emoji: '️' },
+                    { type: 'phone', icon: Phone, label: 'Enter Phone Number', emoji: '' },
                   ].map((option) => (
                     <motion.button
                       key={option.type}
@@ -147,7 +147,7 @@ const SendMentModal = ({ isOpen, onClose, onSend }: SendMentModalProps) => {
                 </div>
               </div>
             )}
-            
+
             {/* Step 2: Category Selection */}
             {step === 'category' && (
               <div className="space-y-6">
@@ -155,7 +155,7 @@ const SendMentModal = ({ isOpen, onClose, onSend }: SendMentModalProps) => {
                   <h2 className="font-display text-2xl font-bold text-foreground">Choose Category</h2>
                   <p className="mt-1 text-sm text-muted-foreground">What kind of ment?</p>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-3">
                   {complimentCategories.map((category) => (
                     <motion.button
@@ -170,7 +170,7 @@ const SendMentModal = ({ isOpen, onClose, onSend }: SendMentModalProps) => {
                     </motion.button>
                   ))}
                 </div>
-                
+
                 <button
                   onClick={() => setStep('recipient')}
                   className="w-full text-sm text-muted-foreground hover:text-foreground"
@@ -179,7 +179,7 @@ const SendMentModal = ({ isOpen, onClose, onSend }: SendMentModalProps) => {
                 </button>
               </div>
             )}
-            
+
             {/* Step 3: Compliment Selection */}
             {step === 'compliment' && selectedCategory && (
               <div className="space-y-4">
@@ -189,7 +189,7 @@ const SendMentModal = ({ isOpen, onClose, onSend }: SendMentModalProps) => {
                   </h2>
                   <p className="mt-1 text-sm text-muted-foreground">Pick a ment to send</p>
                 </div>
-                
+
                 <div className="max-h-80 space-y-2 overflow-y-auto pr-2">
                   {selectedCategory.compliments.map((compliment, index) => (
                     <motion.button
@@ -203,7 +203,7 @@ const SendMentModal = ({ isOpen, onClose, onSend }: SendMentModalProps) => {
                     </motion.button>
                   ))}
                 </div>
-                
+
                 <button
                   onClick={() => setStep('category')}
                   className="w-full text-sm text-muted-foreground hover:text-foreground"
@@ -212,14 +212,14 @@ const SendMentModal = ({ isOpen, onClose, onSend }: SendMentModalProps) => {
                 </button>
               </div>
             )}
-            
+
             {/* Step 4: Sending Animation */}
             {step === 'sending' && (
               <div className="flex flex-col items-center justify-center py-12">
                 <motion.div
                   className="relative"
                   initial={{ scale: 1 }}
-                  animate={{ 
+                  animate={{
                     scale: [1, 1.1, 1, 1.1, 0.8],
                     rotate: [0, -5, 5, -5, 0],
                   }}
@@ -251,16 +251,16 @@ const SendMentModal = ({ isOpen, onClose, onSend }: SendMentModalProps) => {
                 </motion.p>
               </div>
             )}
-            
+
             {/* Step 5: Success */}
             {step === 'success' && (
-              <motion.div 
+              <motion.div
                 className="flex flex-col items-center justify-center py-12"
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
               >
                 <motion.div
-                  animate={{ 
+                  animate={{
                     y: [0, -10, 0],
                     rotate: [0, 5, -5, 0],
                   }}
@@ -272,14 +272,12 @@ const SendMentModal = ({ isOpen, onClose, onSend }: SendMentModalProps) => {
                     className="h-24 w-24 object-contain"
                   />
                 </motion.div>
-                <motion.h2 
+                <motion.h2
                   className="mt-6 font-display text-2xl font-bold text-mint"
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.2 }}
-                >
-                  🎊 Ment Delivered! 🎊
-                </motion.h2>
+                > Ment Delivered! </motion.h2>
                 <motion.p
                   className="mt-2 text-muted-foreground"
                   initial={{ y: 20, opacity: 0 }}

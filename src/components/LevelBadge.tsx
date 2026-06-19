@@ -13,12 +13,12 @@ const LevelBadge = ({
       <motion.div className="flex items-center gap-2 rounded-full bg-secondary px-4 py-2 shadow-sm" whileHover={{
       scale: 1.02
     }}>
-        
+
         <span className="font-display text-sm font-semibold text-foreground">
           Level {currentLevel.level}: {currentLevel.name}
         </span>
       </motion.div>
-      
+
       {currentLevel.level < 25 && <div className="w-full max-w-xs">
           <div className="mb-1 flex justify-between text-xs text-muted-foreground">
             <span>Progress</span>

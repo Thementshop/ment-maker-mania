@@ -40,11 +40,11 @@ const MintCircleGraphic: React.FC<MintCircleGraphicProps> = ({
     const nextPos = mintPositions[(i + 1) % mintCount];
     const midX = (pos.x + nextPos.x) / 2;
     const midY = (pos.y + nextPos.y) / 2;
-    
+
     // Create curved path toward center for chain effect
     const controlX = centerX + (midX - centerX) * 0.85;
     const controlY = centerY + (midY - centerY) * 0.85;
-    
+
     return {
       path: `M ${pos.x} ${pos.y} Q ${controlX} ${controlY} ${nextPos.x} ${nextPos.y}`,
       key: i,
@@ -60,8 +60,8 @@ const MintCircleGraphic: React.FC<MintCircleGraphicProps> = ({
         className
       )}
       style={{
-        filter: isLegendary 
-          ? 'drop-shadow(0 0 20px rgba(88, 252, 89, 0.6))' 
+        filter: isLegendary
+          ? 'drop-shadow(0 0 20px rgba(88, 252, 89, 0.6))'
           : undefined,
       }}
     >
@@ -149,7 +149,7 @@ const MintCircleGraphic: React.FC<MintCircleGraphicProps> = ({
       {/* Mint candies arranged in circle */}
       {mintPositions.map((pos, i) => {
         const rotationAngle = pos.angle + 90;
-        
+
         return (
           <g key={i} transform={`rotate(${rotationAngle}, ${pos.x}, ${pos.y})`}>
             {/* Cellophane wrapper - left side */}
@@ -182,7 +182,7 @@ const MintCircleGraphic: React.FC<MintCircleGraphicProps> = ({
 
             {/* Swirl pattern - multiple curved stripes */}
             <path
-              d={`M ${pos.x - 10} ${pos.y - 8} 
+              d={`M ${pos.x - 10} ${pos.y - 8}
                   Q ${pos.x} ${pos.y - 2} ${pos.x + 10} ${pos.y - 6}`}
               fill="none"
               stroke="white"
@@ -191,7 +191,7 @@ const MintCircleGraphic: React.FC<MintCircleGraphicProps> = ({
               strokeLinecap="round"
             />
             <path
-              d={`M ${pos.x - 8} ${pos.y + 2} 
+              d={`M ${pos.x - 8} ${pos.y + 2}
                   Q ${pos.x + 2} ${pos.y + 6} ${pos.x + 12} ${pos.y + 4}`}
               fill="none"
               stroke="white"
@@ -200,7 +200,7 @@ const MintCircleGraphic: React.FC<MintCircleGraphicProps> = ({
               strokeLinecap="round"
             />
             <path
-              d={`M ${pos.x - 6} ${pos.y + 8} 
+              d={`M ${pos.x - 6} ${pos.y + 8}
                   Q ${pos.x + 4} ${pos.y + 12} ${pos.x + 8} ${pos.y + 10}`}
               fill="none"
               stroke="white"
