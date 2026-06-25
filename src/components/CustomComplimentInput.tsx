@@ -54,6 +54,13 @@ const CustomComplimentInput = ({ onSelect }: CustomComplimentInputProps) => {
     if (!trimmed) return;
     setError(null);
     setChecking(true);
+    // Content filter (Safety Layer 2) — whole-word + phrase guardrails.
+    // Runs before any DB write so blocked text is never stored or delivered.
+    if (checkComplimentContent(trimmed).blocked) {
+      setError(BLOCKED_MESSAGE);
+      setChecking(false);
+      return;
+    }
     // Client-side check first
     if (containsBlocked(trimmed)) {
       setError("Let's keep it kind! Try rephrasing your compliment to spread positivity.");
