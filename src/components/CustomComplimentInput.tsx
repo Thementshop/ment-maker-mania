@@ -3,6 +3,10 @@ import { motion } from 'framer-motion';
 import { Sparkles, Send } from 'lucide-react';
 import { complimentCategories } from '@/data/compliments';
 import { supabase } from '@/integrations/supabase/client';
+import { checkComplimentContent } from '@/utils/contentFilter';
+
+const BLOCKED_MESSAGE =
+  "Hmm, we caught something in there that doesn't feel like kindness. Give it another try — we know you've got something wonderful to say.";
 
 interface CustomComplimentInputProps {
   onSelect: (text: string) => void;
@@ -50,6 +54,13 @@ const CustomComplimentInput = ({ onSelect }: CustomComplimentInputProps) => {
     if (!trimmed) return;
     setError(null);
     setChecking(true);
+    // Content filter (Safety Layer 2) — whole-word + phrase guardrails.
+    // Runs before any DB write so blocked text is never stored or delivered.
+    if (checkComplimentContent(trimmed).blocked) {
+      setError(BLOCKED_MESSAGE);
+      setChecking(false);
+      return;
+    }
     // Client-side check first
     if (containsBlocked(trimmed)) {
       setError("Let's keep it kind! Try rephrasing your compliment to spread positivity.");
