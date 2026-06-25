@@ -25,18 +25,28 @@ function normalizeLeetspeak(text: string): string {
     .replace(/\+/g, 't');
 }
 
+export type ContentBlockReason = "phrase" | "word" | "censored";
+
+export interface ContentCheckResult {
+  blocked: boolean;
+  /** Which rule triggered the block. */
+  reason?: ContentBlockReason;
+  /** The specific blocked term that matched (for logging/diagnostics). */
+  match?: string;
+}
+
 /**
  * Check a custom compliment for blocked content.
- * Returns { blocked: false } if clean, or { blocked: true, reason: string } if blocked.
+ * Returns { blocked: false } if clean, or { blocked: true, reason, match } if blocked.
  */
-export function checkComplimentContent(text: string): { blocked: boolean; reason?: string } {
+export function checkComplimentContent(text: string): ContentCheckResult {
   const lowerText = text.toLowerCase().trim();
   const normalizedText = normalizeLeetspeak(lowerText);
 
   // STEP 1: Check blocked PHRASES first (substring match on both original and normalized)
   for (const phrase of BLOCKED_PHRASES) {
     if (lowerText.includes(phrase) || normalizedText.includes(phrase)) {
-      return { blocked: true, reason: "phrase" };
+      return { blocked: true, reason: "phrase", match: phrase };
     }
   }
 
@@ -57,29 +67,39 @@ export function checkComplimentContent(text: string): { blocked: boolean; reason
     if (allowedSet.has(word)) continue;
     // Block if word is on the blocked list
     if (blockedSet.has(word)) {
-      return { blocked: true, reason: "word" };
+      return { blocked: true, reason: "word", match: word };
     }
   }
 
   // Also check multi-word blocked entries (some blocked "words" are actually phrases like "2 girls 1 cup")
   for (const blockedWord of BLOCKED_WORDS) {
     if (blockedWord.includes(' ') && (lowerText.includes(blockedWord) || normalizedText.includes(blockedWord))) {
-      return { blocked: true, reason: "word" };
+      return { blocked: true, reason: "word", match: blockedWord };
     }
   }
 
-  // STEP 3: Censored tokens — a '*' stands in for a single hidden letter
-  // (e.g. "f*ck"). Treat '*' as a single-char wildcard, anchored to the whole
-  // token so this stays whole-word only and never triggers the Scunthorpe problem.
-  for (const word of wordsOriginal) {
-    if (!word.includes('*')) continue;
+  // STEP 3: Censored tokens (broadened). People mask letters with symbols such
+  // as *, #, %, or repeated bullets — e.g. "f*ck", "sh#t", "a$$" (already
+  // leet-normalized), "f***". Each run of mask symbols stands in for one or
+  // more hidden letters. We anchor the pattern to the whole token so this stays
+  // whole-word only and never triggers the Scunthorpe problem. We test against
+  // both the original and the leet-normalized tokens to catch combined tricks.
+  const MASK_CHARS = /[*#%]/;
+  const censorCandidates = new Set([...wordsOriginal, ...wordsNormalized]);
+  for (const word of censorCandidates) {
+    if (!MASK_CHARS.test(word)) continue;
     if (allowedSet.has(word)) continue;
     const pattern = new RegExp(
-      '^' + word.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '[a-z]') + '$'
+      '^' +
+        word
+          .replace(/[.+?^${}()|[\]\\]/g, '\\$&')
+          // collapse each run of mask symbols into a one-or-more letter wildcard
+          .replace(/(?:\\?[*#%])+/g, '[a-z]+') +
+        '$'
     );
     for (const blockedWord of blockedSet) {
       if (!blockedWord.includes(' ') && pattern.test(blockedWord)) {
-        return { blocked: true, reason: "word" };
+        return { blocked: true, reason: "censored", match: blockedWord };
       }
     }
   }

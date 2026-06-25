@@ -56,7 +56,14 @@ const CustomComplimentInput = ({ onSelect }: CustomComplimentInputProps) => {
     setChecking(true);
     // Content filter (Safety Layer 2) — whole-word + phrase guardrails.
     // Runs before any DB write so blocked text is never stored or delivered.
-    if (checkComplimentContent(trimmed).blocked) {
+    const contentCheck = checkComplimentContent(trimmed);
+    if (contentCheck.blocked) {
+      // Log the block reason (never the user's full text) for diagnostics.
+      console.warn('[contentFilter] blocked compliment', {
+        reason: contentCheck.reason,
+        match: contentCheck.match,
+        length: trimmed.length,
+      });
       setError(BLOCKED_MESSAGE);
       setChecking(false);
       return;
