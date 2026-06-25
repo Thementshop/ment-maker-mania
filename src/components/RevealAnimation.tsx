@@ -293,10 +293,31 @@ const RevealAnimation = ({
       className={`relative w-full overflow-hidden ${className}`}
       style={{ height: '100dvh', backgroundColor: '#f7f7f7' }}
     >
+      {/* Highlight-clip tone curve: maps the near-white video background up to
+          pure white (matching the side panels) WITHOUT lifting the mid-tones —
+          so the mint and cellophane wrapper keep their detail/contrast.
+          tableValues are identity up to ~0.78, then ramp hard to 1.0, so only
+          the brightest background pixels get pushed to white. */}
+      <svg
+        aria-hidden="true"
+        width="0"
+        height="0"
+        style={{ position: 'absolute', width: 0, height: 0 }}
+      >
+        <filter id="reveal-whiten-bg" colorInterpolationFilters="sRGB">
+          <feComponentTransfer>
+            <feFuncR type="table" tableValues="0 0.13 0.26 0.39 0.52 0.65 0.82 1 1" />
+            <feFuncG type="table" tableValues="0 0.13 0.26 0.39 0.52 0.65 0.82 1 1" />
+            <feFuncB type="table" tableValues="0 0.13 0.26 0.39 0.52 0.65 0.82 1 1" />
+          </feComponentTransfer>
+        </filter>
+      </svg>
+
       {/* Reveal video — muted, inline, plays ONCE, holds final frame.
           Portrait/mobile → cover (fills screen). Wide → contain (whole mint
           visible, centered, soft near-white fill on the sides, no gray seam).
-          Subtle brightness/contrast lift (no blur → smooth playback). */}
+          Highlight-clip curve whitens the background; a small brightness/contrast
+          lift keeps the mint crisp (no blur → smooth playback). */}
       <video
         ref={videoRef}
         src={revealVideo.url}
@@ -308,9 +329,10 @@ const RevealAnimation = ({
         style={{
           objectFit: isWide ? 'contain' : 'cover',
           objectPosition: 'center',
-          filter: 'brightness(1.28) contrast(1.04)',
+          filter: 'brightness(1.08) contrast(1.05) url(#reveal-whiten-bg)',
         }}
       />
+
 
       {/* Compliment + sender column — vertically centered, then lifted into the
           upper-middle band. The pinpoint starts at TRUE screen center and zooms
