@@ -68,5 +68,22 @@ export function checkComplimentContent(text: string): { blocked: boolean; reason
     }
   }
 
+  // STEP 3: Censored tokens — a '*' stands in for a single hidden letter
+  // (e.g. "f*ck"). Treat '*' as a single-char wildcard, anchored to the whole
+  // token so this stays whole-word only and never triggers the Scunthorpe problem.
+  for (const word of wordsOriginal) {
+    if (!word.includes('*')) continue;
+    if (allowedSet.has(word)) continue;
+    const pattern = new RegExp(
+      '^' + word.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '[a-z]') + '$'
+    );
+    for (const blockedWord of blockedSet) {
+      if (!blockedWord.includes(' ') && pattern.test(blockedWord)) {
+        return { blocked: true, reason: "word" };
+      }
+    }
+  }
+
   return { blocked: false };
 }
+
