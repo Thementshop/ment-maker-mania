@@ -79,6 +79,33 @@ export type Database = {
           },
         ]
       }
+      content_block_log: {
+        Row: {
+          blocked_text: string
+          created_at: string
+          id: string
+          match_type: string
+          trigger_term: string | null
+          user_id: string | null
+        }
+        Insert: {
+          blocked_text: string
+          created_at?: string
+          id?: string
+          match_type: string
+          trigger_term?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          blocked_text?: string
+          created_at?: string
+          id?: string
+          match_type?: string
+          trigger_term?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       email_logs: {
         Row: {
           chain_id: string | null
@@ -731,6 +758,14 @@ export type Database = {
       is_chain_participant: {
         Args: { _chain_id: string; _identifier: string }
         Returns: boolean
+      }
+      log_content_block: {
+        Args: {
+          _blocked_text: string
+          _match_type: string
+          _trigger_term: string
+        }
+        Returns: undefined
       }
       user_participated_in_chain: {
         Args: { _chain_id: string; _user_id: string }

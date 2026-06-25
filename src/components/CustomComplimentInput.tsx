@@ -58,11 +58,18 @@ const CustomComplimentInput = ({ onSelect }: CustomComplimentInputProps) => {
     // Runs before any DB write so blocked text is never stored or delivered.
     const contentCheck = checkComplimentContent(trimmed);
     if (contentCheck.blocked) {
-      // Log the block reason (never the user's full text) for diagnostics.
+      // Log the block reason for diagnostics.
       console.warn('[contentFilter] blocked compliment', {
         reason: contentCheck.reason,
         match: contentCheck.match,
         length: trimmed.length,
+      });
+      // Persist the block event server-side (fire-and-forget). Records the
+      // blocked text, the trigger term, the match type, the user id, and time.
+      void supabase.rpc('log_content_block', {
+        _blocked_text: trimmed,
+        _trigger_term: contentCheck.match ?? '',
+        _match_type: contentCheck.reason ?? 'unknown',
       });
       setError(BLOCKED_MESSAGE);
       setChecking(false);
