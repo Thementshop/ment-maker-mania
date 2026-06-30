@@ -576,7 +576,22 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
                 </motion.button>
               ))}
             </div>
-            <CustomComplimentInput onSelect={(text) => handleComplimentChosen(text)} />
+
+            {/* Server-side moderation feedback (TMS voice) */}
+            {customRejection && (
+              <div className="space-y-2 rounded-xl border border-border bg-muted/40 p-3 text-center">
+                <p className="text-sm text-foreground">{customRejection}</p>
+                {customRejectCount >= 3 && (
+                  <p className="text-xs text-muted-foreground">
+                    Pick any ready-made Ment above — they're all genuinely kind.
+                  </p>
+                )}
+              </div>
+            )}
+
+            {customRejectCount < 3 && (
+              <CustomComplimentInput onSelect={(text) => handleComplimentChosen(text)} />
+            )}
           </>
         ) : (
           <>
