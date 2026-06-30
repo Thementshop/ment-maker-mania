@@ -52,6 +52,9 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
   // legacy single-compliment state (kept for compatibility but unused in flow)
   const [selectedCategory, setSelectedCategory] = useState<ComplimentCategory | null>(null);
   const [selectedCompliment, setSelectedCompliment] = useState('');
+  // Custom-compliment moderation: 3-strike → ready-made fallback (TMS voice).
+  const [customRejectCount, setCustomRejectCount] = useState(0);
+  const [customRejection, setCustomRejection] = useState<string | null>(null);
 
   const displayName = profile?.display_name || user?.email?.split('@')[0] || 'User';
 
