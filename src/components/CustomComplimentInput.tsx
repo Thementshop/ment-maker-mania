@@ -41,68 +41,32 @@ const CustomComplimentInput = ({ onSelect }: CustomComplimentInputProps) => {
     return ALL_COMPLIMENTS.filter(c => c.text.toLowerCase().includes(q)).slice(0, 6);
   }, [value]);
 
-  const containsBlocked = (text: string): string | null => {
-    const normalized = '' + text.toLowerCase().replace(/[^a-z0-9 ]/g, '') + '';
-    for (const w of blockedWords) {
-      if (normalized.includes('' + w + '')) return w;
-    }
-    return null;
-  };
-
-  const handleSubmit = async (text: string) => {
+  const handleSubmit = (text: string) => {
     const trimmed = text.trim();
     if (!trimmed) return;
     setError(null);
-    setChecking(true);
-    // Content filter (Safety Layer 2) — whole-word + phrase guardrails.
-    // Runs before any DB write so blocked text is never stored or delivered.
+    // Instant UX hint only (NOT the security boundary). Obvious profanity is
+    // caught here so the user gets immediate feedback without a round-trip.
+    // Clean text is handed to the parent, which validates it SERVER-SIDE via the
+    // validate-custom-ment Edge Function before anything is saved or delivered.
     const contentCheck = checkComplimentContent(trimmed);
     if (contentCheck.blocked) {
-      // Log the block reason for diagnostics.
-      console.warn('[contentFilter] blocked compliment', {
+      console.warn('[contentFilter] blocked compliment (client hint)', {
         reason: contentCheck.reason,
         match: contentCheck.match,
         length: trimmed.length,
       });
-      // Persist the block event server-side (fire-and-forget). Records the
-      // blocked text, the trigger term, the match type, the user id, and time.
       void supabase.rpc('log_content_block', {
         _blocked_text: trimmed,
         _trigger_term: contentCheck.match ?? '',
         _match_type: contentCheck.reason ?? 'unknown',
       });
       setError(BLOCKED_MESSAGE);
-      setChecking(false);
       return;
     }
-    // Client-side check first
-    if (containsBlocked(trimmed)) {
-      setError("Let's keep it kind! Try rephrasing your compliment to spread positivity.");
-      setChecking(false);
-      return;
-    }
-    // Server-side check (authoritative) — race against a 5s timeout so the UI
-    // never hangs. If the check doesn't resolve in time, we fall back to the
-    // client-side result (already passed) and let the message through.
-    try {
-      const serverCheck = supabase.rpc('contains_blocked_word', { _text: trimmed });
-      const timeout = new Promise<{ data: false; error: null }>((resolve) =>
-        setTimeout(() => resolve({ data: false, error: null }), 5000)
-      );
-      const result = (await Promise.race([serverCheck, timeout])) as
-        | { data: boolean | null; error: unknown };
-      setChecking(false);
-      if (result?.data === true) {
-        setError("Let's keep it kind! Try rephrasing your compliment to spread positivity.");
-        return;
-      }
-      onSelect(trimmed);
-    } catch {
-      setChecking(false);
-      // Network/transient error — don't block the user, accept the message.
-      onSelect(trimmed);
-    }
+    onSelect(trimmed);
   };
+
 
   return (
     <div className="space-y-3">
