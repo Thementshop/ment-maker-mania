@@ -146,7 +146,6 @@ const SendAMentModal = ({
   // path into the database, and the security boundary for content moderation.
   const handleSendCustom = async (compliment: string, contactOverride?: UserContact) => {
     const contact = contactOverride || selectedContact;
-    const method = deliveryMethod;
     if (!user || !contact) return;
     const text = compliment.trim();
     if (!text) return;
