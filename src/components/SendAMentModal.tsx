@@ -9,6 +9,7 @@ import AddContactForm from '@/components/AddContactForm';
 import CustomComplimentInput from '@/components/CustomComplimentInput';
 import { supabase } from '@/integrations/supabase/client';
 import { getFreshAccessToken } from '@/utils/freshToken';
+import { checkComplimentContent } from '@/utils/contentFilter';
 import confetti from 'canvas-confetti';
 import wrappedMint from '@/assets/wrapped-mint.png';
 import unwrappedMint from '@/assets/unwrapped-mint.png';
@@ -22,6 +23,14 @@ interface SendAMentModalProps {
 }
 
 type Step = 'contact' | 'addContact' | 'delivery' | 'category' | 'compliment' | 'sending' | 'success';
+
+// Custom-compliment moderation copy (TMS voice).
+const CHECKING_MESSAGE = "Hold on — we're making sure this is extra sweet.";
+const REJECT_EARLY =
+  "Hmm, we caught something in there that doesn't feel like kindness. Give it another try — we know you've got something wonderful to say.";
+const REJECT_FINAL =
+  "Custom Ments must be genuinely kind and uplifting. Please choose a positive compliment or encouragement.";
+
 
 const SendAMentModal = ({
   isOpen,
@@ -37,6 +46,13 @@ const SendAMentModal = ({
   const [deliveryMethod, setDeliveryMethod] = useState<'text' | 'email'>('text');
   const [selectedCategory, setSelectedCategory] = useState<ComplimentCategory | null>(null);
   const [selectedCompliment, setSelectedCompliment] = useState('');
+
+  // Custom-compliment moderation state (server-validated).
+  const [customChecking, setCustomChecking] = useState(false);
+  const [customRejection, setCustomRejection] = useState<string | null>(null);
+  const [customRejectCount, setCustomRejectCount] = useState(0);
+
+
 
   const isPrefilled = !!prefilledCompliment;
 
@@ -56,11 +72,16 @@ const SendAMentModal = ({
     setStep('contact');
     setSelectedContact(null);
     setDeliveryMethod('text');
+    // Navigating away resets the custom-rejection counter.
+    setCustomChecking(false);
+    setCustomRejection(null);
+    setCustomRejectCount(0);
     if (!isPrefilled) {
       setSelectedCategory(null);
       setSelectedCompliment('');
     }
   };
+
 
   const handleClose = () => { resetModal(); onClose(); };
 
