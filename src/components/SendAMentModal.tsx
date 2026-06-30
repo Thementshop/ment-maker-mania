@@ -488,7 +488,26 @@ const SendAMentModal = ({
                     </motion.button>
                   ))}
                 </div>
-                <CustomComplimentInput onSelect={(text) => { setSelectedCompliment(text); void handleSend(text); }} />
+                <CustomComplimentInput onSelect={(text) => { setSelectedCompliment(text); void handleSendCustom(text); }} />
+
+                {/* Server-side moderation feedback (TMS voice) */}
+                {customChecking && (
+                  <p className="text-center text-sm text-muted-foreground">{CHECKING_MESSAGE}</p>
+                )}
+                {!customChecking && customRejection && (
+                  <div className="space-y-2 rounded-xl border border-border bg-muted/40 p-3 text-center">
+                    <p className="text-sm text-foreground">{customRejection}</p>
+                    {customRejectCount >= 3 && (
+                      <button
+                        onClick={() => { setCustomRejection(null); setSelectedCompliment(''); }}
+                        className="w-full rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+                      >
+                        Choose a Ready-Made Ment
+                      </button>
+                    )}
+                  </div>
+                )}
+
                 <button onClick={handleBack} className="w-full text-sm text-muted-foreground hover:text-foreground">← Back</button>
               </div>
             )}
