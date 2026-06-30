@@ -57,6 +57,9 @@ const ChainPassModal = ({ isOpen, onClose, chain, receivedCompliment }: ChainPas
   // Compliment state
   const [selectedCategory, setSelectedCategory] = useState<ComplimentCategory | null>(null);
   const [selectedCompliment, setSelectedCompliment] = useState('');
+  // Custom-compliment moderation: 3-strike → ready-made fallback (TMS voice).
+  const [customRejectCount, setCustomRejectCount] = useState(0);
+  const [customRejection, setCustomRejection] = useState<string | null>(null);
 
   const resetModal = useCallback(() => {
     setStep('choice');
