@@ -159,30 +159,32 @@ Deno.serve(async (req) => {
     // Enqueue email instead of calling send-email directly. The process-email-queue
     // worker (pg_cron, every minute) drains the queue with retries + DLQ.
     // Skipped when silently discarded so a blocked recipient is never emailed.
-    try {
-      if (silentlyDiscarded) throw new Error('__skip_enqueue__');
-      const { error: enqueueErr } = await adminClient.from('email_queue').insert({
-        email_type: 'ment_received',
-        recipient_email,
-        recipient_id: null,
-        chain_id: null,
-        payload: {
-          recipient_name: recipient_email.split('@')[0],
-          chain_name: '',
-          sender_name: senderName,
-          compliment_text,
-          compliment_category,
-          chain_url: baseAppUrl,
-          app_url: baseAppUrl,
-          ment_id: insertedMent?.id || '',
-          reveal_url: revealUrl,
-        },
-      });
-      if (enqueueErr) console.error('[SEND-A-MENT] Enqueue failed:', enqueueErr);
-    } catch (enqueueErr) {
-      console.error('[SEND-A-MENT] Enqueue threw:', enqueueErr);
-      // Don't fail the whole request if enqueue fails — the user-facing send still succeeded.
+    if (!silentlyDiscarded) {
+      try {
+        const { error: enqueueErr } = await adminClient.from('email_queue').insert({
+          email_type: 'ment_received',
+          recipient_email,
+          recipient_id: null,
+          chain_id: null,
+          payload: {
+            recipient_name: recipient_email.split('@')[0],
+            chain_name: '',
+            sender_name: senderName,
+            compliment_text,
+            compliment_category,
+            chain_url: baseAppUrl,
+            app_url: baseAppUrl,
+            ment_id: insertedMent?.id || '',
+            reveal_url: revealUrl,
+          },
+        });
+        if (enqueueErr) console.error('[SEND-A-MENT] Enqueue failed:', enqueueErr);
+      } catch (enqueueErr) {
+        console.error('[SEND-A-MENT] Enqueue threw:', enqueueErr);
+        // Don't fail the whole request if enqueue fails — the user-facing send still succeeded.
+      }
     }
+
 
     return new Response(
       JSON.stringify({ success: true, mint_earned: true, new_jar_count: newJarCount, new_total_sent: newTotalSent }),
