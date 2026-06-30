@@ -82,6 +82,38 @@ Deno.serve(async (req) => {
       );
     }
 
+    // ─── Content moderation (security boundary for custom chain compliments) ───
+    // Validate the primary compliment plus every per-recipient compliment. This is
+    // the server-side gate — the client filter is only an instant hint.
+    const complimentsToCheck = [
+      compliment,
+      ...((body.compliments && Array.isArray(body.compliments)) ? body.compliments : []),
+    ].filter((c): c is string => typeof c === 'string' && c.trim().length > 0);
+
+    for (const text of complimentsToCheck) {
+      const check = checkComplimentContent(text);
+      if (check.blocked) {
+        // Best-effort diagnostics log (never blocks the response).
+        try {
+          await adminClient.rpc('log_content_block', {
+            _blocked_text: text,
+            _trigger_term: check.match ?? '',
+            _match_type: check.reason ?? 'unknown',
+          });
+        } catch (logErr) {
+          console.error('[create-chain] log_content_block failed:', logErr);
+        }
+        return new Response(
+          JSON.stringify({
+            error:
+              "Hmm, we caught something in there that doesn't feel like kindness. Give it another try — we know you've got something wonderful to say.",
+            code: 'content_blocked',
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
     console.log('Creating chain with', recipientList.length, 'recipients');
 
     // ─── Blocked-sender enforcement ───
