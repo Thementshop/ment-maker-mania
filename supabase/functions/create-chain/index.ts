@@ -201,10 +201,11 @@ Deno.serve(async (req) => {
       console.log('Creator awarded +5 mints, new jar:', newJarCount, 'total_sent:', newTotalSent);
     }
 
-    // The chain_links INSERT trigger already recorded +1 mint per recipient (N rows)
+    // The chain_links INSERT trigger already recorded +1 mint per stored link
     // in mint_transactions for the starter. Top up so the starter's canonical total
-    // for "starting a chain" is +5 mints regardless of recipient count.
-    const topUp = 5 - recipientList.length;
+    // for "starting a chain" is +5 mints regardless of recipient count (and regardless
+    // of how many recipients were silently dropped for blocking the sender).
+    const topUp = 5 - deliverableCount;
     if (topUp > 0) {
       const { error: topUpErr } = await adminClient
         .from('mint_transactions')
