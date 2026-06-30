@@ -19,21 +19,16 @@ const ALL_COMPLIMENTS = complimentCategories.flatMap(c =>
 const CustomComplimentInput = ({ onSelect }: CustomComplimentInputProps) => {
   const [value, setValue] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [checking, setChecking] = useState(false);
   const [popular, setPopular] = useState<string[]>([]);
-  const [blockedWords, setBlockedWords] = useState<string[]>([]);
 
   useEffect(() => {
-    // Load popular compliments + blocked words list once
+    // Load popular compliments once.
     (async () => {
-      const [popRes, blockedRes] = await Promise.all([
-        supabase.rpc('get_popular_compliments', { _limit: 5 }),
-        supabase.from('blocked_words').select('word'),
-      ]);
+      const popRes = await supabase.rpc('get_popular_compliments', { _limit: 5 });
       if (popRes.data) setPopular(popRes.data.map((r: any) => r.compliment_text));
-      if (blockedRes.data) setBlockedWords(blockedRes.data.map((r: any) => r.word.toLowerCase()));
     })();
   }, []);
+
 
   const suggestions = useMemo(() => {
     const q = value.trim().toLowerCase();
