@@ -17,6 +17,8 @@ import { useToast } from '@/hooks/use-toast';
 import CustomComplimentInput from '@/components/CustomComplimentInput';
 import { useMentChains, type MentChain, type ChainLink } from '@/hooks/useMentChains';
 import { complimentCategories, type ComplimentCategory } from '@/data/compliments';
+import { checkComplimentContent } from '@/utils/contentFilter';
+import { supabase } from '@/integrations/supabase/client';
 import confetti from 'canvas-confetti';
 
 interface ChainPassModalProps {
@@ -55,6 +57,9 @@ const ChainPassModal = ({ isOpen, onClose, chain, receivedCompliment }: ChainPas
   // Compliment state
   const [selectedCategory, setSelectedCategory] = useState<ComplimentCategory | null>(null);
   const [selectedCompliment, setSelectedCompliment] = useState('');
+  // Custom-compliment moderation: 3-strike → ready-made fallback (TMS voice).
+  const [customRejectCount, setCustomRejectCount] = useState(0);
+  const [customRejection, setCustomRejection] = useState<string | null>(null);
 
   const resetModal = useCallback(() => {
     setStep('choice');
@@ -117,7 +122,30 @@ const ChainPassModal = ({ isOpen, onClose, chain, receivedCompliment }: ChainPas
   };
 
   const handleSend = async (compliment: string) => {
+    // Content moderation for custom (user-typed) compliments only. Forwarding the
+    // received compliment ('share') is already-approved text, so skip the check.
+    if (passChoice !== 'share') {
+      const check = checkComplimentContent(compliment);
+      if (check.blocked) {
+        void supabase.rpc('log_content_block', {
+          _blocked_text: compliment,
+          _trigger_term: check.match ?? '',
+          _match_type: check.reason ?? 'unknown',
+        });
+        const next = customRejectCount + 1;
+        setCustomRejectCount(next);
+        setCustomRejection(
+          next >= 3
+            ? "Custom Ments must be genuinely kind and uplifting. Please choose a ready-made Ment below."
+            : "Hmm, we caught something in there that doesn't feel like kindness. Give it another try — we know you've got something wonderful to say."
+        );
+        setStep('category');
+        return;
+      }
+    }
+
     setStep('sending');
+
 
     try {
       const success = await passChain(
@@ -348,7 +376,21 @@ const ChainPassModal = ({ isOpen, onClose, chain, receivedCompliment }: ChainPas
         ))}
       </div>
 
-      <CustomComplimentInput onSelect={(text) => handleComplimentSelect(text)} />
+      {/* Moderation feedback (TMS voice) */}
+      {customRejection && (
+        <div className="space-y-2 rounded-xl border border-border bg-muted/40 p-3 text-center">
+          <p className="text-sm text-foreground">{customRejection}</p>
+          {customRejectCount >= 3 && (
+            <p className="text-xs text-muted-foreground">
+              Pick any ready-made Ment above — they're all genuinely kind.
+            </p>
+          )}
+        </div>
+      )}
+
+      {customRejectCount < 3 && (
+        <CustomComplimentInput onSelect={(text) => handleComplimentSelect(text)} />
+      )}
 
       <Button variant="outline" onClick={handleBack} className="w-full">
         <ArrowLeft className="h-4 w-4 mr-2" />
