@@ -86,7 +86,7 @@ const CustomComplimentInput = ({ onSelect }: CustomComplimentInputProps) => {
           />
           <button
             onClick={() => handleSubmit(value)}
-            disabled={!value.trim() || checking}
+            disabled={!value.trim()}
             className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
           >
             <Send className="h-4 w-4" />
@@ -96,12 +96,12 @@ const CustomComplimentInput = ({ onSelect }: CustomComplimentInputProps) => {
         {value.trim() && !error && (
           <button
             onClick={() => handleSubmit(value)}
-            disabled={checking}
             className="w-full rounded-xl border-2 border-primary bg-primary/5 py-2 text-sm font-semibold text-primary hover:bg-primary/10 disabled:opacity-50"
           >
-            {checking ? 'Checking...' : `Send this: "${value.trim().slice(0, 40)}${value.trim().length > 40 ? '…' : ''}"`}
+            {`Send this: "${value.trim().slice(0, 40)}${value.trim().length > 40 ? '…' : ''}"`}
           </button>
         )}
+
       </div>
 
       {/* Autocomplete suggestions */}
