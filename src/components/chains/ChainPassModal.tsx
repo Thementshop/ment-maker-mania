@@ -122,7 +122,30 @@ const ChainPassModal = ({ isOpen, onClose, chain, receivedCompliment }: ChainPas
   };
 
   const handleSend = async (compliment: string) => {
+    // Content moderation for custom (user-typed) compliments only. Forwarding the
+    // received compliment ('share') is already-approved text, so skip the check.
+    if (passChoice !== 'share') {
+      const check = checkComplimentContent(compliment);
+      if (check.blocked) {
+        void supabase.rpc('log_content_block', {
+          _blocked_text: compliment,
+          _trigger_term: check.match ?? '',
+          _match_type: check.reason ?? 'unknown',
+        });
+        const next = customRejectCount + 1;
+        setCustomRejectCount(next);
+        setCustomRejection(
+          next >= 3
+            ? "Custom Ments must be genuinely kind and uplifting. Please choose a ready-made Ment below."
+            : "Hmm, we caught something in there that doesn't feel like kindness. Give it another try — we know you've got something wonderful to say."
+        );
+        setStep('category');
+        return;
+      }
+    }
+
     setStep('sending');
+
 
     try {
       const success = await passChain(
