@@ -133,6 +133,7 @@ const MentPage = () => {
           category: data.category,
           sent_at: data.sent_at,
           sender_name: senderName,
+          sender_id: data.sender_id ?? null,
         });
       } catch {
         setError("This ment has already been unwrapped or doesn't exist");
