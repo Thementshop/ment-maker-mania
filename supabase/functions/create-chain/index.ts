@@ -83,6 +83,27 @@ Deno.serve(async (req) => {
 
     console.log('Creating chain with', recipientList.length, 'recipients');
 
+    // ─── Blocked-sender enforcement ───
+    // For each email recipient who has blocked this sender, silently drop them:
+    // no chain link stored, no mint awarded to them, no email delivered. The sender
+    // is never told, and still earns the full +5 start bonus.
+    const blockedSet = new Set<string>();
+    await Promise.all(
+      recipientList.map(async (r) => {
+        if (!r.includes('@')) return;
+        try {
+          const { data: isBlocked } = await adminClient.rpc('is_blocked_by_email', {
+            _sender: userId,
+            _recipient_email: r,
+          });
+          if (isBlocked === true) blockedSet.add(r.toLowerCase());
+        } catch (blockErr) {
+          console.error('[create-chain] block check failed for', r, blockErr);
+        }
+      })
+    );
+    const isDeliverable = (r: string) => !blockedSet.has(r.toLowerCase());
+
     const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
     const finalName = chainName?.trim() || `@${user.user_metadata?.full_name || user.email?.split('@')[0] || 'User'}'s Chain`;
 
