@@ -138,15 +138,20 @@ Deno.serve(async (req) => {
       ? body.compliments
       : recipientList.map(() => compliment);
 
-    const linkInserts = recipientList.map((recipient, i) => ({
-      chain_id: newChain.chain_id,
-      passed_by: userId,
-      passed_to: recipient,
-      received_compliment: '',
-      sent_compliment: perRecipient[i] || compliment,
-      was_forwarded: false,
-      compliment_category: complimentCategory || null,
-    }));
+    // Only store links for deliverable recipients — blocked ones are silently dropped.
+    const linkInserts = recipientList
+      .map((recipient, i) => ({
+        chain_id: newChain.chain_id,
+        passed_by: userId,
+        passed_to: recipient,
+        received_compliment: '',
+        sent_compliment: perRecipient[i] || compliment,
+        was_forwarded: false,
+        compliment_category: complimentCategory || null,
+      }))
+      .filter((row) => isDeliverable(row.passed_to));
+    const deliverableCount = linkInserts.length;
+
 
     const { error: linkError } = await adminClient
       .from('chain_links')
