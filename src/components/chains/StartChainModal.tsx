@@ -256,12 +256,28 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
       const result = await response.json();
 
       if (!response.ok) {
+        // Content moderation rejection → keep the user in the picker with a gentle
+        // TMS-voice nudge, and offer ready-made Ments after 3 strikes.
+        if (result.code === 'content_blocked') {
+          const next = customRejectCount + 1;
+          setCustomRejectCount(next);
+          setCustomRejection(
+            next >= 3
+              ? "Custom Ments must be genuinely kind and uplifting. Please choose a ready-made Ment below."
+              : (result.error ||
+                  "Hmm, we caught something in there that doesn't feel like kindness. Give it another try — we know you've got something wonderful to say.")
+          );
+          setActiveCategory(null);
+          setStep('pickCompliment');
+          return;
+        }
         throw new Error(result.error || 'Failed to create chain');
       }
 
       if (!result.chain) {
         throw new Error('No chain returned from server');
       }
+
 
       setStep('success');
 
