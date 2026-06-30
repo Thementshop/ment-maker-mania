@@ -376,7 +376,21 @@ const ChainPassModal = ({ isOpen, onClose, chain, receivedCompliment }: ChainPas
         ))}
       </div>
 
-      <CustomComplimentInput onSelect={(text) => handleComplimentSelect(text)} />
+      {/* Moderation feedback (TMS voice) */}
+      {customRejection && (
+        <div className="space-y-2 rounded-xl border border-border bg-muted/40 p-3 text-center">
+          <p className="text-sm text-foreground">{customRejection}</p>
+          {customRejectCount >= 3 && (
+            <p className="text-xs text-muted-foreground">
+              Pick any ready-made Ment above — they're all genuinely kind.
+            </p>
+          )}
+        </div>
+      )}
+
+      {customRejectCount < 3 && (
+        <CustomComplimentInput onSelect={(text) => handleComplimentSelect(text)} />
+      )}
 
       <Button variant="outline" onClick={handleBack} className="w-full">
         <ArrowLeft className="h-4 w-4 mr-2" />
