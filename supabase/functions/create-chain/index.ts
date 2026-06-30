@@ -153,13 +153,16 @@ Deno.serve(async (req) => {
     const deliverableCount = linkInserts.length;
 
 
-    const { error: linkError } = await adminClient
-      .from('chain_links')
-      .insert(linkInserts);
+    if (linkInserts.length > 0) {
+      const { error: linkError } = await adminClient
+        .from('chain_links')
+        .insert(linkInserts);
 
-    if (linkError) {
-      console.error('Link creation error:', linkError);
+      if (linkError) {
+        console.error('Link creation error:', linkError);
+      }
     }
+
 
     // Persist creator reward before responding so the client can show the real updated jar count
     let newJarCount: number | null = null;
