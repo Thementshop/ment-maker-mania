@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      blocked_senders: {
+        Row: {
+          blocked_user_id: string
+          blocker_user_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          blocked_user_id: string
+          blocker_user_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          blocked_user_id?: string
+          blocker_user_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: []
+      }
       blocked_words: {
         Row: {
           category: string | null
@@ -286,6 +307,36 @@ export type Database = {
           started_by?: string
           status?: string
           tier?: string | null
+        }
+        Relationships: []
+      }
+      ment_reports: {
+        Row: {
+          created_at: string
+          id: string
+          reason: string | null
+          reported_ment_id: string | null
+          reported_user_id: string | null
+          reporter_user_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          reason?: string | null
+          reported_ment_id?: string | null
+          reported_user_id?: string | null
+          reporter_user_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          reason?: string | null
+          reported_ment_id?: string | null
+          reported_user_id?: string | null
+          reporter_user_id?: string
+          status?: string
         }
         Relationships: []
       }
@@ -755,6 +806,10 @@ export type Database = {
       }
       get_user_id_by_email: { Args: { _email: string }; Returns: string }
       increment_world_counter: { Args: never; Returns: number }
+      is_blocked_by_email: {
+        Args: { _recipient_email: string; _sender: string }
+        Returns: boolean
+      }
       is_chain_participant: {
         Args: { _chain_id: string; _identifier: string }
         Returns: boolean

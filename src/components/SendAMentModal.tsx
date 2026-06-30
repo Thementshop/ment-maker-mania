@@ -9,6 +9,7 @@ import AddContactForm from '@/components/AddContactForm';
 import CustomComplimentInput from '@/components/CustomComplimentInput';
 import { supabase } from '@/integrations/supabase/client';
 import { getFreshAccessToken } from '@/utils/freshToken';
+import { checkComplimentContent } from '@/utils/contentFilter';
 import confetti from 'canvas-confetti';
 import wrappedMint from '@/assets/wrapped-mint.png';
 import unwrappedMint from '@/assets/unwrapped-mint.png';
@@ -22,6 +23,14 @@ interface SendAMentModalProps {
 }
 
 type Step = 'contact' | 'addContact' | 'delivery' | 'category' | 'compliment' | 'sending' | 'success';
+
+// Custom-compliment moderation copy (TMS voice).
+const CHECKING_MESSAGE = "Hold on — we're making sure this is extra sweet.";
+const REJECT_EARLY =
+  "Hmm, we caught something in there that doesn't feel like kindness. Give it another try — we know you've got something wonderful to say.";
+const REJECT_FINAL =
+  "Custom Ments must be genuinely kind and uplifting. Please choose a positive compliment or encouragement.";
+
 
 const SendAMentModal = ({
   isOpen,
@@ -37,6 +46,13 @@ const SendAMentModal = ({
   const [deliveryMethod, setDeliveryMethod] = useState<'text' | 'email'>('text');
   const [selectedCategory, setSelectedCategory] = useState<ComplimentCategory | null>(null);
   const [selectedCompliment, setSelectedCompliment] = useState('');
+
+  // Custom-compliment moderation state (server-validated).
+  const [customChecking, setCustomChecking] = useState(false);
+  const [customRejection, setCustomRejection] = useState<string | null>(null);
+  const [customRejectCount, setCustomRejectCount] = useState(0);
+
+
 
   const isPrefilled = !!prefilledCompliment;
 
@@ -56,11 +72,16 @@ const SendAMentModal = ({
     setStep('contact');
     setSelectedContact(null);
     setDeliveryMethod('text');
+    // Navigating away resets the custom-rejection counter.
+    setCustomChecking(false);
+    setCustomRejection(null);
+    setCustomRejectCount(0);
     if (!isPrefilled) {
       setSelectedCategory(null);
       setSelectedCompliment('');
     }
   };
+
 
   const handleClose = () => { resetModal(); onClose(); };
 
@@ -103,6 +124,98 @@ const SendAMentModal = ({
     await handleSend(compliment);
   };
 
+  // Shared success tail (contact stats + confetti + toast + close).
+  const finishSuccess = (contact: UserContact) => {
+    supabase
+      .from('user_contacts')
+      .update({
+        total_ments_sent: (contact.total_ments_sent || 0) + 1,
+        last_sent_at: new Date().toISOString(),
+      })
+      .eq('id', contact.id)
+      .then(({ error }) => { if (error) console.error('[SendAMent] contact stats update failed:', error); });
+
+    setStep('success');
+    confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#58fc59', '#FF6B9D', '#4FC3F7', '#FFD740', '#B39DDB'] });
+    toast({ title: "Compliment sent! +1 mint earned", description: `Your ment was sent to ${contact.contact_name}` });
+    setTimeout(() => handleClose(), 2500);
+  };
+
+  // Custom (user-typed) compliments are validated SERVER-SIDE. The browser can no
+  // longer write them directly — the validate-custom-ment Edge Function is the only
+  // path into the database, and the security boundary for content moderation.
+  const handleSendCustom = async (compliment: string, contactOverride?: UserContact) => {
+    const contact = contactOverride || selectedContact;
+    if (!user || !contact) return;
+    const text = compliment.trim();
+    if (!text) return;
+
+    // Need an email destination (custom Ments are delivered by email).
+    if (!contact.email) {
+      toast({
+        title: "No email on file",
+        description: "This contact doesn't have an email address. Please add one to send them a Ment.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const bumpRejection = () => {
+      const next = customRejectCount + 1;
+      setCustomRejectCount(next);
+      setCustomRejection(next >= 3 ? REJECT_FINAL : REJECT_EARLY);
+    };
+
+    // Instant UX hint for obvious profanity (NOT the security boundary).
+    if (checkComplimentContent(text).blocked) {
+      setCustomChecking(false);
+      bumpRejection();
+      return;
+    }
+
+    setCustomRejection(null);
+    setCustomChecking(true);
+    try {
+      const accessToken = await getFreshAccessToken();
+      if (!accessToken) {
+        setCustomChecking(false);
+        toast({ title: "Session expired", description: "Please sign in again.", variant: "destructive" });
+        return;
+      }
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/validate-custom-ment`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
+          body: JSON.stringify({
+            recipient_email: contact.email,
+            compliment_text: text,
+            compliment_category: 'custom',
+          }),
+        }
+      );
+      const result = await response.json().catch(() => ({ approved: false }));
+      setCustomChecking(false);
+
+      // Fail closed: anything other than an explicit approval is a block.
+      if (!response.ok || result?.approved !== true) {
+        bumpRejection();
+        return; // Keep the user's text so they can edit it.
+      }
+
+      // Approved — reset the counter and celebrate.
+      setCustomRejectCount(0);
+      const { useGameStore } = await import('@/store/gameStore');
+      useGameStore.getState().bumpRefresh();
+      finishSuccess(contact);
+    } catch (err) {
+      // Network/transient error → fail closed, never send.
+      console.error('[SendAMent] custom validation failed:', err);
+      setCustomChecking(false);
+      bumpRejection();
+    }
+  };
+
   const handleSend = async (
     compliment?: string,
     contactOverride?: UserContact,
@@ -112,6 +225,7 @@ const SendAMentModal = ({
     const method = methodOverride || deliveryMethod;
     if (!user || !contact) return;
     const complimentToSend = compliment || selectedCompliment;
+
 
     // Pre-flight: SMS is not live yet. If user picked text but contact has no email
     // for fallback, fail fast with a clear error instead of hanging.
@@ -373,7 +487,26 @@ const SendAMentModal = ({
                     </motion.button>
                   ))}
                 </div>
-                <CustomComplimentInput onSelect={(text) => { setSelectedCompliment(text); void handleSend(text); }} />
+                <CustomComplimentInput onSelect={(text) => { setSelectedCompliment(text); void handleSendCustom(text); }} />
+
+                {/* Server-side moderation feedback (TMS voice) */}
+                {customChecking && (
+                  <p className="text-center text-sm text-muted-foreground">{CHECKING_MESSAGE}</p>
+                )}
+                {!customChecking && customRejection && (
+                  <div className="space-y-2 rounded-xl border border-border bg-muted/40 p-3 text-center">
+                    <p className="text-sm text-foreground">{customRejection}</p>
+                    {customRejectCount >= 3 && (
+                      <button
+                        onClick={() => { setCustomRejection(null); setSelectedCompliment(''); }}
+                        className="w-full rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+                      >
+                        Choose a Ready-Made Ment
+                      </button>
+                    )}
+                  </div>
+                )}
+
                 <button onClick={handleBack} className="w-full text-sm text-muted-foreground hover:text-foreground">← Back</button>
               </div>
             )}

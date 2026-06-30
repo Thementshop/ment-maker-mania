@@ -42,25 +42,43 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "You can't send a ment to yourself" }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // Insert sent ment (reusing adminClient from above)
-
-    // Insert sent ment
-    const { data: insertedMent, error: insertError } = await adminClient
-      .from('sent_ments')
-      .insert({
-        sender_id: userId,
-        recipient_email,
-        compliment_text,
-        category: compliment_category,
-        recipient_type: 'email',
-      })
-      .select('id')
-      .single();
-
-    if (insertError) {
-      console.error('[SEND-A-MENT] Insert error:', insertError);
-      return new Response(JSON.stringify({ error: 'Failed to save ment' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    // ─── Blocked-sender enforcement ───
+    // If the recipient has blocked this sender, silently discard: the send appears
+    // to succeed and the sender still earns their mint, but nothing is stored or
+    // delivered to the recipient, and the sender is never told they were blocked.
+    let silentlyDiscarded = false;
+    try {
+      const { data: blocked } = await adminClient.rpc('is_blocked_by_email', {
+        _sender: userId,
+        _recipient_email: recipient_email,
+      });
+      silentlyDiscarded = blocked === true;
+    } catch (blockErr) {
+      console.error('[SEND-A-MENT] block check failed:', blockErr);
     }
+
+    // Insert sent ment (skipped entirely when silently discarded)
+    let insertedMent: { id: string } | null = null;
+    if (!silentlyDiscarded) {
+      const { data, error: insertError } = await adminClient
+        .from('sent_ments')
+        .insert({
+          sender_id: userId,
+          recipient_email,
+          compliment_text,
+          category: compliment_category,
+          recipient_type: 'email',
+        })
+        .select('id')
+        .single();
+
+      if (insertError) {
+        console.error('[SEND-A-MENT] Insert error:', insertError);
+        return new Response(JSON.stringify({ error: 'Failed to save ment' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      insertedMent = data;
+    }
+
 
     const { error: mintTransactionError } = await adminClient
       .from('mint_transactions')
@@ -75,10 +93,14 @@ Deno.serve(async (req) => {
     }
 
     // Award +1 mint to recipient (if they have an account). Fire-and-forget.
-    adminClient.rpc('award_mint_to_email', { _email: recipient_email })
-      .then(({ error }: { error: unknown }) => {
-        if (error) console.warn('[SEND-A-MENT] Recipient mint award failed:', error);
-      });
+    // Skipped when silently discarded so a blocked recipient gets nothing.
+    if (!silentlyDiscarded) {
+      adminClient.rpc('award_mint_to_email', { _email: recipient_email })
+        .then(({ error }: { error: unknown }) => {
+          if (error) console.warn('[SEND-A-MENT] Recipient mint award failed:', error);
+        });
+    }
+
 
 
     // Keep legacy user game state counters in sync for the existing UI/store
@@ -136,29 +158,33 @@ Deno.serve(async (req) => {
 
     // Enqueue email instead of calling send-email directly. The process-email-queue
     // worker (pg_cron, every minute) drains the queue with retries + DLQ.
-    try {
-      const { error: enqueueErr } = await adminClient.from('email_queue').insert({
-        email_type: 'ment_received',
-        recipient_email,
-        recipient_id: null,
-        chain_id: null,
-        payload: {
-          recipient_name: recipient_email.split('@')[0],
-          chain_name: '',
-          sender_name: senderName,
-          compliment_text,
-          compliment_category,
-          chain_url: baseAppUrl,
-          app_url: baseAppUrl,
-          ment_id: insertedMent?.id || '',
-          reveal_url: revealUrl,
-        },
-      });
-      if (enqueueErr) console.error('[SEND-A-MENT] Enqueue failed:', enqueueErr);
-    } catch (enqueueErr) {
-      console.error('[SEND-A-MENT] Enqueue threw:', enqueueErr);
-      // Don't fail the whole request if enqueue fails — the user-facing send still succeeded.
+    // Skipped when silently discarded so a blocked recipient is never emailed.
+    if (!silentlyDiscarded) {
+      try {
+        const { error: enqueueErr } = await adminClient.from('email_queue').insert({
+          email_type: 'ment_received',
+          recipient_email,
+          recipient_id: null,
+          chain_id: null,
+          payload: {
+            recipient_name: recipient_email.split('@')[0],
+            chain_name: '',
+            sender_name: senderName,
+            compliment_text,
+            compliment_category,
+            chain_url: baseAppUrl,
+            app_url: baseAppUrl,
+            ment_id: insertedMent?.id || '',
+            reveal_url: revealUrl,
+          },
+        });
+        if (enqueueErr) console.error('[SEND-A-MENT] Enqueue failed:', enqueueErr);
+      } catch (enqueueErr) {
+        console.error('[SEND-A-MENT] Enqueue threw:', enqueueErr);
+        // Don't fail the whole request if enqueue fails — the user-facing send still succeeded.
+      }
     }
+
 
     return new Response(
       JSON.stringify({ success: true, mint_earned: true, new_jar_count: newJarCount, new_total_sent: newTotalSent }),

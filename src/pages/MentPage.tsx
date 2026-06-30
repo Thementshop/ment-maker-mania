@@ -9,12 +9,14 @@ import brandMint from '@/assets/brand-mint.png';
 import { supabase } from '@/integrations/supabase/client';
 import { AuthContext } from '@/contexts/AuthContext';
 import RevealAnimation from '@/components/RevealAnimation';
+import MentSafetyActions from '@/components/MentSafetyActions';
 
 interface MentData {
   compliment_text: string;
   category: string;
   sent_at: string | null;
   sender_name: string;
+  sender_id: string | null;
 }
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -132,6 +134,7 @@ const MentPage = () => {
           category: data.category,
           sent_at: data.sent_at,
           sender_name: senderName,
+          sender_id: data.sender_id ?? null,
         });
       } catch {
         setError("This ment has already been unwrapped or doesn't exist");
@@ -256,7 +259,15 @@ const MentPage = () => {
                   </>
                 )}
               </div>
+
+              {/* Recipient-only safety actions (report / block) */}
+              {!isShareMode && isLoggedIn && mentId && (
+                <div className="w-full max-w-md">
+                  <MentSafetyActions mentId={mentId} senderId={ment.sender_id} />
+                </div>
+              )}
             </motion.div>
+
           )}
         </AnimatePresence>
 

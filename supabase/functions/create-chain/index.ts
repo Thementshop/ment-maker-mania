@@ -83,6 +83,27 @@ Deno.serve(async (req) => {
 
     console.log('Creating chain with', recipientList.length, 'recipients');
 
+    // ─── Blocked-sender enforcement ───
+    // For each email recipient who has blocked this sender, silently drop them:
+    // no chain link stored, no mint awarded to them, no email delivered. The sender
+    // is never told, and still earns the full +5 start bonus.
+    const blockedSet = new Set<string>();
+    await Promise.all(
+      recipientList.map(async (r) => {
+        if (!r.includes('@')) return;
+        try {
+          const { data: isBlocked } = await adminClient.rpc('is_blocked_by_email', {
+            _sender: userId,
+            _recipient_email: r,
+          });
+          if (isBlocked === true) blockedSet.add(r.toLowerCase());
+        } catch (blockErr) {
+          console.error('[create-chain] block check failed for', r, blockErr);
+        }
+      })
+    );
+    const isDeliverable = (r: string) => !blockedSet.has(r.toLowerCase());
+
     const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
     const finalName = chainName?.trim() || `@${user.user_metadata?.full_name || user.email?.split('@')[0] || 'User'}'s Chain`;
 
@@ -117,23 +138,31 @@ Deno.serve(async (req) => {
       ? body.compliments
       : recipientList.map(() => compliment);
 
-    const linkInserts = recipientList.map((recipient, i) => ({
-      chain_id: newChain.chain_id,
-      passed_by: userId,
-      passed_to: recipient,
-      received_compliment: '',
-      sent_compliment: perRecipient[i] || compliment,
-      was_forwarded: false,
-      compliment_category: complimentCategory || null,
-    }));
+    // Only store links for deliverable recipients — blocked ones are silently dropped.
+    const linkInserts = recipientList
+      .map((recipient, i) => ({
+        chain_id: newChain.chain_id,
+        passed_by: userId,
+        passed_to: recipient,
+        received_compliment: '',
+        sent_compliment: perRecipient[i] || compliment,
+        was_forwarded: false,
+        compliment_category: complimentCategory || null,
+      }))
+      .filter((row) => isDeliverable(row.passed_to));
+    const deliverableCount = linkInserts.length;
 
-    const { error: linkError } = await adminClient
-      .from('chain_links')
-      .insert(linkInserts);
 
-    if (linkError) {
-      console.error('Link creation error:', linkError);
+    if (linkInserts.length > 0) {
+      const { error: linkError } = await adminClient
+        .from('chain_links')
+        .insert(linkInserts);
+
+      if (linkError) {
+        console.error('Link creation error:', linkError);
+      }
     }
+
 
     // Persist creator reward before responding so the client can show the real updated jar count
     let newJarCount: number | null = null;
@@ -172,10 +201,11 @@ Deno.serve(async (req) => {
       console.log('Creator awarded +5 mints, new jar:', newJarCount, 'total_sent:', newTotalSent);
     }
 
-    // The chain_links INSERT trigger already recorded +1 mint per recipient (N rows)
+    // The chain_links INSERT trigger already recorded +1 mint per stored link
     // in mint_transactions for the starter. Top up so the starter's canonical total
-    // for "starting a chain" is +5 mints regardless of recipient count.
-    const topUp = 5 - recipientList.length;
+    // for "starting a chain" is +5 mints regardless of recipient count (and regardless
+    // of how many recipients were silently dropped for blocking the sender).
+    const topUp = 5 - deliverableCount;
     if (topUp > 0) {
       const { error: topUpErr } = await adminClient
         .from('mint_transactions')
@@ -185,8 +215,9 @@ Deno.serve(async (req) => {
 
     const responsePayload = { chain: newChain, success: true, newJarCount, newTotalSent };
 
-    // Award +1 mint to each recipient who has an account (fire-and-forget)
-    for (const recipient of recipientList) {
+    // Award +1 mint to each deliverable recipient who has an account (fire-and-forget).
+    // Blocked recipients are skipped so nothing reaches them.
+    for (const recipient of recipientList.filter(isDeliverable)) {
       adminClient.rpc('award_mint_to_email', { _email: recipient })
         .then(({ error }) => {
           if (error) console.warn('Recipient mint failed for', recipient, error);
@@ -209,7 +240,7 @@ Deno.serve(async (req) => {
     const appBaseUrl = 'https://ment-maker-mania.lovable.app';
 
     const queueRows = recipientList
-      .filter((r) => r.includes('@'))
+      .filter((r) => r.includes('@') && isDeliverable(r))
       .map((recipient) => ({
         email_type: 'chain_received',
         recipient_email: recipient,
