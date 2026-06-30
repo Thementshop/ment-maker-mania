@@ -93,10 +93,14 @@ Deno.serve(async (req) => {
     }
 
     // Award +1 mint to recipient (if they have an account). Fire-and-forget.
-    adminClient.rpc('award_mint_to_email', { _email: recipient_email })
-      .then(({ error }: { error: unknown }) => {
-        if (error) console.warn('[SEND-A-MENT] Recipient mint award failed:', error);
-      });
+    // Skipped when silently discarded so a blocked recipient gets nothing.
+    if (!silentlyDiscarded) {
+      adminClient.rpc('award_mint_to_email', { _email: recipient_email })
+        .then(({ error }: { error: unknown }) => {
+          if (error) console.warn('[SEND-A-MENT] Recipient mint award failed:', error);
+        });
+    }
+
 
 
     // Keep legacy user game state counters in sync for the existing UI/store
