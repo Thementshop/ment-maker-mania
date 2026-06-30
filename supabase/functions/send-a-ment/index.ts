@@ -42,25 +42,43 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "You can't send a ment to yourself" }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // Insert sent ment (reusing adminClient from above)
-
-    // Insert sent ment
-    const { data: insertedMent, error: insertError } = await adminClient
-      .from('sent_ments')
-      .insert({
-        sender_id: userId,
-        recipient_email,
-        compliment_text,
-        category: compliment_category,
-        recipient_type: 'email',
-      })
-      .select('id')
-      .single();
-
-    if (insertError) {
-      console.error('[SEND-A-MENT] Insert error:', insertError);
-      return new Response(JSON.stringify({ error: 'Failed to save ment' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    // ─── Blocked-sender enforcement ───
+    // If the recipient has blocked this sender, silently discard: the send appears
+    // to succeed and the sender still earns their mint, but nothing is stored or
+    // delivered to the recipient, and the sender is never told they were blocked.
+    let silentlyDiscarded = false;
+    try {
+      const { data: blocked } = await adminClient.rpc('is_blocked_by_email', {
+        _sender: userId,
+        _recipient_email: recipient_email,
+      });
+      silentlyDiscarded = blocked === true;
+    } catch (blockErr) {
+      console.error('[SEND-A-MENT] block check failed:', blockErr);
     }
+
+    // Insert sent ment (skipped entirely when silently discarded)
+    let insertedMent: { id: string } | null = null;
+    if (!silentlyDiscarded) {
+      const { data, error: insertError } = await adminClient
+        .from('sent_ments')
+        .insert({
+          sender_id: userId,
+          recipient_email,
+          compliment_text,
+          category: compliment_category,
+          recipient_type: 'email',
+        })
+        .select('id')
+        .single();
+
+      if (insertError) {
+        console.error('[SEND-A-MENT] Insert error:', insertError);
+        return new Response(JSON.stringify({ error: 'Failed to save ment' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      insertedMent = data;
+    }
+
 
     const { error: mintTransactionError } = await adminClient
       .from('mint_transactions')
