@@ -258,7 +258,15 @@ const MentPage = () => {
                   </>
                 )}
               </div>
+
+              {/* Recipient-only safety actions (report / block) */}
+              {!isShareMode && isLoggedIn && mentId && (
+                <div className="w-full max-w-md">
+                  <MentSafetyActions mentId={mentId} senderId={ment.sender_id} />
+                </div>
+              )}
             </motion.div>
+
           )}
         </AnimatePresence>
 
