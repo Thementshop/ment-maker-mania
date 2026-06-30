@@ -240,7 +240,7 @@ Deno.serve(async (req) => {
     const appBaseUrl = 'https://ment-maker-mania.lovable.app';
 
     const queueRows = recipientList
-      .filter((r) => r.includes('@'))
+      .filter((r) => r.includes('@') && isDeliverable(r))
       .map((recipient) => ({
         email_type: 'chain_received',
         recipient_email: recipient,
