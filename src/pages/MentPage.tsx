@@ -15,6 +15,7 @@ interface MentData {
   category: string;
   sent_at: string | null;
   sender_name: string;
+  sender_id: string | null;
 }
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
