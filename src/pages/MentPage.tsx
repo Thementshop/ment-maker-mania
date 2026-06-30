@@ -9,6 +9,7 @@ import brandMint from '@/assets/brand-mint.png';
 import { supabase } from '@/integrations/supabase/client';
 import { AuthContext } from '@/contexts/AuthContext';
 import RevealAnimation from '@/components/RevealAnimation';
+import MentSafetyActions from '@/components/MentSafetyActions';
 
 interface MentData {
   compliment_text: string;
