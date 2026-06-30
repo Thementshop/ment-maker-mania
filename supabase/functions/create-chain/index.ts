@@ -215,8 +215,9 @@ Deno.serve(async (req) => {
 
     const responsePayload = { chain: newChain, success: true, newJarCount, newTotalSent };
 
-    // Award +1 mint to each recipient who has an account (fire-and-forget)
-    for (const recipient of recipientList) {
+    // Award +1 mint to each deliverable recipient who has an account (fire-and-forget).
+    // Blocked recipients are skipped so nothing reaches them.
+    for (const recipient of recipientList.filter(isDeliverable)) {
       adminClient.rpc('award_mint_to_email', { _email: recipient })
         .then(({ error }) => {
           if (error) console.warn('Recipient mint failed for', recipient, error);
