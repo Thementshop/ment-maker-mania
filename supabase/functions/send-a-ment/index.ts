@@ -158,7 +158,9 @@ Deno.serve(async (req) => {
 
     // Enqueue email instead of calling send-email directly. The process-email-queue
     // worker (pg_cron, every minute) drains the queue with retries + DLQ.
+    // Skipped when silently discarded so a blocked recipient is never emailed.
     try {
+      if (silentlyDiscarded) throw new Error('__skip_enqueue__');
       const { error: enqueueErr } = await adminClient.from('email_queue').insert({
         email_type: 'ment_received',
         recipient_email,
