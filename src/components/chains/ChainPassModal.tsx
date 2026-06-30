@@ -17,6 +17,8 @@ import { useToast } from '@/hooks/use-toast';
 import CustomComplimentInput from '@/components/CustomComplimentInput';
 import { useMentChains, type MentChain, type ChainLink } from '@/hooks/useMentChains';
 import { complimentCategories, type ComplimentCategory } from '@/data/compliments';
+import { checkComplimentContent } from '@/utils/contentFilter';
+import { supabase } from '@/integrations/supabase/client';
 import confetti from 'canvas-confetti';
 
 interface ChainPassModalProps {
