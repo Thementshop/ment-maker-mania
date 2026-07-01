@@ -274,6 +274,25 @@ const AccountSettingsModal = ({ isOpen, onClose }: AccountSettingsModalProps) =>
             </div>
           </motion.div>
 
+          {/* Your Reports */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+          >
+            <Button
+              onClick={() => {
+                onClose();
+                navigate('/reports');
+              }}
+              variant="outline"
+              className="w-full"
+            >
+              <Flag className="h-4 w-4 mr-2" />
+              Your reports
+            </Button>
+          </motion.div>
+
           {/* Divider */}
           <div className="border-t border-border" />
 
