@@ -11,6 +11,7 @@ import Auth from "./pages/Auth";
 import Store from "./pages/Store";
 import ChainPage from "./pages/ChainPage";
 import MentPage from "./pages/MentPage";
+import ReportHistory from "./pages/ReportHistory";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
