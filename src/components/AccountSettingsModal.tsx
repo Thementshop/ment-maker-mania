@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGameStore } from '@/store/gameStore';
@@ -7,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Settings, Check, LogOut, Loader2 } from 'lucide-react';
+import { Settings, Check, LogOut, Loader2, Flag } from 'lucide-react';
 
 interface AccountSettingsModalProps {
   isOpen: boolean;
@@ -17,6 +18,7 @@ interface AccountSettingsModalProps {
 const AccountSettingsModal = ({ isOpen, onClose }: AccountSettingsModalProps) => {
   const { user, profile, updateProfile, updateEmail, updatePassword, signOut } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   // Display name state
   const [displayName, setDisplayName] = useState(profile?.display_name || '');
@@ -270,6 +272,25 @@ const AccountSettingsModal = ({ isOpen, onClose }: AccountSettingsModalProps) =>
                 </Button>
               </div>
             </div>
+          </motion.div>
+
+          {/* Your Reports */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+          >
+            <Button
+              onClick={() => {
+                onClose();
+                navigate('/reports');
+              }}
+              variant="outline"
+              className="w-full"
+            >
+              <Flag className="h-4 w-4 mr-2" />
+              Your reports
+            </Button>
           </motion.div>
 
           {/* Divider */}

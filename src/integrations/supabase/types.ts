@@ -772,6 +772,17 @@ export type Database = {
           sent_at: string
         }[]
       }
+      get_my_reports: {
+        Args: never
+        Returns: {
+          compliment_text: string
+          created_at: string
+          id: string
+          reason: string
+          reported_ment_id: string
+          status: string
+        }[]
+      }
       get_participated_chain_ids: {
         Args: { _user_email?: string; _user_id: string }
         Returns: string[]
