@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGameStore } from '@/store/gameStore';
@@ -7,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Settings, Check, LogOut, Loader2 } from 'lucide-react';
+import { Settings, Check, LogOut, Loader2, Flag } from 'lucide-react';
 
 interface AccountSettingsModalProps {
   isOpen: boolean;
