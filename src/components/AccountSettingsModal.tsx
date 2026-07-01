@@ -18,6 +18,7 @@ interface AccountSettingsModalProps {
 const AccountSettingsModal = ({ isOpen, onClose }: AccountSettingsModalProps) => {
   const { user, profile, updateProfile, updateEmail, updatePassword, signOut } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   // Display name state
   const [displayName, setDisplayName] = useState(profile?.display_name || '');
