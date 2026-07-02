@@ -365,6 +365,10 @@ const SendAMentModal = ({
   };
 
   const handleBack = () => {
+    // Leaving the custom-compliment input resets the 3-strike counter.
+    setCustomChecking(false);
+    setCustomRejection(null);
+    setCustomRejectCount(0);
     switch (step) {
       case 'addContact': setStep('contact'); break;
       case 'delivery': setStep('contact'); break;
