@@ -272,7 +272,7 @@ const AdminModeration = () => {
                           size="sm"
                           variant="destructive"
                           disabled={busy || r.sender_banned || !r.sender_id}
-                          onClick={() => banSender(r)}
+                          onClick={() => setBanTarget(r)}
                         >
                           <Ban className="h-4 w-4 mr-1" />
                           {r.sender_banned ? 'Banned' : 'Ban Sender'}
