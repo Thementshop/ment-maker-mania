@@ -271,12 +271,7 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
         if (result.code === 'content_blocked') {
           const next = customRejectCount + 1;
           setCustomRejectCount(next);
-          setCustomRejection(
-            next >= 3
-              ? "Custom Ments must be genuinely kind and uplifting. Please choose a ready-made Ment below."
-              : (result.error ||
-                  "Hmm, we caught something in there that doesn't feel like kindness. Give it another try — we know you've got something wonderful to say.")
-          );
+          setCustomRejection(next >= 3 ? REJECT_FINAL : REJECT_EARLY);
           setActiveCategory(null);
           setStep('pickCompliment');
           return;
@@ -288,6 +283,9 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
         throw new Error('No chain returned from server');
       }
 
+      // Success — reset the 3-strike counter.
+      setCustomRejectCount(0);
+      setCustomRejection(null);
 
       setStep('success');
 
