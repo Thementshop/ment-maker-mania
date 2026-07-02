@@ -492,7 +492,9 @@ const SendAMentModal = ({
                     </motion.button>
                   ))}
                 </div>
-                <CustomComplimentInput onSelect={(text) => { setSelectedCompliment(text); void handleSendCustom(text); }} />
+                {customRejectCount < 3 && (
+                  <CustomComplimentInput onSelect={(text) => { setSelectedCompliment(text); void handleSendCustom(text); }} />
+                )}
 
                 {/* Server-side moderation feedback (TMS voice) */}
                 {customChecking && (
