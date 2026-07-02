@@ -360,6 +360,41 @@ const AdminModeration = () => {
           )}
         </section>
       </div>
+
+      <AlertDialog open={!!banTarget} onOpenChange={(open) => { if (!open) setBanTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Ban this sender?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <p>
+                  You're about to ban{' '}
+                  <span className="font-medium text-foreground">
+                    {banTarget?.sender_name || 'this user'}
+                  </span>
+                  {banTarget?.sender_email ? ` (${banTarget.sender_email})` : ''}.
+                </p>
+                <p>
+                  All of their future sends will <span className="font-medium text-foreground">silently fail</span> —
+                  they are never told they've been banned. This report will be marked as actioned. You can reverse
+                  this anytime from the Banned users list.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busyId === banTarget?.id}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={busyId === banTarget?.id}
+              onClick={(e) => { e.preventDefault(); if (banTarget) void banSender(banTarget); }}
+            >
+              <Ban className="h-4 w-4 mr-1" />
+              Ban sender
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
