@@ -160,6 +160,7 @@ const AdminModeration = () => {
   const banSender = async (report: ReportRow) => {
     if (!report.sender_id) {
       toast({ title: 'No sender on this report', variant: 'destructive' });
+      setBanTarget(null);
       return;
     }
     setBusyId(report.id);
@@ -174,6 +175,7 @@ const AdminModeration = () => {
       await Promise.all([loadReports(), loadBanned()]);
     }
     setBusyId(null);
+    setBanTarget(null);
   };
 
   const unbanUser = async (userId: string) => {
