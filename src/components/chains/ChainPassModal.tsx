@@ -76,6 +76,9 @@ const ChainPassModal = ({ isOpen, onClose, chain, receivedCompliment }: ChainPas
     setRecipientError('');
     setSelectedCategory(null);
     setSelectedCompliment('');
+    // Reset the 3-strike counter whenever the modal is reset (close / new session).
+    setCustomRejectCount(0);
+    setCustomRejection(null);
   }, []);
 
   const handleClose = () => {
