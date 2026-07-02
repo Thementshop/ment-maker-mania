@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
+import { checkComplimentContent } from '../_shared/contentFilter.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -41,6 +42,28 @@ Deno.serve(async (req) => {
     if (recipient_email.toLowerCase() === userEmail?.toLowerCase()) {
       return new Response(JSON.stringify({ error: "You can't send a ment to yourself" }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
+
+    // ─── Content filter (authoritative security boundary) ───
+    // Even though the UI only sends ready-made compliments here, compliment_text is
+    // fully client-controlled. Anyone hitting this endpoint directly (curl/devtools)
+    // could otherwise ship arbitrary text. Run the same shared filter as
+    // validate-custom-ment / create-chain — fail-closed: blocked → never sent.
+    const contentCheck = checkComplimentContent(compliment_text);
+    if (contentCheck.blocked) {
+      try {
+        await adminClient.from('content_block_log').insert({
+          user_id: userId,
+          blocked_text: compliment_text,
+          trigger_term: contentCheck.match ?? '',
+          match_type: contentCheck.reason ?? 'unknown',
+        });
+      } catch (logErr) {
+        console.error('[SEND-A-MENT] block-log insert failed:', logErr);
+      }
+      return new Response(JSON.stringify({ error: 'blocked' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+
 
     // ─── Blocked-sender enforcement ───
     // If the recipient has blocked this sender, silently discard: the send appears
