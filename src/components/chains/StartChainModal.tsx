@@ -590,9 +590,12 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
               <div className="space-y-2 rounded-xl border border-border bg-muted/40 p-3 text-center">
                 <p className="text-sm text-foreground">{customRejection}</p>
                 {customRejectCount >= 3 && (
-                  <p className="text-xs text-muted-foreground">
-                    Pick any ready-made Ment above — they're all genuinely kind.
-                  </p>
+                  <button
+                    onClick={() => setCustomRejection(null)}
+                    className="w-full rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+                  >
+                    {READY_MADE_BUTTON}
+                  </button>
                 )}
               </div>
             )}
