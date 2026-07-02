@@ -77,6 +77,20 @@ Deno.serve(async (req) => {
       console.error('[VALIDATE-CUSTOM-MENT] block check failed:', blockErr);
     }
 
+    // ─── Admin ban enforcement ───
+    // If this sender has been banned by an admin, silently discard the send:
+    // return success so the sender is never told, but deliver nothing.
+    try {
+      const { data: bannedRow } = await adminClient
+        .from('profiles')
+        .select('is_banned')
+        .eq('id', userId)
+        .maybeSingle();
+      if (bannedRow?.is_banned === true) silentlyDiscarded = true;
+    } catch (banErr) {
+      console.error('[VALIDATE-CUSTOM-MENT] ban check failed:', banErr);
+    }
+
     const category = compliment_category || 'custom';
     let insertedMentId = '';
 
