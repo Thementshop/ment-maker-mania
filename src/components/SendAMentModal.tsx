@@ -29,7 +29,8 @@ const CHECKING_MESSAGE = "Hold on — we're making sure this is extra sweet.";
 const REJECT_EARLY =
   "Hmm, we caught something in there that doesn't feel like kindness. Give it another try — we know you've got something wonderful to say.";
 const REJECT_FINAL =
-  "Custom Ments must be genuinely kind and uplifting. Please choose a positive compliment or encouragement.";
+  "We keep catching something that doesn't quite pass our kindness check. Our Ready-Made Ments are pre-loaded with sweetness and ready to make someone's whole entire day.";
+const READY_MADE_BUTTON = "Choose a Ready-Made Ment from any of our categories";
 
 
 const SendAMentModal = ({
@@ -364,6 +365,10 @@ const SendAMentModal = ({
   };
 
   const handleBack = () => {
+    // Leaving the custom-compliment input resets the 3-strike counter.
+    setCustomChecking(false);
+    setCustomRejection(null);
+    setCustomRejectCount(0);
     switch (step) {
       case 'addContact': setStep('contact'); break;
       case 'delivery': setStep('contact'); break;
@@ -487,7 +492,9 @@ const SendAMentModal = ({
                     </motion.button>
                   ))}
                 </div>
-                <CustomComplimentInput onSelect={(text) => { setSelectedCompliment(text); void handleSendCustom(text); }} />
+                {customRejectCount < 3 && (
+                  <CustomComplimentInput onSelect={(text) => { setSelectedCompliment(text); void handleSendCustom(text); }} />
+                )}
 
                 {/* Server-side moderation feedback (TMS voice) */}
                 {customChecking && (
@@ -501,7 +508,7 @@ const SendAMentModal = ({
                         onClick={() => { setCustomRejection(null); setSelectedCompliment(''); }}
                         className="w-full rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
                       >
-                        Choose a Ready-Made Ment
+                        {READY_MADE_BUTTON}
                       </button>
                     )}
                   </div>

@@ -114,7 +114,52 @@ Deno.serve(async (req) => {
       }
     }
 
+    // ─── Admin ban enforcement ───
+    // If this sender has been banned by an admin, silently succeed: reward the
+    // starter and return a success response, but create nothing and deliver nothing.
+    // The banned user is never told they are banned.
+    try {
+      const { data: bannedRow } = await adminClient
+        .from('profiles')
+        .select('is_banned')
+        .eq('id', userId)
+        .maybeSingle();
+      if (bannedRow?.is_banned === true) {
+        const { data: gs } = await adminClient
+          .from('user_game_state')
+          .select('jar_count, total_sent')
+          .eq('user_id', userId)
+          .maybeSingle();
+        const bannedJarCount = (gs?.jar_count ?? 25) + 5;
+        const bannedTotalSent = (gs?.total_sent ?? 0) + 1;
+        await adminClient
+          .from('user_game_state')
+          .update({ jar_count: bannedJarCount, total_sent: bannedTotalSent })
+          .eq('user_id', userId);
+        await adminClient
+          .from('mint_transactions')
+          .insert({ user_id: userId, amount: 5, reason: 'start_chain_bonus' });
+        const syntheticChain = {
+          chain_id: crypto.randomUUID(),
+          chain_name: chainName?.trim() || `@${user.user_metadata?.full_name || user.email?.split('@')[0] || 'User'}'s Chain`,
+          started_by: userId,
+          status: 'active',
+          share_count: recipientList.length,
+          tier: 'small',
+          links_count: recipientList.length,
+          created_at: new Date().toISOString(),
+        };
+        return new Response(
+          JSON.stringify({ chain: syntheticChain, success: true, newJarCount: bannedJarCount, newTotalSent: bannedTotalSent }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    } catch (banErr) {
+      console.error('[create-chain] ban check failed:', banErr);
+    }
+
     console.log('Creating chain with', recipientList.length, 'recipients');
+
 
     // ─── Blocked-sender enforcement ───
     // For each email recipient who has blocked this sender, silently drop them:

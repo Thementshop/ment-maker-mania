@@ -12,6 +12,7 @@ import Store from "./pages/Store";
 import ChainPage from "./pages/ChainPage";
 import MentPage from "./pages/MentPage";
 import ReportHistory from "./pages/ReportHistory";
+import AdminModeration from "./pages/AdminModeration";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +39,11 @@ const App = () => (
             <Route path="/reports" element={
               <ProtectedRoute>
                 <ReportHistory />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/moderation" element={
+              <ProtectedRoute>
+                <AdminModeration />
               </ProtectedRoute>
             } />
             <Route path="/chain/:chainId" element={<ChainPage />} />

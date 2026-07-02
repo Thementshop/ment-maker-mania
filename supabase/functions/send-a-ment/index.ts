@@ -57,6 +57,20 @@ Deno.serve(async (req) => {
       console.error('[SEND-A-MENT] block check failed:', blockErr);
     }
 
+    // ─── Admin ban enforcement ───
+    // If this sender has been banned by an admin, silently discard: return success
+    // so the sender is never told, but nothing is stored or delivered.
+    try {
+      const { data: bannedRow } = await adminClient
+        .from('profiles')
+        .select('is_banned')
+        .eq('id', userId)
+        .maybeSingle();
+      if (bannedRow?.is_banned === true) silentlyDiscarded = true;
+    } catch (banErr) {
+      console.error('[SEND-A-MENT] ban check failed:', banErr);
+    }
+
     // Insert sent ment (skipped entirely when silently discarded)
     let insertedMent: { id: string } | null = null;
     if (!silentlyDiscarded) {

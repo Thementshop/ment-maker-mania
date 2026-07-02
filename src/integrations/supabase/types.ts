@@ -465,9 +465,11 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          banned_at: string | null
           created_at: string | null
           display_name: string | null
           id: string
+          is_banned: boolean
           mint_boost_last_purchased_at: string | null
           pause_token_last_awarded_at: string | null
           pause_tokens: number
@@ -477,9 +479,11 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          banned_at?: string | null
           created_at?: string | null
           display_name?: string | null
           id: string
+          is_banned?: boolean
           mint_boost_last_purchased_at?: string | null
           pause_token_last_awarded_at?: string | null
           pause_tokens?: number
@@ -489,9 +493,11 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          banned_at?: string | null
           created_at?: string | null
           display_name?: string | null
           id?: string
+          is_banned?: boolean
           mint_boost_last_purchased_at?: string | null
           pause_token_last_awarded_at?: string | null
           pause_tokens?: number
@@ -739,6 +745,56 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_ban_user: {
+        Args: { _report_id?: string; _user_id: string }
+        Returns: undefined
+      }
+      admin_get_banned_users: {
+        Args: never
+        Returns: {
+          banned_at: string
+          display_name: string
+          email: string
+          id: string
+          report_count: number
+        }[]
+      }
+      admin_get_content_blocks: {
+        Args: { _limit?: number; _offset?: number }
+        Returns: {
+          blocked_text: string
+          created_at: string
+          id: string
+          match_type: string
+          trigger_term: string
+          user_email: string
+          user_id: string
+          user_name: string
+        }[]
+      }
+      admin_get_reports: {
+        Args: never
+        Returns: {
+          compliment_text: string
+          created_at: string
+          id: string
+          reason: string
+          reported_ment_id: string
+          reporter_email: string
+          reporter_id: string
+          reporter_name: string
+          sender_banned: boolean
+          sender_email: string
+          sender_id: string
+          sender_name: string
+          status: string
+        }[]
+      }
+      admin_set_report_status: {
+        Args: { _report_id: string; _status: string }
+        Returns: undefined
+      }
+      admin_unban_user: { Args: { _user_id: string }; Returns: undefined }
       award_mint_to_email: { Args: { _email: string }; Returns: boolean }
       claim_chains_for_user: {
         Args: { claiming_user_id: string }
@@ -817,6 +873,7 @@ export type Database = {
       }
       get_user_id_by_email: { Args: { _email: string }; Returns: string }
       increment_world_counter: { Args: never; Returns: number }
+      is_app_admin: { Args: never; Returns: boolean }
       is_blocked_by_email: {
         Args: { _recipient_email: string; _sender: string }
         Returns: boolean

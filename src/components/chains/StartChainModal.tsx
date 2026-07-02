@@ -21,6 +21,13 @@ import CustomComplimentInput from '@/components/CustomComplimentInput';
 import { getAvailableChainNames } from '@/utils/chainNames';
 import confetti from 'canvas-confetti';
 
+// Custom-compliment moderation copy (TMS voice).
+const REJECT_EARLY =
+  "Hmm, we caught something in there that doesn't feel like kindness. Give it another try — we know you've got something wonderful to say.";
+const REJECT_FINAL =
+  "We keep catching something that doesn't quite pass our kindness check. Our Ready-Made Ments are pre-loaded with sweetness and ready to make someone's whole entire day.";
+const READY_MADE_BUTTON = "Choose a Ready-Made Ment from any of our categories";
+
 interface StartChainModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -87,6 +94,9 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
     setActiveCategory(null);
     setSelectedCategory(null);
     setSelectedCompliment('');
+    // Reset the 3-strike counter whenever the modal is reset (close / new session).
+    setCustomRejectCount(0);
+    setCustomRejection(null);
   }, []);
 
   const handleClose = () => {
@@ -261,12 +271,7 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
         if (result.code === 'content_blocked') {
           const next = customRejectCount + 1;
           setCustomRejectCount(next);
-          setCustomRejection(
-            next >= 3
-              ? "Custom Ments must be genuinely kind and uplifting. Please choose a ready-made Ment below."
-              : (result.error ||
-                  "Hmm, we caught something in there that doesn't feel like kindness. Give it another try — we know you've got something wonderful to say.")
-          );
+          setCustomRejection(next >= 3 ? REJECT_FINAL : REJECT_EARLY);
           setActiveCategory(null);
           setStep('pickCompliment');
           return;
@@ -278,6 +283,9 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
         throw new Error('No chain returned from server');
       }
 
+      // Success — reset the 3-strike counter.
+      setCustomRejectCount(0);
+      setCustomRejection(null);
 
       setStep('success');
 
@@ -582,9 +590,12 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
               <div className="space-y-2 rounded-xl border border-border bg-muted/40 p-3 text-center">
                 <p className="text-sm text-foreground">{customRejection}</p>
                 {customRejectCount >= 3 && (
-                  <p className="text-xs text-muted-foreground">
-                    Pick any ready-made Ment above — they're all genuinely kind.
-                  </p>
+                  <button
+                    onClick={() => setCustomRejection(null)}
+                    className="w-full rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+                  >
+                    {READY_MADE_BUTTON}
+                  </button>
                 )}
               </div>
             )}
