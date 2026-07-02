@@ -3,10 +3,8 @@ import { motion } from 'framer-motion';
 import { Sparkles, Send } from 'lucide-react';
 import { complimentCategories } from '@/data/compliments';
 import { supabase } from '@/integrations/supabase/client';
-import { checkComplimentContent } from '@/utils/contentFilter';
 
-const BLOCKED_MESSAGE =
-  "Hmm, we caught something in there that doesn't feel like kindness. Give it another try — we know you've got something wonderful to say.";
+
 
 interface CustomComplimentInputProps {
   onSelect: (text: string) => void;
