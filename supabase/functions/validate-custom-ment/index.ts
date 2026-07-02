@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
+// deploy-touch: ban enforcement added
 import { checkComplimentContent } from '../_shared/contentFilter.ts';
 
 const corsHeaders = {
