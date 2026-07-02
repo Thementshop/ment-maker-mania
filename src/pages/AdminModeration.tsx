@@ -93,6 +93,7 @@ const AdminModeration = () => {
   const [blockOffset, setBlockOffset] = useState(0);
   const [hasMoreBlocks, setHasMoreBlocks] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [banTarget, setBanTarget] = useState<ReportRow | null>(null);
 
   const isAdmin = isAdminUserId(user?.id);
 
