@@ -40,25 +40,11 @@ const CustomComplimentInput = ({ onSelect }: CustomComplimentInputProps) => {
     const trimmed = text.trim();
     if (!trimmed) return;
     setError(null);
-    // Instant UX hint only (NOT the security boundary). Obvious profanity is
-    // caught here so the user gets immediate feedback without a round-trip.
-    // Clean text is handed to the parent, which validates it SERVER-SIDE via the
-    // validate-custom-ment Edge Function before anything is saved or delivered.
-    const contentCheck = checkComplimentContent(trimmed);
-    if (contentCheck.blocked) {
-      console.warn('[contentFilter] blocked compliment (client hint)', {
-        reason: contentCheck.reason,
-        match: contentCheck.match,
-        length: trimmed.length,
-      });
-      void supabase.rpc('log_content_block', {
-        _blocked_text: trimmed,
-        _trigger_term: contentCheck.match ?? '',
-        _match_type: contentCheck.reason ?? 'unknown',
-      });
-      setError(BLOCKED_MESSAGE);
-      return;
-    }
+    // NOTE: content moderation is intentionally NOT done here. This input is a
+    // dumb text field — every submission is handed to the parent, which is the
+    // single authority for content checks, block logging, the 3-strike counter,
+    // and the "Choose a Ready-Made Ment" fallback. Blocking here would swallow
+    // rejections and the strike counter would never advance.
     onSelect(trimmed);
   };
 
