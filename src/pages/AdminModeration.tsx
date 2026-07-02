@@ -4,6 +4,16 @@ import { Flag, Loader2, ShieldAlert, Ban, ScrollText, UserX } from 'lucide-react
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { isAdminUserId } from '@/config/admins';
@@ -83,6 +93,7 @@ const AdminModeration = () => {
   const [blockOffset, setBlockOffset] = useState(0);
   const [hasMoreBlocks, setHasMoreBlocks] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [banTarget, setBanTarget] = useState<ReportRow | null>(null);
 
   const isAdmin = isAdminUserId(user?.id);
 
@@ -149,6 +160,7 @@ const AdminModeration = () => {
   const banSender = async (report: ReportRow) => {
     if (!report.sender_id) {
       toast({ title: 'No sender on this report', variant: 'destructive' });
+      setBanTarget(null);
       return;
     }
     setBusyId(report.id);
@@ -163,6 +175,7 @@ const AdminModeration = () => {
       await Promise.all([loadReports(), loadBanned()]);
     }
     setBusyId(null);
+    setBanTarget(null);
   };
 
   const unbanUser = async (userId: string) => {
@@ -259,7 +272,7 @@ const AdminModeration = () => {
                           size="sm"
                           variant="destructive"
                           disabled={busy || r.sender_banned || !r.sender_id}
-                          onClick={() => banSender(r)}
+                          onClick={() => setBanTarget(r)}
                         >
                           <Ban className="h-4 w-4 mr-1" />
                           {r.sender_banned ? 'Banned' : 'Ban Sender'}
@@ -347,6 +360,41 @@ const AdminModeration = () => {
           )}
         </section>
       </div>
+
+      <AlertDialog open={!!banTarget} onOpenChange={(open) => { if (!open) setBanTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Ban this sender?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <p>
+                  You're about to ban{' '}
+                  <span className="font-medium text-foreground">
+                    {banTarget?.sender_name || 'this user'}
+                  </span>
+                  {banTarget?.sender_email ? ` (${banTarget.sender_email})` : ''}.
+                </p>
+                <p>
+                  All of their future sends will <span className="font-medium text-foreground">silently fail</span> —
+                  they are never told they've been banned. This report will be marked as actioned. You can reverse
+                  this anytime from the Banned users list.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busyId === banTarget?.id}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={busyId === banTarget?.id}
+              onClick={(e) => { e.preventDefault(); if (banTarget) void banSender(banTarget); }}
+            >
+              <Ban className="h-4 w-4 mr-1" />
+              Ban sender
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
