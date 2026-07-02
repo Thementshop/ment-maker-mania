@@ -168,7 +168,13 @@ const SendAMentModal = ({
     };
 
     // Instant UX hint for obvious profanity (NOT the security boundary).
-    if (checkComplimentContent(text).blocked) {
+    const instantCheck = checkComplimentContent(text);
+    if (instantCheck.blocked) {
+      void supabase.rpc('log_content_block', {
+        _blocked_text: text,
+        _trigger_term: instantCheck.match ?? '',
+        _match_type: instantCheck.reason ?? 'unknown',
+      });
       setCustomChecking(false);
       bumpRejection();
       return;
