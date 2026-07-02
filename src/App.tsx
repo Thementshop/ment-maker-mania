@@ -41,6 +41,11 @@ const App = () => (
                 <ReportHistory />
               </ProtectedRoute>
             } />
+            <Route path="/admin/moderation" element={
+              <ProtectedRoute>
+                <AdminModeration />
+              </ProtectedRoute>
+            } />
             <Route path="/chain/:chainId" element={<ChainPage />} />
             <Route path="/ment/:mentId" element={<MentPage />} />
             <Route path="/ment/:mentId/shared" element={<MentPage />} />
