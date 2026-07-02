@@ -162,6 +162,9 @@ const ChainPassModal = ({ isOpen, onClose, chain, receivedCompliment }: ChainPas
       );
 
       if (success) {
+        // Success — reset the 3-strike counter.
+        setCustomRejectCount(0);
+        setCustomRejection(null);
         setStep('success');
 
         // Fire confetti!
