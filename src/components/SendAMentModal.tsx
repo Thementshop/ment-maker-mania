@@ -29,7 +29,8 @@ const CHECKING_MESSAGE = "Hold on — we're making sure this is extra sweet.";
 const REJECT_EARLY =
   "Hmm, we caught something in there that doesn't feel like kindness. Give it another try — we know you've got something wonderful to say.";
 const REJECT_FINAL =
-  "Custom Ments must be genuinely kind and uplifting. Please choose a positive compliment or encouragement.";
+  "We keep catching something that doesn't quite pass our kindness check. Our Ready-Made Ments are pre-loaded with sweetness and ready to make someone's whole entire day.";
+const READY_MADE_BUTTON = "Choose a Ready-Made Ment from any of our categories";
 
 
 const SendAMentModal = ({
