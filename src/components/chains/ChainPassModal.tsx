@@ -144,11 +144,7 @@ const ChainPassModal = ({ isOpen, onClose, chain, receivedCompliment }: ChainPas
         });
         const next = customRejectCount + 1;
         setCustomRejectCount(next);
-        setCustomRejection(
-          next >= 3
-            ? "Custom Ments must be genuinely kind and uplifting. Please choose a ready-made Ment below."
-            : "Hmm, we caught something in there that doesn't feel like kindness. Give it another try — we know you've got something wonderful to say."
-        );
+        setCustomRejection(next >= 3 ? REJECT_FINAL : REJECT_EARLY);
         setStep('category');
         return;
       }
