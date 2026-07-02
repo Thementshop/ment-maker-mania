@@ -502,7 +502,7 @@ const SendAMentModal = ({
                         onClick={() => { setCustomRejection(null); setSelectedCompliment(''); }}
                         className="w-full rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
                       >
-                        Choose a Ready-Made Ment
+                        {READY_MADE_BUTTON}
                       </button>
                     )}
                   </div>
