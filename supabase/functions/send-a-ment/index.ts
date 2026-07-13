@@ -211,24 +211,26 @@ Deno.serve(async (req) => {
     // Increment total_sent
     await adminClient.rpc('increment_world_counter');
 
-    // Auto-save contact
-    const contactName = recipient_email.split('@')[0];
-    const { data: existingContact } = await adminClient
-      .from('saved_contacts')
-      .select('id, times_sent')
-      .eq('user_id', userId)
-      .eq('contact_email', recipient_email.toLowerCase())
-      .maybeSingle();
+    // Auto-save contact (legacy saved_contacts is keyed by email; email sends only).
+    if (method === 'email') {
+      const contactName = recipient_email.split('@')[0];
+      const { data: existingContact } = await adminClient
+        .from('saved_contacts')
+        .select('id, times_sent')
+        .eq('user_id', userId)
+        .eq('contact_email', recipient_email.toLowerCase())
+        .maybeSingle();
 
-    if (existingContact) {
-      await adminClient
-        .from('saved_contacts')
-        .update({ times_sent: existingContact.times_sent + 1, last_sent_at: new Date().toISOString() })
-        .eq('id', existingContact.id);
-    } else {
-      await adminClient
-        .from('saved_contacts')
-        .insert({ user_id: userId, contact_email: recipient_email.toLowerCase(), contact_name: contactName });
+      if (existingContact) {
+        await adminClient
+          .from('saved_contacts')
+          .update({ times_sent: existingContact.times_sent + 1, last_sent_at: new Date().toISOString() })
+          .eq('id', existingContact.id);
+      } else {
+        await adminClient
+          .from('saved_contacts')
+          .insert({ user_id: userId, contact_email: recipient_email.toLowerCase(), contact_name: contactName });
+      }
     }
 
     // Get sender display name
