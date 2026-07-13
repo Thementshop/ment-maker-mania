@@ -364,6 +364,9 @@ const AdminModeration = () => {
 
         {/* ── Section 4: Email Health ── */}
         <EmailHealthSection />
+
+        {/* ── Section 5: Do-Not-Contact ── */}
+        <DoNotContactSection />
       </div>
 
       <AlertDialog open={!!banTarget} onOpenChange={(open) => { if (!open) setBanTarget(null); }}>
