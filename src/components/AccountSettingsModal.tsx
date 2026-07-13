@@ -278,6 +278,22 @@ const AccountSettingsModal = ({ isOpen, onClose }: AccountSettingsModalProps) =>
             </div>
           </motion.div>
 
+          {/* My Groups */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.23 }}
+          >
+            <Button
+              onClick={() => setShowGroups(true)}
+              variant="outline"
+              className="w-full"
+            >
+              <Users className="h-4 w-4 mr-2" />
+              My Groups
+            </Button>
+          </motion.div>
+
           {/* Your Reports */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
