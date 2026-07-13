@@ -3,6 +3,7 @@ import { checkComplimentContent } from '../_shared/contentFilter.ts';
 import { buildSingleMentShortMessage } from '../_shared/notification-copy.ts';
 import { isOptedOut } from '../_shared/opt-out.ts';
 import { getAppBaseUrl } from '../_shared/app-url.ts';
+import { checkAndRecordSend } from '../_shared/rate-limit.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -24,6 +25,8 @@ function normalizePhone(raw: string): string | null {
   return cleaned;
 }
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -31,7 +34,6 @@ Deno.serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
     // Auth check
@@ -52,8 +54,6 @@ Deno.serve(async (req) => {
     const userEmail = authUser.email as string;
 
     // ─── Phone verification gate (primary anti-abuse gate) ───
-    // A user cannot send until they've verified a real phone number. Checked
-    // BEFORE any processing so unverified users never reach the send logic.
     {
       const { data: profileRow } = await adminClient
         .from('profiles')
@@ -69,36 +69,21 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { recipient_email, recipient_phone, delivery_method, compliment_text, compliment_category } = body;
-
-    // Default to email delivery for backward compatibility. Only "text" switches to SMS.
-    const method: 'email' | 'text' = delivery_method === 'text' ? 'text' : 'email';
+    const {
+      recipient_email,
+      recipient_phone,
+      delivery_method,
+      compliment_text,
+      compliment_category,
+      recipients,       // array of { email, name?, phone? } for group sends
+      group_id,         // uuid of a named saved group (optional)
+    } = body;
 
     if (!compliment_text || !compliment_category) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // Resolve + validate the recipient identifier for the chosen channel.
-    let normalizedPhone: string | null = null;
-    if (method === 'text') {
-      normalizedPhone = normalizePhone(recipient_phone ?? '');
-      if (!normalizedPhone) {
-        return new Response(JSON.stringify({ error: "That doesn't look like a valid phone number" }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      }
-    } else {
-      if (!recipient_email) {
-        return new Response(JSON.stringify({ error: 'Missing required fields' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      }
-      if (recipient_email.toLowerCase() === userEmail?.toLowerCase()) {
-        return new Response(JSON.stringify({ error: "You can't send a ment to yourself" }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      }
-    }
-
     // ─── Content filter (authoritative security boundary) ───
-    // Even though the UI only sends ready-made compliments here, compliment_text is
-    // fully client-controlled. Anyone hitting this endpoint directly (curl/devtools)
-    // could otherwise ship arbitrary text. Run the same shared filter as
-    // validate-custom-ment / create-chain — fail-closed: blocked → never sent.
     const contentCheck = checkComplimentContent(compliment_text);
     if (contentCheck.blocked) {
       try {
@@ -114,46 +99,208 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'blocked' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
+    const baseAppUrl = getAppBaseUrl();
 
+    // Is this a group send (multiple recipients in one action)?
+    const isGroup = Array.isArray(recipients) && recipients.length > 0;
 
-    // ─── Blocked-sender enforcement ───
-    // If the recipient has blocked this sender, silently discard: the send appears
-    // to succeed and the sender still earns their mint, but nothing is stored or
-    // delivered to the recipient, and the sender is never told they were blocked.
-    let silentlyDiscarded = false;
-    if (method === 'email') {
-      try {
-        const { data: blocked } = await adminClient.rpc('is_blocked_by_email', {
-          _sender: userId,
-          _recipient_email: recipient_email,
-        });
-        silentlyDiscarded = blocked === true;
-      } catch (blockErr) {
-        console.error('[SEND-A-MENT] block check failed:', blockErr);
-      }
-
-      // ─── Do-not-contact enforcement ───
-      // If the recipient opted out of Ment emails, silently discard exactly like
-      // a blocked sender: sender still earns their mint, nothing stored or sent.
-      try {
-        if (await isOptedOut(adminClient, recipient_email)) silentlyDiscarded = true;
-      } catch (optErr) {
-        console.error('[SEND-A-MENT] opt-out check failed:', optErr);
-      }
-    }
-
-    // ─── Admin ban enforcement ───
-    // If this sender has been banned by an admin, silently discard: return success
-    // so the sender is never told, but nothing is stored or delivered.
+    // ─── Sender ban check (applies to every send path) ───
+    let senderBanned = false;
     try {
       const { data: bannedRow } = await adminClient
         .from('profiles')
         .select('is_banned')
         .eq('id', userId)
         .maybeSingle();
-      if (bannedRow?.is_banned === true) silentlyDiscarded = true;
+      senderBanned = bannedRow?.is_banned === true;
     } catch (banErr) {
       console.error('[SEND-A-MENT] ban check failed:', banErr);
+    }
+
+    // Sender display name (used for email payloads)
+    const { data: senderProfile } = await adminClient
+      .from('profiles')
+      .select('display_name')
+      .eq('id', userId)
+      .maybeSingle();
+    const senderName = senderProfile?.display_name || userEmail?.split('@')[0] || 'Someone';
+
+    // Shared helper: award exactly ONE mint to the sender + bump legacy counters.
+    // Called once per send ACTION (single or group) regardless of recipient count.
+    async function awardSenderMintAndCounters(): Promise<number> {
+      const { error: mintTransactionError } = await adminClient
+        .from('mint_transactions')
+        .insert({ user_id: userId, amount: 1, reason: 'send' });
+      if (mintTransactionError) console.error('[SEND-A-MENT] Mint transaction error:', mintTransactionError);
+
+      const { data: gameState } = await adminClient
+        .from('user_game_state')
+        .select('jar_count, total_sent')
+        .eq('user_id', userId)
+        .single();
+      const newJarCount = (gameState?.jar_count ?? 1) + 1;
+      const newTotalSent = (gameState?.total_sent ?? 0) + 1;
+      await adminClient
+        .from('user_game_state')
+        .update({ jar_count: newJarCount, total_sent: newTotalSent })
+        .eq('user_id', userId);
+      await adminClient.rpc('increment_world_counter');
+      return newJarCount;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // GROUP SEND
+    // ═══════════════════════════════════════════════════════════════════
+    if (isGroup) {
+      // Build a clean, de-duplicated recipient list (email channel only).
+      const seen = new Set<string>();
+      const cleanRecipients: { email: string; name?: string }[] = [];
+      for (const r of recipients) {
+        const email = String(r?.email ?? '').trim().toLowerCase();
+        if (!EMAIL_RE.test(email)) continue;
+        if (email === userEmail?.toLowerCase()) continue; // can't send to yourself
+        if (seen.has(email)) continue;
+        seen.add(email);
+        cleanRecipients.push({ email, name: r?.name ? String(r.name) : undefined });
+      }
+
+      if (cleanRecipients.length === 0) {
+        return new Response(JSON.stringify({ error: 'No valid recipients in that group' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      // ─── Rate-limit gate (records the action when allowed) ───
+      const rl = await checkAndRecordSend(adminClient, userId, 'group', cleanRecipients.length, 'email');
+      if (!rl.allowed) {
+        return new Response(
+          JSON.stringify({ error: 'rate_limited', error_code: rl.errorCode, message: rl.message }),
+          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Shared id linking every Ment from this one group send.
+      const groupSendId = crypto.randomUUID();
+      const namedGroupId = typeof group_id === 'string' && group_id.length > 0 ? group_id : null;
+
+      // Deliver to each recipient individually (each gets their own row + email).
+      if (!senderBanned) {
+        for (const r of cleanRecipients) {
+          try {
+            // Per-recipient blocked-sender / do-not-contact enforcement.
+            let discard = false;
+            try {
+              const { data: blocked } = await adminClient.rpc('is_blocked_by_email', {
+                _sender: userId, _recipient_email: r.email,
+              });
+              if (blocked === true) discard = true;
+            } catch (e) { console.error('[SEND-A-MENT] group block check failed:', e); }
+            if (!discard) {
+              try { if (await isOptedOut(adminClient, r.email)) discard = true; }
+              catch (e) { console.error('[SEND-A-MENT] group opt-out check failed:', e); }
+            }
+            if (discard) continue;
+
+            const { data: inserted, error: insErr } = await adminClient
+              .from('sent_ments')
+              .insert({
+                sender_id: userId,
+                recipient_email: r.email,
+                recipient_phone: null,
+                compliment_text,
+                category: compliment_category,
+                recipient_type: 'email',
+                group_id: namedGroupId,
+                group_send_id: groupSendId,
+              })
+              .select('id')
+              .single();
+            if (insErr) { console.error('[SEND-A-MENT] group insert failed:', insErr); continue; }
+
+            const revealUrl = `${baseAppUrl}/ment/${inserted.id}?auto=1`;
+            await adminClient.from('email_queue').insert({
+              email_type: 'ment_received',
+              recipient_email: r.email,
+              recipient_id: null,
+              chain_id: null,
+              payload: {
+                recipient_name: r.name || r.email.split('@')[0],
+                chain_name: '',
+                sender_name: senderName,
+                compliment_text,
+                compliment_category,
+                chain_url: baseAppUrl,
+                app_url: baseAppUrl,
+                ment_id: inserted.id,
+                reveal_url: revealUrl,
+              },
+            });
+
+            // Recipient earns a mint if they already have an account.
+            adminClient.rpc('award_mint_to_email', { _email: r.email })
+              .then(({ error }: { error: unknown }) => {
+                if (error) console.warn('[SEND-A-MENT] group recipient mint award failed:', error);
+              });
+          } catch (loopErr) {
+            console.error('[SEND-A-MENT] group recipient loop error:', loopErr);
+          }
+        }
+      }
+
+      // Sender earns exactly ONE mint for the whole group send.
+      const newJarCount = await awardSenderMintAndCounters();
+
+      return new Response(
+        JSON.stringify({ success: true, mint_earned: true, new_jar_count: newJarCount, recipient_count: cleanRecipients.length }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // SINGLE SEND (email or text) — original behaviour + rate limiting
+    // ═══════════════════════════════════════════════════════════════════
+    const method: 'email' | 'text' = delivery_method === 'text' ? 'text' : 'email';
+
+    let normalizedPhone: string | null = null;
+    if (method === 'text') {
+      normalizedPhone = normalizePhone(recipient_phone ?? '');
+      if (!normalizedPhone) {
+        return new Response(JSON.stringify({ error: "That doesn't look like a valid phone number" }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+    } else {
+      if (!recipient_email) {
+        return new Response(JSON.stringify({ error: 'Missing required fields' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      if (recipient_email.toLowerCase() === userEmail?.toLowerCase()) {
+        return new Response(JSON.stringify({ error: "You can't send a ment to yourself" }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+    }
+
+    // ─── Rate-limit gate ───
+    const rlSingle = await checkAndRecordSend(
+      adminClient, userId, 'single', 1, method === 'text' ? 'sms' : 'email',
+    );
+    if (!rlSingle.allowed) {
+      return new Response(
+        JSON.stringify({ error: 'rate_limited', error_code: rlSingle.errorCode, message: rlSingle.message }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // ─── Silent-discard enforcement (blocked / opted-out / banned) ───
+    let silentlyDiscarded = senderBanned;
+    if (!silentlyDiscarded && method === 'email') {
+      try {
+        const { data: blocked } = await adminClient.rpc('is_blocked_by_email', {
+          _sender: userId, _recipient_email: recipient_email,
+        });
+        if (blocked === true) silentlyDiscarded = true;
+      } catch (blockErr) {
+        console.error('[SEND-A-MENT] block check failed:', blockErr);
+      }
+      try {
+        if (await isOptedOut(adminClient, recipient_email)) silentlyDiscarded = true;
+      } catch (optErr) {
+        console.error('[SEND-A-MENT] opt-out check failed:', optErr);
+      }
     }
 
     // Insert sent ment (skipped entirely when silently discarded)
@@ -179,48 +326,16 @@ Deno.serve(async (req) => {
       insertedMent = data;
     }
 
+    // Sender earns exactly one mint.
+    const newJarCount = await awardSenderMintAndCounters();
 
-    const { error: mintTransactionError } = await adminClient
-      .from('mint_transactions')
-      .insert({
-        user_id: userId,
-        amount: 1,
-        reason: 'send',
-      });
-
-    if (mintTransactionError) {
-      console.error('[SEND-A-MENT] Mint transaction error:', mintTransactionError);
-    }
-
-    // Award +1 mint to recipient (if they have an account). Fire-and-forget.
-    // Skipped when silently discarded so a blocked recipient gets nothing.
-    // Only applies to email recipients (matched to an existing account by email).
+    // Award +1 mint to recipient (email accounts only). Fire-and-forget.
     if (!silentlyDiscarded && method === 'email') {
       adminClient.rpc('award_mint_to_email', { _email: recipient_email })
         .then(({ error }: { error: unknown }) => {
           if (error) console.warn('[SEND-A-MENT] Recipient mint award failed:', error);
         });
     }
-
-
-
-    // Keep legacy user game state counters in sync for the existing UI/store
-    const { data: gameState } = await adminClient
-      .from('user_game_state')
-      .select('jar_count, total_sent')
-      .eq('user_id', userId)
-      .single();
-
-    const newJarCount = (gameState?.jar_count ?? 1) + 1;
-    const newTotalSent = (gameState?.total_sent ?? 0) + 1;
-
-    await adminClient
-      .from('user_game_state')
-      .update({ jar_count: newJarCount, total_sent: newTotalSent })
-      .eq('user_id', userId);
-
-    // Increment total_sent
-    await adminClient.rpc('increment_world_counter');
 
     // Auto-save contact (legacy saved_contacts is keyed by email; email sends only).
     if (method === 'email') {
@@ -244,25 +359,9 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Get sender display name
-    const { data: senderProfile } = await adminClient
-      .from('profiles')
-      .select('display_name')
-      .eq('id', userId)
-      .maybeSingle();
-
-    const senderName = senderProfile?.display_name || userEmail?.split('@')[0] || 'Someone';
-
-    // ─── Lazy auto-login: skip token generation here. The reveal URL uses ?auto=1
-    // and the issue-reveal-token edge function generates/caches a token at click-time.
-    // This removes auth.admin.listUsers() and auth.admin.generateLink() from the hot path.
-    const baseAppUrl = getAppBaseUrl();
     const revealUrl = `${baseAppUrl}/ment/${insertedMent?.id || ''}?auto=1`;
 
     // ─── Delivery ───
-    // EMAIL: enqueue for the process-email-queue worker (pg_cron, retries + DLQ).
-    // TEXT:  send an SMS via Twilio immediately (recipients have no account/queue).
-    // Both are skipped when silently discarded so a blocked recipient gets nothing.
     if (!silentlyDiscarded && method === 'email') {
       try {
         const { error: enqueueErr } = await adminClient.from('email_queue').insert({
@@ -285,7 +384,6 @@ Deno.serve(async (req) => {
         if (enqueueErr) console.error('[SEND-A-MENT] Enqueue failed:', enqueueErr);
       } catch (enqueueErr) {
         console.error('[SEND-A-MENT] Enqueue threw:', enqueueErr);
-        // Don't fail the whole request if enqueue fails — the user-facing send still succeeded.
       }
     }
 
@@ -301,7 +399,6 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Sender identity is NEVER included — the surprise is revealed only in-app.
       const smsMessage = buildSingleMentShortMessage(revealUrl);
       const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
       const twilioResp = await fetch(twilioUrl, {
@@ -320,7 +417,6 @@ Deno.serve(async (req) => {
       if (!twilioResp.ok) {
         const errText = await twilioResp.text();
         console.error(`[SEND-A-MENT] Twilio error [${twilioResp.status}]: ${errText}`);
-        // Roll back the ment we just stored so a failed text isn't left dangling.
         if (insertedMent?.id) {
           await adminClient.from('sent_ments').delete().eq('id', insertedMent.id);
         }
@@ -331,9 +427,8 @@ Deno.serve(async (req) => {
       }
     }
 
-
     return new Response(
-      JSON.stringify({ success: true, mint_earned: true, new_jar_count: newJarCount, new_total_sent: newTotalSent }),
+      JSON.stringify({ success: true, mint_earned: true, new_jar_count: newJarCount }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
