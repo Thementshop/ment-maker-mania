@@ -20,7 +20,8 @@ const RESEND_COOLDOWN = 30;
 
 const PhoneVerificationModal = ({ isOpen, onClose, onVerified }: PhoneVerificationModalProps) => {
   const [screen, setScreen] = useState<Screen>('phone');
-  const [countryCode, setCountryCode] = useState('+1');
+  const [country, setCountry] = useState<Country>(COUNTRIES[0]);
+  const [countryOpen, setCountryOpen] = useState(false);
   const [localNumber, setLocalNumber] = useState('');
   const [digits, setDigits] = useState<string[]>(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
@@ -28,7 +29,7 @@ const PhoneVerificationModal = ({ isOpen, onClose, onVerified }: PhoneVerificati
   const [cooldown, setCooldown] = useState(0);
   const codeRefs = useRef<Array<HTMLInputElement | null>>([]);
 
-  const fullNumber = `${countryCode}${localNumber.replace(/[\s\-().]/g, '')}`;
+  const fullNumber = `${dialPrefix(country.dial)}${localNumber.replace(/[\s\-().]/g, '')}`;
   const last4 = localNumber.replace(/\D/g, '').slice(-4);
 
   const reset = useCallback(() => {
