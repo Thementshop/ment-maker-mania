@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Phone, Mail } from 'lucide-react';
+import { X, Phone, Mail, Send } from 'lucide-react';
 import { complimentCategories, ComplimentCategory } from '@/data/compliments';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
