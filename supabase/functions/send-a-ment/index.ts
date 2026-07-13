@@ -130,6 +130,15 @@ Deno.serve(async (req) => {
       } catch (blockErr) {
         console.error('[SEND-A-MENT] block check failed:', blockErr);
       }
+
+      // ─── Do-not-contact enforcement ───
+      // If the recipient opted out of Ment emails, silently discard exactly like
+      // a blocked sender: sender still earns their mint, nothing stored or sent.
+      try {
+        if (await isOptedOut(adminClient, recipient_email)) silentlyDiscarded = true;
+      } catch (optErr) {
+        console.error('[SEND-A-MENT] opt-out check failed:', optErr);
+      }
     }
 
     // ─── Admin ban enforcement ───
