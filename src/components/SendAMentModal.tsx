@@ -495,6 +495,7 @@ const SendAMentModal = ({
       case 'delivery': setStep('contact'); break;
       case 'category': setStep(selectedContact?.phone && selectedContact?.email ? 'delivery' : 'contact'); break;
       case 'compliment': setStep('category'); break;
+      case 'confirm': setStep(isPrefilled ? 'contact' : 'compliment'); break;
     }
   };
 
