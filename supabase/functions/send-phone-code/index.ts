@@ -137,7 +137,29 @@ Deno.serve(async (req) => {
     if (!twilioResp.ok) {
       const errText = await twilioResp.text();
       console.error(`[send-phone-code] Twilio error [${twilioResp.status}]: ${errText}`);
-      return new Response(JSON.stringify({ error: 'sms_failed', message: 'Something went sideways on our end. Give it another shot in a minute.' }), {
+
+      // Surface Twilio's actual reason so trial/setup issues are diagnosable.
+      let twilioCode: number | undefined;
+      let twilioMessage: string | undefined;
+      try {
+        const parsed = JSON.parse(errText);
+        twilioCode = parsed?.code;
+        twilioMessage = parsed?.message;
+      } catch { /* non-JSON body */ }
+
+      // Friendly, specific guidance for the most common trial-account blockers.
+      let message = 'We couldn't send the verification text. Please try again in a minute.';
+      if (twilioCode === 21608) {
+        message = "On a Twilio trial, you can only text numbers you've verified in the Twilio console. Verify this number there first, or upgrade your Twilio account.";
+      } else if (twilioCode === 21266) {
+        message = "Your Twilio 'from' number and the number you're texting can't be the same. Use your Twilio number as the sender.";
+      } else if (twilioCode === 572006 || /template/i.test(twilioMessage ?? '')) {
+        message = "Your Twilio trial account only allows predefined message templates for this destination. Upgrading your Twilio account (off trial) removes this restriction.";
+      } else if (twilioMessage) {
+        message = `Twilio couldn't send the text: ${twilioMessage}`;
+      }
+
+      return new Response(JSON.stringify({ error: 'sms_failed', message, twilio_code: twilioCode }), {
         status: 502,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
