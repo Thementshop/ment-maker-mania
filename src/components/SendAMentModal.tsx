@@ -312,6 +312,13 @@ const SendAMentModal = ({
           }
         );
         const result = await response.json();
+        if (result?.status === 'phone_not_verified') {
+          window.clearTimeout(timeoutId);
+          pendingSendRef.current = retrySend;
+          setStep(resumeStep);
+          setShowPhoneVerify(true);
+          return;
+        }
         if (!response.ok) throw new Error(result.error || 'Failed to send ment');
 
         // Force homepage counters to refetch their canonical sources
