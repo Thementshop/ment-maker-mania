@@ -360,6 +360,9 @@ const AdminModeration = () => {
             </div>
           )}
         </section>
+
+        {/* ── Section 4: Email Health ── */}
+        <EmailHealthSection />
       </div>
 
       <AlertDialog open={!!banTarget} onOpenChange={(open) => { if (!open) setBanTarget(null); }}>
