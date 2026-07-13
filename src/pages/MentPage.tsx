@@ -454,7 +454,7 @@ const MentPage = () => {
                 transition={{ delay: 0.8 }}
               >
                 {isShareMode ? (
-                  <>A little kindness from <strong>{ment!.sender_name}</strong></>
+                  <>A little kindness from <strong>{ment!.sender_name}</strong>{ment!.group_context ? ` — ${ment!.group_context}` : ''}</>
                 ) : isLoggedIn ? (
                   <>That mint just landed in your jar and it is SO proud to be there. Want to spread the sweetness? Send a Ment to someone who deserves a brighter day.</>
                 ) : (
