@@ -20,6 +20,7 @@ import { complimentCategories, type ComplimentCategory } from '@/data/compliment
 import CustomComplimentInput from '@/components/CustomComplimentInput';
 import { getAvailableChainNames } from '@/utils/chainNames';
 import confetti from 'canvas-confetti';
+import PhoneVerificationModal from '@/components/PhoneVerificationModal';
 
 // Custom-compliment moderation copy (TMS voice).
 const REJECT_EARLY =
