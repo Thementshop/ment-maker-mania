@@ -670,6 +670,48 @@ const SendAMentModal = ({
               </div>
             )}
 
+            {/* Step 5b: Group send confirmation */}
+            {step === 'confirm' && isGroupMode && (
+              <div className="space-y-5">
+                <div className="text-center">
+                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary/10 mb-2">
+                    <Send className="h-7 w-7 text-primary" />
+                  </div>
+                  <h2 className="font-display text-2xl font-bold text-foreground">Ready to send?</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    To <span className="font-semibold text-foreground">{selectedGroupName}</span> ({groupRecipients.length} {groupRecipients.length === 1 ? 'person' : 'people'})
+                  </p>
+                </div>
+
+                <div className="rounded-2xl p-4" style={{ background: 'linear-gradient(135deg, rgba(88,252,89,0.08), rgba(88,252,89,0.15))', border: '2px solid rgba(88,252,89,0.3)' }}>
+                  <p className="text-sm font-medium text-foreground italic">"{selectedCompliment || prefilledCompliment}"</p>
+                </div>
+
+                <p className="text-xs text-muted-foreground text-center">
+                  Sending to {groupRecipients.length} {groupRecipients.length === 1 ? 'person' : 'people'} · earns you 1 mint
+                </p>
+
+                {groupRecipients.length > maxPerSend ? (
+                  <div className="rounded-xl border border-border bg-muted/40 p-3 text-center">
+                    <p className="text-sm text-foreground">
+                      That's a big group! Try splitting it into a couple of sends — same love, just in batches.
+                    </p>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => void handleGroupSend()}
+                    className="w-full rounded-xl px-6 py-3 font-bold text-white text-center transition-all hover:scale-[1.02]"
+                    style={{ background: 'linear-gradient(135deg, #58fc59, #3dd83e)' }}
+                  >
+                    Send to all {groupRecipients.length}
+                  </button>
+                )}
+
+                <button onClick={handleBack} className="w-full text-sm text-muted-foreground hover:text-foreground">← Back</button>
+              </div>
+            )}
+
+
             {/* Step 6: Sending Animation */}
             {step === 'sending' && (
               <div className="flex flex-col items-center justify-center py-12">
