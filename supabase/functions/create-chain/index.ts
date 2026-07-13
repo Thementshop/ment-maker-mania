@@ -177,6 +177,18 @@ Deno.serve(async (req) => {
       console.error('[create-chain] ban check failed:', banErr);
     }
 
+    // ─── Rate-limit gate ───
+    // A chain start counts as exactly 1 send action; its recipients count toward
+    // the daily recipients cap. Applied after the ban check so banned users still
+    // silently "succeed" and are never told about limits.
+    const rl = await checkAndRecordSend(adminClient, userId, 'chain', recipientList.length, 'email');
+    if (!rl.allowed) {
+      return new Response(
+        JSON.stringify({ error: 'rate_limited', error_code: rl.errorCode, message: rl.message }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     console.log('Creating chain with', recipientList.length, 'recipients');
 
 
