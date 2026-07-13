@@ -67,6 +67,34 @@ export async function getOrCreateOptOutToken(admin: AdminClient, email: string):
   }
 }
 
+// Permanently add an email to the do-not-contact list. Idempotent.
+export async function addToDoNotContact(
+  admin: AdminClient,
+  email: string,
+  source: string,
+): Promise<void> {
+  const normalized = (email || '').trim();
+  if (!normalized) return;
+  try {
+    const { data: existing } = await admin
+      .from('do_not_contact')
+      .select('id')
+      .ilike('email', normalized)
+      .maybeSingle();
+    if (existing) return;
+
+    const token = (await getOrCreateOptOutToken(admin, normalized)) ?? crypto.randomUUID();
+    const { error } = await admin
+      .from('do_not_contact')
+      .insert({ email: normalized, opt_out_token: token, source });
+    if (error && error.code !== '23505') {
+      console.error('[opt-out] addToDoNotContact failed:', error);
+    }
+  } catch (err) {
+    console.error('[opt-out] addToDoNotContact threw:', err);
+  }
+}
+
 // The public unsubscribe page (GET) the HTML link points to.
 export function buildUnsubscribePageUrl(token: string): string {
   return `${APP_BASE_URL}/unsubscribe?token=${encodeURIComponent(token)}`;

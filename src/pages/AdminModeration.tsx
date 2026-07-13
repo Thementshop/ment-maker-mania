@@ -18,6 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { isAdminUserId } from '@/config/admins';
 import { supabase } from '@/integrations/supabase/client';
+import EmailHealthSection from '@/components/admin/EmailHealthSection';
 
 interface ReportRow {
   id: string;
@@ -359,6 +360,9 @@ const AdminModeration = () => {
             </div>
           )}
         </section>
+
+        {/* ── Section 4: Email Health ── */}
+        <EmailHealthSection />
       </div>
 
       <AlertDialog open={!!banTarget} onOpenChange={(open) => { if (!open) setBanTarget(null); }}>

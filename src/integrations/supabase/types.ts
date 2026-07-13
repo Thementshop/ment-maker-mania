@@ -151,6 +151,33 @@ export type Database = {
         }
         Relationships: []
       }
+      email_events: {
+        Row: {
+          created_at: string
+          email_id: string | null
+          event_data: Json | null
+          event_type: string
+          id: string
+          recipient_email: string
+        }
+        Insert: {
+          created_at?: string
+          email_id?: string | null
+          event_data?: Json | null
+          event_type: string
+          id?: string
+          recipient_email: string
+        }
+        Update: {
+          created_at?: string
+          email_id?: string | null
+          event_data?: Json | null
+          event_type?: string
+          id?: string
+          recipient_email?: string
+        }
+        Relationships: []
+      }
       email_logs: {
         Row: {
           chain_id: string | null
@@ -859,6 +886,7 @@ export type Database = {
           user_name: string
         }[]
       }
+      admin_get_email_health: { Args: never; Returns: Json }
       admin_get_reports: {
         Args: never
         Returns: {
