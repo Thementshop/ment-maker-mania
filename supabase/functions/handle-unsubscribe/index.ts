@@ -19,8 +19,20 @@ Deno.serve(async (req) => {
 
   try {
     const url = new URL(req.url);
-    const token = url.searchParams.get('token')?.trim();
-    const source = url.searchParams.get('source')?.trim() || 'email_link';
+    let token = url.searchParams.get('token')?.trim();
+    let source = url.searchParams.get('source')?.trim();
+
+    // Also accept token/source from a JSON body (used by the /unsubscribe page).
+    if (!token && req.method === 'POST') {
+      try {
+        const body = await req.json();
+        token = (body?.token ?? '').toString().trim();
+        source = source || (body?.source ?? '').toString().trim();
+      } catch (_e) {
+        // no/invalid body — fall through to missing_token handling
+      }
+    }
+    source = source || 'email_link';
 
     if (!token) {
       return new Response(
