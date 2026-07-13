@@ -2,6 +2,7 @@
 // Triggered every minute by pg_cron. No auth required (verify_jwt = false).
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 import { logError } from '../_shared/error-log.ts';
+import { isOptedOut } from '../_shared/opt-out.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
