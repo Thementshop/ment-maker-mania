@@ -222,6 +222,7 @@ const MentPage = () => {
           complimentText={ment.compliment_text}
           category={ment.category}
           senderName={ment.sender_name}
+          senderSubtitle={ment.group_context}
           showSender
         />
 
