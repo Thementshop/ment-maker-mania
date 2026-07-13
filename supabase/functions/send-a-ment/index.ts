@@ -1,10 +1,26 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 import { checkComplimentContent } from '../_shared/contentFilter.ts';
+import { buildSingleMentShortMessage } from '../_shared/notification-copy.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
+
+// Normalize a phone number to E.164 (+ followed by 8–15 digits). US 10-digit
+// numbers default to +1. Returns null if it can't produce a valid shape.
+function normalizePhone(raw: string): string | null {
+  if (!raw) return null;
+  let cleaned = raw.trim().replace(/[\s\-().]/g, '');
+  if (cleaned.startsWith('00')) cleaned = '+' + cleaned.slice(2);
+  if (!cleaned.startsWith('+')) {
+    const digits = cleaned.replace(/\D/g, '');
+    if (digits.length === 10) cleaned = '+1' + digits;
+    else cleaned = '+' + digits;
+  }
+  if (!/^\+\d{8,15}$/.test(cleaned)) return null;
+  return cleaned;
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -50,14 +66,30 @@ Deno.serve(async (req) => {
       }
     }
 
-    const { recipient_email, compliment_text, compliment_category } = await req.json();
+    const body = await req.json();
+    const { recipient_email, recipient_phone, delivery_method, compliment_text, compliment_category } = body;
 
-    if (!recipient_email || !compliment_text || !compliment_category) {
+    // Default to email delivery for backward compatibility. Only "text" switches to SMS.
+    const method: 'email' | 'text' = delivery_method === 'text' ? 'text' : 'email';
+
+    if (!compliment_text || !compliment_category) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    if (recipient_email.toLowerCase() === userEmail?.toLowerCase()) {
-      return new Response(JSON.stringify({ error: "You can't send a ment to yourself" }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    // Resolve + validate the recipient identifier for the chosen channel.
+    let normalizedPhone: string | null = null;
+    if (method === 'text') {
+      normalizedPhone = normalizePhone(recipient_phone ?? '');
+      if (!normalizedPhone) {
+        return new Response(JSON.stringify({ error: "That doesn't look like a valid phone number" }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+    } else {
+      if (!recipient_email) {
+        return new Response(JSON.stringify({ error: 'Missing required fields' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      if (recipient_email.toLowerCase() === userEmail?.toLowerCase()) {
+        return new Response(JSON.stringify({ error: "You can't send a ment to yourself" }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
     }
 
     // ─── Content filter (authoritative security boundary) ───
@@ -87,14 +119,16 @@ Deno.serve(async (req) => {
     // to succeed and the sender still earns their mint, but nothing is stored or
     // delivered to the recipient, and the sender is never told they were blocked.
     let silentlyDiscarded = false;
-    try {
-      const { data: blocked } = await adminClient.rpc('is_blocked_by_email', {
-        _sender: userId,
-        _recipient_email: recipient_email,
-      });
-      silentlyDiscarded = blocked === true;
-    } catch (blockErr) {
-      console.error('[SEND-A-MENT] block check failed:', blockErr);
+    if (method === 'email') {
+      try {
+        const { data: blocked } = await adminClient.rpc('is_blocked_by_email', {
+          _sender: userId,
+          _recipient_email: recipient_email,
+        });
+        silentlyDiscarded = blocked === true;
+      } catch (blockErr) {
+        console.error('[SEND-A-MENT] block check failed:', blockErr);
+      }
     }
 
     // ─── Admin ban enforcement ───
@@ -118,10 +152,11 @@ Deno.serve(async (req) => {
         .from('sent_ments')
         .insert({
           sender_id: userId,
-          recipient_email,
+          recipient_email: method === 'email' ? recipient_email : null,
+          recipient_phone: method === 'text' ? normalizedPhone : null,
           compliment_text,
           category: compliment_category,
-          recipient_type: 'email',
+          recipient_type: method === 'text' ? 'phone' : 'email',
         })
         .select('id')
         .single();
@@ -148,7 +183,8 @@ Deno.serve(async (req) => {
 
     // Award +1 mint to recipient (if they have an account). Fire-and-forget.
     // Skipped when silently discarded so a blocked recipient gets nothing.
-    if (!silentlyDiscarded) {
+    // Only applies to email recipients (matched to an existing account by email).
+    if (!silentlyDiscarded && method === 'email') {
       adminClient.rpc('award_mint_to_email', { _email: recipient_email })
         .then(({ error }: { error: unknown }) => {
           if (error) console.warn('[SEND-A-MENT] Recipient mint award failed:', error);
@@ -175,24 +211,26 @@ Deno.serve(async (req) => {
     // Increment total_sent
     await adminClient.rpc('increment_world_counter');
 
-    // Auto-save contact
-    const contactName = recipient_email.split('@')[0];
-    const { data: existingContact } = await adminClient
-      .from('saved_contacts')
-      .select('id, times_sent')
-      .eq('user_id', userId)
-      .eq('contact_email', recipient_email.toLowerCase())
-      .maybeSingle();
+    // Auto-save contact (legacy saved_contacts is keyed by email; email sends only).
+    if (method === 'email') {
+      const contactName = recipient_email.split('@')[0];
+      const { data: existingContact } = await adminClient
+        .from('saved_contacts')
+        .select('id, times_sent')
+        .eq('user_id', userId)
+        .eq('contact_email', recipient_email.toLowerCase())
+        .maybeSingle();
 
-    if (existingContact) {
-      await adminClient
-        .from('saved_contacts')
-        .update({ times_sent: existingContact.times_sent + 1, last_sent_at: new Date().toISOString() })
-        .eq('id', existingContact.id);
-    } else {
-      await adminClient
-        .from('saved_contacts')
-        .insert({ user_id: userId, contact_email: recipient_email.toLowerCase(), contact_name: contactName });
+      if (existingContact) {
+        await adminClient
+          .from('saved_contacts')
+          .update({ times_sent: existingContact.times_sent + 1, last_sent_at: new Date().toISOString() })
+          .eq('id', existingContact.id);
+      } else {
+        await adminClient
+          .from('saved_contacts')
+          .insert({ user_id: userId, contact_email: recipient_email.toLowerCase(), contact_name: contactName });
+      }
     }
 
     // Get sender display name
@@ -210,10 +248,11 @@ Deno.serve(async (req) => {
     const baseAppUrl = 'https://ment-maker-mania.lovable.app';
     const revealUrl = `${baseAppUrl}/ment/${insertedMent?.id || ''}?auto=1`;
 
-    // Enqueue email instead of calling send-email directly. The process-email-queue
-    // worker (pg_cron, every minute) drains the queue with retries + DLQ.
-    // Skipped when silently discarded so a blocked recipient is never emailed.
-    if (!silentlyDiscarded) {
+    // ─── Delivery ───
+    // EMAIL: enqueue for the process-email-queue worker (pg_cron, retries + DLQ).
+    // TEXT:  send an SMS via Twilio immediately (recipients have no account/queue).
+    // Both are skipped when silently discarded so a blocked recipient gets nothing.
+    if (!silentlyDiscarded && method === 'email') {
       try {
         const { error: enqueueErr } = await adminClient.from('email_queue').insert({
           email_type: 'ment_received',
@@ -236,6 +275,48 @@ Deno.serve(async (req) => {
       } catch (enqueueErr) {
         console.error('[SEND-A-MENT] Enqueue threw:', enqueueErr);
         // Don't fail the whole request if enqueue fails — the user-facing send still succeeded.
+      }
+    }
+
+    if (!silentlyDiscarded && method === 'text') {
+      const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
+      const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
+      const fromNumber = Deno.env.get('TWILIO_PHONE_NUMBER');
+      if (!accountSid || !authToken || !fromNumber) {
+        console.error('[SEND-A-MENT] Twilio env vars missing — cannot deliver SMS');
+        return new Response(
+          JSON.stringify({ error: 'sms_not_configured', message: "Text delivery isn't available right now. Try email instead." }),
+          { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Sender identity is NEVER included — the surprise is revealed only in-app.
+      const smsMessage = buildSingleMentShortMessage(revealUrl);
+      const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
+      const twilioResp = await fetch(twilioUrl, {
+        method: 'POST',
+        headers: {
+          Authorization: 'Basic ' + btoa(`${accountSid}:${authToken}`),
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          From: fromNumber,
+          To: normalizedPhone!,
+          Body: smsMessage,
+        }).toString(),
+      });
+
+      if (!twilioResp.ok) {
+        const errText = await twilioResp.text();
+        console.error(`[SEND-A-MENT] Twilio error [${twilioResp.status}]: ${errText}`);
+        // Roll back the ment we just stored so a failed text isn't left dangling.
+        if (insertedMent?.id) {
+          await adminClient.from('sent_ments').delete().eq('id', insertedMent.id);
+        }
+        return new Response(
+          JSON.stringify({ error: 'sms_failed', message: "We couldn't send that text. On a Twilio trial, the number must be verified in your Twilio console." }),
+          { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
     }
 
