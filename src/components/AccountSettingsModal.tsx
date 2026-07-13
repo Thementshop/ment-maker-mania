@@ -338,6 +338,7 @@ const AccountSettingsModal = ({ isOpen, onClose }: AccountSettingsModalProps) =>
           </motion.div>
         </div>
       </DialogContent>
+      <GroupsManagerModal isOpen={showGroups} onClose={() => setShowGroups(false)} />
     </Dialog>
   );
 };
