@@ -619,7 +619,7 @@ const SendAMentModal = ({
                     </motion.button>
                   ))}
                 </div>
-                {customRejectCount < 3 && (
+                {!isGroupMode && customRejectCount < 3 && (
                   <CustomComplimentInput onSelect={(text) => { setSelectedCompliment(text); void handleSendCustom(text); }} />
                 )}
 
