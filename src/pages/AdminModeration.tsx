@@ -19,6 +19,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { isAdminUserId } from '@/config/admins';
 import { supabase } from '@/integrations/supabase/client';
 import EmailHealthSection from '@/components/admin/EmailHealthSection';
+import DoNotContactSection from '@/components/admin/DoNotContactSection';
 
 interface ReportRow {
   id: string;
