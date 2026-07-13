@@ -127,6 +127,30 @@ export type Database = {
         }
         Relationships: []
       }
+      do_not_contact: {
+        Row: {
+          email: string
+          id: string
+          opt_out_token: string
+          opted_out_at: string
+          source: string
+        }
+        Insert: {
+          email: string
+          id?: string
+          opt_out_token: string
+          opted_out_at?: string
+          source?: string
+        }
+        Update: {
+          email?: string
+          id?: string
+          opt_out_token?: string
+          opted_out_at?: string
+          source?: string
+        }
+        Relationships: []
+      }
       email_logs: {
         Row: {
           chain_id: string | null
@@ -160,6 +184,27 @@ export type Database = {
           resend_id?: string | null
           sent_at?: string | null
           status?: string | null
+        }
+        Relationships: []
+      }
+      email_opt_out_tokens: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          token: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          token?: string
         }
         Relationships: []
       }

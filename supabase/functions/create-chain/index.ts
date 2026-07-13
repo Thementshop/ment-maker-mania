@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 import { checkComplimentContent } from '../_shared/contentFilter.ts';
+import { isOptedOut } from '../_shared/opt-out.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -193,6 +194,14 @@ Deno.serve(async (req) => {
           if (isBlocked === true) blockedSet.add(r.toLowerCase());
         } catch (blockErr) {
           console.error('[create-chain] block check failed for', r, blockErr);
+        }
+        // ─── Do-not-contact enforcement ───
+        // Recipients who opted out of Ment emails are silently dropped, exactly
+        // like blocked senders: no link stored, no mint, no email delivered.
+        try {
+          if (await isOptedOut(adminClient, r)) blockedSet.add(r.toLowerCase());
+        } catch (optErr) {
+          console.error('[create-chain] opt-out check failed for', r, optErr);
         }
       })
     );

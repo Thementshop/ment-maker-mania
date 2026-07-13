@@ -1,5 +1,11 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 import { NOTIFICATION_COPY } from '../_shared/notification-copy.ts';
+import {
+  isOptedOut,
+  getOrCreateOptOutToken,
+  buildUnsubscribeHtml,
+  buildUnsubscribeHeaders,
+} from '../_shared/opt-out.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -351,6 +357,23 @@ Deno.serve(async (req) => {
       );
     }
 
+    // ─── Do-not-contact gate (authoritative) ───
+    // If the recipient has opted out, skip silently: no send, no notification.
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const admin = createClient(supabaseUrl, supabaseServiceKey);
+
+    if (await isOptedOut(admin, recipient_email)) {
+      console.log('[EMAIL] Skipped — recipient opted out:', recipient_email);
+      return new Response(
+        JSON.stringify({ success: true, message: 'Recipient opted out' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Stable one-tap unsubscribe token for this recipient.
+    const optOutToken = await getOrCreateOptOutToken(admin, recipient_email);
+
     // Duplicate prevention: check if same email was sent in last 2 hours
     if (chain_id) {
       const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -376,8 +399,21 @@ Deno.serve(async (req) => {
       }
     }
 
-    const { subject, html } = buildEmail(email_type, template_data);
+    const { subject, html: baseHtml } = buildEmail(email_type, template_data);
     console.log('[EMAIL] Subject:', subject);
+
+    // Append the one-tap unsubscribe footer inside the email card + build the
+    // List-Unsubscribe headers (native inbox unsubscribe button).
+    let html = baseHtml;
+    let extraHeaders: Record<string, string> = {};
+    if (optOutToken) {
+      const marker = '</table>\n</td></tr></table></body></html>';
+      const unsubRow = buildUnsubscribeHtml(optOutToken);
+      html = html.includes(marker)
+        ? html.replace(marker, `${unsubRow}\n${marker}`)
+        : html.replace('</body></html>', `${unsubRow}</body></html>`);
+      extraHeaders = buildUnsubscribeHeaders(optOutToken);
+    }
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10000);
@@ -395,6 +431,7 @@ Deno.serve(async (req) => {
           to: recipient_email,
           subject,
           html,
+          headers: extraHeaders,
         }),
         signal: controller.signal,
       });

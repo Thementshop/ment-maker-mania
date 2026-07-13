@@ -2,6 +2,7 @@
 // Triggered every minute by pg_cron. No auth required (verify_jwt = false).
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 import { logError } from '../_shared/error-log.ts';
+import { isOptedOut } from '../_shared/opt-out.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -67,6 +68,18 @@ Deno.serve(async (req) => {
 
     for (const row of claimed) {
       try {
+        // ─── Do-not-contact gate ───
+        // Skip silently if the recipient opted out. Mark the queue row as sent so
+        // it isn't retried; nothing is delivered.
+        if (await isOptedOut(admin, row.recipient_email)) {
+          await admin
+            .from('email_queue')
+            .update({ status: 'sent', sent_at: new Date().toISOString(), last_error: 'skipped: recipient opted out' })
+            .eq('id', row.id);
+          console.log('[process-email-queue] Skipped opted-out recipient:', row.recipient_email);
+          continue;
+        }
+
         const resp = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
           method: 'POST',
           headers: {

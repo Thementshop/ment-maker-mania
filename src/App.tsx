@@ -14,6 +14,7 @@ import MentPage from "./pages/MentPage";
 import ReportHistory from "./pages/ReportHistory";
 import AdminModeration from "./pages/AdminModeration";
 import NotFound from "./pages/NotFound";
+import Unsubscribe from "./pages/Unsubscribe";
 
 const queryClient = new QueryClient();
 
@@ -50,6 +51,7 @@ const App = () => (
             <Route path="/ment/:mentId" element={<MentPage />} />
             <Route path="/ment/:mentId/shared" element={<MentPage />} />
             <Route path="/share/:mentId" element={<MentPage />} />
+            <Route path="/unsubscribe" element={<Unsubscribe />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

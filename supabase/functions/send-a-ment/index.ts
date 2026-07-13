@@ -1,6 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 import { checkComplimentContent } from '../_shared/contentFilter.ts';
 import { buildSingleMentShortMessage } from '../_shared/notification-copy.ts';
+import { isOptedOut } from '../_shared/opt-out.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -128,6 +129,15 @@ Deno.serve(async (req) => {
         silentlyDiscarded = blocked === true;
       } catch (blockErr) {
         console.error('[SEND-A-MENT] block check failed:', blockErr);
+      }
+
+      // ─── Do-not-contact enforcement ───
+      // If the recipient opted out of Ment emails, silently discard exactly like
+      // a blocked sender: sender still earns their mint, nothing stored or sent.
+      try {
+        if (await isOptedOut(adminClient, recipient_email)) silentlyDiscarded = true;
+      } catch (optErr) {
+        console.error('[SEND-A-MENT] opt-out check failed:', optErr);
       }
     }
 
