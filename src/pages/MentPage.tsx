@@ -17,6 +17,26 @@ interface MentData {
   sent_at: string | null;
   sender_name: string;
   sender_id: string | null;
+  group_context: string | null;
+}
+
+// Builds the recipient-facing group line shown under the sender:
+//   named group   → "sent to Sales Team"
+//   several people → "also sent to Sarah, Devon, and 3 others"
+//   unknown names  → "sent to a group"
+function buildGroupContext(row: any): string | null {
+  if (row?.group_name) return `sent to ${row.group_name}`;
+  const otherCount: number = row?.other_recipient_count ?? 0;
+  if (otherCount <= 0) return null;
+  const names: string[] = Array.isArray(row?.other_recipient_names)
+    ? row.other_recipient_names.filter(Boolean)
+    : [];
+  if (names.length === 0) return 'sent to a group';
+  const shown = names.slice(0, 2);
+  const remaining = otherCount - shown.length;
+  let list = shown.join(', ');
+  if (remaining > 0) list += `, and ${remaining} other${remaining > 1 ? 's' : ''}`;
+  return `also sent to ${list}`;
 }
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
