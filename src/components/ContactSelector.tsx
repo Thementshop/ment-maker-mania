@@ -29,7 +29,7 @@ interface ContactSelectorProps {
   onGroupSelected?: (groupId: string, groupName: string) => void;
 }
 
-const ContactSelector = ({ onContactSelected, onNewContact, initialSearch = '' }: ContactSelectorProps) => {
+const ContactSelector = ({ onContactSelected, onNewContact, initialSearch = '', groups = [], onGroupSelected }: ContactSelectorProps) => {
   const { user } = useAuth();
   const [contacts, setContacts] = useState<UserContact[]>([]);
   const [search, setSearch] = useState(initialSearch);
