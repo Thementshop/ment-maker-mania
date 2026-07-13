@@ -34,6 +34,8 @@ const PhoneVerificationModal = ({ isOpen, onClose, onVerified }: PhoneVerificati
 
   const reset = useCallback(() => {
     setScreen('phone');
+    setCountry(COUNTRIES[0]);
+    setCountryOpen(false);
     setLocalNumber('');
     setDigits(['', '', '', '', '', '']);
     setLoading(false);
