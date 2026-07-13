@@ -183,7 +183,8 @@ Deno.serve(async (req) => {
 
     // Award +1 mint to recipient (if they have an account). Fire-and-forget.
     // Skipped when silently discarded so a blocked recipient gets nothing.
-    if (!silentlyDiscarded) {
+    // Only applies to email recipients (matched to an existing account by email).
+    if (!silentlyDiscarded && method === 'email') {
       adminClient.rpc('award_mint_to_email', { _email: recipient_email })
         .then(({ error }: { error: unknown }) => {
           if (error) console.warn('[SEND-A-MENT] Recipient mint award failed:', error);
