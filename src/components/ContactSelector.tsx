@@ -92,6 +92,29 @@ const ContactSelector = ({ onContactSelected, onNewContact, initialSearch = '', 
         />
       </div>
 
+      {/* Groups — tap to send to a whole crew at once */}
+      {search.length < 2 && groups.length > 0 && onGroupSelected && (
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            <Users className="inline h-3 w-3 mr-1" />Your groups
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {groups.map((g) => (
+              <button
+                key={g.id}
+                onClick={() => onGroupSelected(g.id, g.name)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/5 px-3 py-1.5 text-sm font-medium text-foreground hover:bg-primary/10 transition-colors"
+              >
+                <Users className="h-3.5 w-3.5 text-primary" />
+                {g.name}
+                <span className="text-xs text-muted-foreground">({g.member_count})</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+
       {/* Autocomplete results */}
       <AnimatePresence>
         {search.length >= 2 && filtered.length > 0 && (
