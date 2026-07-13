@@ -14,6 +14,7 @@ import MentPage from "./pages/MentPage";
 import ReportHistory from "./pages/ReportHistory";
 import AdminModeration from "./pages/AdminModeration";
 import NotFound from "./pages/NotFound";
+import Unsubscribe from "./pages/Unsubscribe";
 
 const queryClient = new QueryClient();
 
