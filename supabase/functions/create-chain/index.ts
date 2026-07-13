@@ -195,6 +195,14 @@ Deno.serve(async (req) => {
         } catch (blockErr) {
           console.error('[create-chain] block check failed for', r, blockErr);
         }
+        // ─── Do-not-contact enforcement ───
+        // Recipients who opted out of Ment emails are silently dropped, exactly
+        // like blocked senders: no link stored, no mint, no email delivered.
+        try {
+          if (await isOptedOut(adminClient, r)) blockedSet.add(r.toLowerCase());
+        } catch (optErr) {
+          console.error('[create-chain] opt-out check failed for', r, optErr);
+        }
       })
     );
     const isDeliverable = (r: string) => !blockedSet.has(r.toLowerCase());
