@@ -152,10 +152,11 @@ Deno.serve(async (req) => {
         .from('sent_ments')
         .insert({
           sender_id: userId,
-          recipient_email,
+          recipient_email: method === 'email' ? recipient_email : null,
+          recipient_phone: method === 'text' ? normalizedPhone : null,
           compliment_text,
           category: compliment_category,
-          recipient_type: 'email',
+          recipient_type: method === 'text' ? 'phone' : 'email',
         })
         .select('id')
         .single();
