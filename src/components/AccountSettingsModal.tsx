@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Settings, Check, LogOut, Loader2, Flag } from 'lucide-react';
+import { Settings, Check, LogOut, Loader2, Flag, Users } from 'lucide-react';
+import GroupsManagerModal from '@/components/GroupsManagerModal';
 
 interface AccountSettingsModalProps {
   isOpen: boolean;
