@@ -2,6 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 import { checkComplimentContent } from '../_shared/contentFilter.ts';
 import { buildSingleMentShortMessage } from '../_shared/notification-copy.ts';
 import { isOptedOut } from '../_shared/opt-out.ts';
+import { getAppBaseUrl } from '../_shared/app-url.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -255,7 +256,7 @@ Deno.serve(async (req) => {
     // ─── Lazy auto-login: skip token generation here. The reveal URL uses ?auto=1
     // and the issue-reveal-token edge function generates/caches a token at click-time.
     // This removes auth.admin.listUsers() and auth.admin.generateLink() from the hot path.
-    const baseAppUrl = 'https://ment-maker-mania.lovable.app';
+    const baseAppUrl = getAppBaseUrl();
     const revealUrl = `${baseAppUrl}/ment/${insertedMent?.id || ''}?auto=1`;
 
     // ─── Delivery ───
