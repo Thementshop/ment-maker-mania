@@ -357,6 +357,23 @@ Deno.serve(async (req) => {
       );
     }
 
+    // ─── Do-not-contact gate (authoritative) ───
+    // If the recipient has opted out, skip silently: no send, no notification.
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const admin = createClient(supabaseUrl, supabaseServiceKey);
+
+    if (await isOptedOut(admin, recipient_email)) {
+      console.log('[EMAIL] Skipped — recipient opted out:', recipient_email);
+      return new Response(
+        JSON.stringify({ success: true, message: 'Recipient opted out' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Stable one-tap unsubscribe token for this recipient.
+    const optOutToken = await getOrCreateOptOutToken(admin, recipient_email);
+
     // Duplicate prevention: check if same email was sent in last 2 hours
     if (chain_id) {
       const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
