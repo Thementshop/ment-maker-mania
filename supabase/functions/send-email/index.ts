@@ -1,12 +1,12 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 import { NOTIFICATION_COPY } from '../_shared/notification-copy.ts';
 import {
-import { getAppBaseUrl } from '../_shared/app-url.ts';
   isOptedOut,
   getOrCreateOptOutToken,
   buildUnsubscribeHtml,
   buildUnsubscribeHeaders,
 } from '../_shared/opt-out.ts';
+import { getAppBaseUrl } from '../_shared/app-url.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
