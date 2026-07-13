@@ -1,7 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Phone, Loader2, CheckCircle2 } from 'lucide-react';
+import { X, Phone, Loader2, CheckCircle2, ChevronsUpDown, Check } from 'lucide-react';
 import { getFreshAccessToken } from '@/utils/freshToken';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Command, CommandInput, CommandList, CommandEmpty, CommandItem } from '@/components/ui/command';
+import { COUNTRIES, flagEmoji, dialPrefix, type Country } from '@/data/countries';
+import { cn } from '@/lib/utils';
 
 interface PhoneVerificationModalProps {
   isOpen: boolean;
@@ -11,16 +15,6 @@ interface PhoneVerificationModalProps {
 }
 
 type Screen = 'phone' | 'code' | 'success';
-
-const COUNTRY_CODES = [
-  { code: '+1', label: 'US/CA (+1)' },
-  { code: '+44', label: 'UK (+44)' },
-  { code: '+61', label: 'AU (+61)' },
-  { code: '+91', label: 'IN (+91)' },
-  { code: '+353', label: 'IE (+353)' },
-  { code: '+64', label: 'NZ (+64)' },
-  { code: '+27', label: 'ZA (+27)' },
-];
 
 const RESEND_COOLDOWN = 30;
 
