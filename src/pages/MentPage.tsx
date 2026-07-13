@@ -33,6 +33,10 @@ const MentPage = () => {
   const isShareMode =
     location.pathname.endsWith('/shared') || location.pathname.startsWith('/share/');
 
+  // Sign-in link that opens the Sign In form (mode=login) and returns the user
+  // to this exact Ment after they authenticate.
+  const signInHref = `/auth?mode=login&returnTo=${encodeURIComponent(location.pathname)}`;
+
   const [ment, setMent] = useState<MentData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -250,7 +254,7 @@ const MentPage = () => {
                       Create Free Account
                     </Link>
                     <Link
-                      to="/auth?mode=signin"
+                      to={signInHref}
                       className="block w-full text-center text-sm transition-colors hover:underline"
                       style={{ color: '#166534' }}
                     >
@@ -491,7 +495,7 @@ const MentPage = () => {
                       Create Free Account
                     </Link>
                     <Link
-                      to="/auth?mode=signin"
+                      to={signInHref}
                       className="block w-full text-center text-sm transition-colors hover:underline"
                       style={{ color: '#166534' }}
                     >

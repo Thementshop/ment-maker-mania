@@ -1,7 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Phone, Loader2, CheckCircle2 } from 'lucide-react';
+import { X, Phone, Loader2, CheckCircle2, ChevronsUpDown, Check } from 'lucide-react';
 import { getFreshAccessToken } from '@/utils/freshToken';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Command, CommandInput, CommandList, CommandEmpty, CommandItem } from '@/components/ui/command';
+import { COUNTRIES, flagEmoji, dialPrefix, type Country } from '@/data/countries';
+import { cn } from '@/lib/utils';
 
 interface PhoneVerificationModalProps {
   isOpen: boolean;
@@ -12,21 +16,12 @@ interface PhoneVerificationModalProps {
 
 type Screen = 'phone' | 'code' | 'success';
 
-const COUNTRY_CODES = [
-  { code: '+1', label: 'US/CA (+1)' },
-  { code: '+44', label: 'UK (+44)' },
-  { code: '+61', label: 'AU (+61)' },
-  { code: '+91', label: 'IN (+91)' },
-  { code: '+353', label: 'IE (+353)' },
-  { code: '+64', label: 'NZ (+64)' },
-  { code: '+27', label: 'ZA (+27)' },
-];
-
 const RESEND_COOLDOWN = 30;
 
 const PhoneVerificationModal = ({ isOpen, onClose, onVerified }: PhoneVerificationModalProps) => {
   const [screen, setScreen] = useState<Screen>('phone');
-  const [countryCode, setCountryCode] = useState('+1');
+  const [country, setCountry] = useState<Country>(COUNTRIES[0]);
+  const [countryOpen, setCountryOpen] = useState(false);
   const [localNumber, setLocalNumber] = useState('');
   const [digits, setDigits] = useState<string[]>(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
@@ -34,11 +29,13 @@ const PhoneVerificationModal = ({ isOpen, onClose, onVerified }: PhoneVerificati
   const [cooldown, setCooldown] = useState(0);
   const codeRefs = useRef<Array<HTMLInputElement | null>>([]);
 
-  const fullNumber = `${countryCode}${localNumber.replace(/[\s\-().]/g, '')}`;
+  const fullNumber = `${dialPrefix(country.dial)}${localNumber.replace(/[\s\-().]/g, '')}`;
   const last4 = localNumber.replace(/\D/g, '').slice(-4);
 
   const reset = useCallback(() => {
     setScreen('phone');
+    setCountry(COUNTRIES[0]);
+    setCountryOpen(false);
     setLocalNumber('');
     setDigits(['', '', '', '', '', '']);
     setLoading(false);
@@ -198,17 +195,55 @@ const PhoneVerificationModal = ({ isOpen, onClose, onVerified }: PhoneVerificati
               </div>
 
               <div className="flex gap-2">
-                <select
-                  value={countryCode}
-                  onChange={(e) => setCountryCode(e.target.value)}
-                  className="rounded-xl border-2 border-border bg-background px-3 py-3 text-sm font-medium focus:border-primary focus:outline-none"
-                >
-                  {COUNTRY_CODES.map((c) => (
-                    <option key={c.code} value={c.code}>
-                      {c.label}
-                    </option>
-                  ))}
-                </select>
+                <Popover open={countryOpen} onOpenChange={setCountryOpen}>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      role="combobox"
+                      aria-expanded={countryOpen}
+                      aria-label="Select country code"
+                      className="flex shrink-0 items-center gap-1.5 rounded-xl border-2 border-border bg-background px-3 py-3 text-sm font-medium focus:border-primary focus:outline-none"
+                    >
+                      <span className="text-base leading-none">{flagEmoji(country.iso2)}</span>
+                      <span>{country.dial}</span>
+                      <ChevronsUpDown className="h-4 w-4 opacity-50" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[280px] p-0" align="start">
+                    <Command
+                      filter={(value, search) =>
+                        value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0
+                      }
+                    >
+                      <CommandInput placeholder="Search country..." />
+                      <CommandList>
+                        <CommandEmpty>No country found.</CommandEmpty>
+                        {COUNTRIES.map((c, i) => (
+                          <CommandItem
+                            key={`${c.iso2}-${c.name}-${i}`}
+                            value={`${c.name} ${c.dial}`}
+                            onSelect={() => {
+                              setCountry(c);
+                              setCountryOpen(false);
+                            }}
+                          >
+                            <span className="mr-2 text-base leading-none">{flagEmoji(c.iso2)}</span>
+                            <span className="flex-1">{c.name}</span>
+                            <span className="text-muted-foreground">{c.dial}</span>
+                            <Check
+                              className={cn(
+                                'ml-2 h-4 w-4',
+                                country.name === c.name && country.dial === c.dial
+                                  ? 'opacity-100'
+                                  : 'opacity-0',
+                              )}
+                            />
+                          </CommandItem>
+                        ))}
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
                 <input
                   type="tel"
                   inputMode="tel"
