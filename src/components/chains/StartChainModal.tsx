@@ -750,6 +750,18 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
         </AnimatePresence>
       </DialogContent>
     </Dialog>
+
+    <PhoneVerificationModal
+      isOpen={showPhoneVerify}
+      onClose={() => setShowPhoneVerify(false)}
+      onVerified={() => {
+        setShowPhoneVerify(false);
+        const fn = pendingSendRef.current;
+        pendingSendRef.current = null;
+        fn?.();
+      }}
+    />
+    </>
   );
 };
 
