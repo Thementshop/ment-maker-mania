@@ -536,6 +536,8 @@ const SendAMentModal = ({
                 onContactSelected={handleContactSelected}
                 onNewContact={() => setStep('addContact')}
                 initialSearch={isPrefilled && prefilledSenderName ? prefilledSenderName : ''}
+                groups={groups.map((g) => ({ id: g.id, name: g.name, member_count: g.member_count }))}
+                onGroupSelected={handleGroupSelected}
               />
             )}
 
