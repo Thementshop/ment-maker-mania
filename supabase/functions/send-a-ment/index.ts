@@ -1,10 +1,26 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 import { checkComplimentContent } from '../_shared/contentFilter.ts';
+import { buildSingleMentShortMessage } from '../_shared/notification-copy.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
+
+// Normalize a phone number to E.164 (+ followed by 8–15 digits). US 10-digit
+// numbers default to +1. Returns null if it can't produce a valid shape.
+function normalizePhone(raw: string): string | null {
+  if (!raw) return null;
+  let cleaned = raw.trim().replace(/[\s\-().]/g, '');
+  if (cleaned.startsWith('00')) cleaned = '+' + cleaned.slice(2);
+  if (!cleaned.startsWith('+')) {
+    const digits = cleaned.replace(/\D/g, '');
+    if (digits.length === 10) cleaned = '+1' + digits;
+    else cleaned = '+' + digits;
+  }
+  if (!/^\+\d{8,15}$/.test(cleaned)) return null;
+  return cleaned;
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
