@@ -100,6 +100,65 @@ export type Database = {
           },
         ]
       }
+      contact_group_members: {
+        Row: {
+          added_at: string
+          contact_email: string
+          contact_name: string | null
+          contact_phone: string | null
+          group_id: string
+          id: string
+        }
+        Insert: {
+          added_at?: string
+          contact_email: string
+          contact_name?: string | null
+          contact_phone?: string | null
+          group_id: string
+          id?: string
+        }
+        Update: {
+          added_at?: string
+          contact_email?: string
+          contact_name?: string | null
+          contact_phone?: string | null
+          group_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "contact_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contact_groups: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       content_block_log: {
         Row: {
           blocked_text: string
@@ -672,12 +731,41 @@ export type Database = {
         }
         Relationships: []
       }
+      send_events: {
+        Row: {
+          channel: string
+          created_at: string
+          id: string
+          recipient_count: number
+          send_type: string
+          user_id: string
+        }
+        Insert: {
+          channel?: string
+          created_at?: string
+          id?: string
+          recipient_count?: number
+          send_type: string
+          user_id: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          id?: string
+          recipient_count?: number
+          send_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       sent_ments: {
         Row: {
           category: string
           claimed_at: string | null
           claimed_by: string | null
           compliment_text: string
+          group_id: string | null
+          group_send_id: string | null
           id: string
           personal_note: string | null
           recipient_email: string | null
@@ -692,6 +780,8 @@ export type Database = {
           claimed_at?: string | null
           claimed_by?: string | null
           compliment_text: string
+          group_id?: string | null
+          group_send_id?: string | null
           id?: string
           personal_note?: string | null
           recipient_email?: string | null
@@ -706,6 +796,8 @@ export type Database = {
           claimed_at?: string | null
           claimed_by?: string | null
           compliment_text?: string
+          group_id?: string | null
+          group_send_id?: string | null
           id?: string
           personal_note?: string | null
           recipient_email?: string | null
@@ -715,7 +807,15 @@ export type Database = {
           sender_id?: string
           sent_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "sent_ments_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "contact_groups"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       used_chain_names: {
         Row: {
@@ -886,6 +986,14 @@ export type Database = {
           user_name: string
         }[]
       }
+      admin_get_do_not_contact: {
+        Args: never
+        Returns: {
+          email: string
+          opted_out_at: string
+          source: string
+        }[]
+      }
       admin_get_email_health: { Args: never; Returns: Json }
       admin_get_reports: {
         Args: never
@@ -911,6 +1019,15 @@ export type Database = {
       }
       admin_unban_user: { Args: { _user_id: string }; Returns: undefined }
       award_mint_to_email: { Args: { _email: string }; Returns: boolean }
+      check_and_record_send: {
+        Args: {
+          _channel?: string
+          _recipient_count: number
+          _send_type: string
+          _user_id: string
+        }
+        Returns: Json
+      }
       claim_chains_for_user: {
         Args: { claiming_user_id: string }
         Returns: number
@@ -937,7 +1054,12 @@ export type Database = {
         Returns: {
           category: string
           compliment_text: string
+          group_id: string
+          group_name: string
+          group_send_id: string
           id: string
+          other_recipient_count: number
+          other_recipient_names: string[]
           recipient_expires_at: string
           sender_id: string
           sent_at: string
@@ -973,6 +1095,7 @@ export type Database = {
           id: string
         }[]
       }
+      get_send_limits: { Args: never; Returns: Json }
       get_top_chains: {
         Args: { _limit?: number; _since?: string }
         Returns: {
@@ -997,6 +1120,7 @@ export type Database = {
         Args: { _chain_id: string; _identifier: string }
         Returns: boolean
       }
+      is_established_account: { Args: { _user_id: string }; Returns: boolean }
       log_content_block: {
         Args: {
           _blocked_text: string
