@@ -599,8 +599,10 @@ const SendAMentModal = ({
               <div className="space-y-5">
                 <div className="text-center">
                   <p className="text-sm text-muted-foreground mb-1">
-                    Sending to <span className="font-medium text-foreground">{selectedContact?.contact_name}</span>
-                    {deliveryMethod === 'text' ? ` via` : ` via`}
+                    Sending to{' '}
+                    <span className="font-medium text-foreground">
+                      {isGroupMode ? `${selectedGroupName} (${groupRecipients.length} people)` : selectedContact?.contact_name}
+                    </span>
                   </p>
                   <h2 className="font-display text-2xl font-bold text-foreground">Choose Category</h2>
                 </div>
