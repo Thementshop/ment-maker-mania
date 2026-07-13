@@ -63,6 +63,24 @@ const SendAMentModal = ({
   const [showPhoneVerify, setShowPhoneVerify] = useState(false);
   const pendingSendRef = useRef<(() => void) | null>(null);
 
+  // ─── Group send state ───
+  const { groups, getMembers } = useContactGroups();
+  const [groupRecipients, setGroupRecipients] = useState<GroupRecipient[]>([]);
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [selectedGroupName, setSelectedGroupName] = useState<string | null>(null);
+  const [maxPerSend, setMaxPerSend] = useState(15);
+  const isGroupMode = groupRecipients.length > 0;
+
+  // Fetch the user's per-send recipient cap when the modal opens.
+  useEffect(() => {
+    if (!isOpen) return;
+    supabase.rpc('get_send_limits').then(({ data }) => {
+      const d = data as { max_per_send?: number } | null;
+      if (d?.max_per_send) setMaxPerSend(d.max_per_send);
+    });
+  }, [isOpen]);
+
+
 
 
   const isPrefilled = !!prefilledCompliment;
