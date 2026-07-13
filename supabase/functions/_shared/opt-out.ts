@@ -75,7 +75,7 @@ export function buildUnsubscribePageUrl(token: string): string {
 // The one-click POST endpoint used by the List-Unsubscribe header.
 export function buildUnsubscribePostUrl(token: string): string {
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-  return `${supabaseUrl}/functions/v1/handle-unsubscribe?token=${encodeURIComponent(token)}`;
+  return `${supabaseUrl}/functions/v1/handle-unsubscribe?token=${encodeURIComponent(token)}&source=email_header`;
 }
 
 // Small muted unsubscribe footer appended to the bottom of recipient emails.
