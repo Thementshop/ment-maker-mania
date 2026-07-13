@@ -271,6 +271,15 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
 
       const result = await response.json();
 
+      // Phone gate: stash a retry (preserving recipients + compliments) and open
+      // the verification modal instead of showing a generic error.
+      if (result?.status === 'phone_not_verified') {
+        pendingSendRef.current = () => { void handleSend(compliment, perRecipient); };
+        setStep('pickCompliment');
+        setShowPhoneVerify(true);
+        return;
+      }
+
       if (!response.ok) {
         // Content moderation rejection → keep the user in the picker with a gentle
         // TMS-voice nudge, and offer ready-made Ments after 3 strikes.
