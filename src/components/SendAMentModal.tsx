@@ -14,6 +14,7 @@ import confetti from 'canvas-confetti';
 import wrappedMint from '@/assets/wrapped-mint.png';
 import unwrappedMint from '@/assets/unwrapped-mint.png';
 import PhoneVerificationModal from '@/components/PhoneVerificationModal';
+import { useContactGroups } from '@/hooks/useContactGroups';
 
 interface SendAMentModalProps {
   isOpen: boolean;
