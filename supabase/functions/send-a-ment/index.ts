@@ -66,14 +66,30 @@ Deno.serve(async (req) => {
       }
     }
 
-    const { recipient_email, compliment_text, compliment_category } = await req.json();
+    const body = await req.json();
+    const { recipient_email, recipient_phone, delivery_method, compliment_text, compliment_category } = body;
 
-    if (!recipient_email || !compliment_text || !compliment_category) {
+    // Default to email delivery for backward compatibility. Only "text" switches to SMS.
+    const method: 'email' | 'text' = delivery_method === 'text' ? 'text' : 'email';
+
+    if (!compliment_text || !compliment_category) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    if (recipient_email.toLowerCase() === userEmail?.toLowerCase()) {
-      return new Response(JSON.stringify({ error: "You can't send a ment to yourself" }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    // Resolve + validate the recipient identifier for the chosen channel.
+    let normalizedPhone: string | null = null;
+    if (method === 'text') {
+      normalizedPhone = normalizePhone(recipient_phone ?? '');
+      if (!normalizedPhone) {
+        return new Response(JSON.stringify({ error: "That doesn't look like a valid phone number" }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+    } else {
+      if (!recipient_email) {
+        return new Response(JSON.stringify({ error: 'Missing required fields' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      if (recipient_email.toLowerCase() === userEmail?.toLowerCase()) {
+        return new Response(JSON.stringify({ error: "You can't send a ment to yourself" }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
     }
 
     // ─── Content filter (authoritative security boundary) ───
