@@ -2,6 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 import { checkComplimentContent } from '../_shared/contentFilter.ts';
 import { isOptedOut } from '../_shared/opt-out.ts';
 import { getAppBaseUrl } from '../_shared/app-url.ts';
+import { checkAndRecordSend } from '../_shared/rate-limit.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
