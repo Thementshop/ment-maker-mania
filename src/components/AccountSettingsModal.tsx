@@ -45,6 +45,9 @@ const AccountSettingsModal = ({ isOpen, onClose }: AccountSettingsModalProps) =>
   // Signing out state
   const [isSigningOut, setIsSigningOut] = useState(false);
 
+  // My Groups manager
+  const [showGroups, setShowGroups] = useState(false);
+
   const handleUpdateDisplayName = async () => {
     if (!displayName.trim()) {
       toast({
