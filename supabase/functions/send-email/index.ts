@@ -399,8 +399,21 @@ Deno.serve(async (req) => {
       }
     }
 
-    const { subject, html } = buildEmail(email_type, template_data);
+    const { subject, html: baseHtml } = buildEmail(email_type, template_data);
     console.log('[EMAIL] Subject:', subject);
+
+    // Append the one-tap unsubscribe footer inside the email card + build the
+    // List-Unsubscribe headers (native inbox unsubscribe button).
+    let html = baseHtml;
+    let extraHeaders: Record<string, string> = {};
+    if (optOutToken) {
+      const marker = '</table>\n</td></tr></table></body></html>';
+      const unsubRow = buildUnsubscribeHtml(optOutToken);
+      html = html.includes(marker)
+        ? html.replace(marker, `${unsubRow}\n${marker}`)
+        : html.replace('</body></html>', `${unsubRow}</body></html>`);
+      extraHeaders = buildUnsubscribeHeaders(optOutToken);
+    }
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10000);
@@ -418,6 +431,7 @@ Deno.serve(async (req) => {
           to: recipient_email,
           subject,
           html,
+          headers: extraHeaders,
         }),
         signal: controller.signal,
       });
