@@ -179,7 +179,81 @@ const SendAMentModal = ({
 
   const handleComplimentSelect = async (compliment: string) => {
     setSelectedCompliment(compliment);
+    // Group sends require a confirmation step before firing.
+    if (isGroupMode) {
+      setStep('confirm');
+      return;
+    }
     await handleSend(compliment);
+  };
+
+  // ─── Group send: one action, many recipients, one mint ───
+  const handleGroupSend = async () => {
+    if (!user || groupRecipients.length === 0) return;
+    if (groupRecipients.length > maxPerSend) {
+      toast({ title: "That's a big group!", description: 'Try splitting it into a couple of sends — same love, just in batches.', variant: 'destructive' });
+      return;
+    }
+    const complimentToSend = selectedCompliment || prefilledCompliment || '';
+    setStep('sending');
+
+    let timedOut = false;
+    const timeoutId = window.setTimeout(() => {
+      timedOut = true;
+      toast({ title: 'Something went wrong. Please try again.', variant: 'destructive' });
+      setStep('confirm');
+    }, 30000);
+
+    try {
+      const accessToken = await getFreshAccessToken();
+      if (!accessToken) {
+        window.clearTimeout(timeoutId);
+        toast({ title: 'Session expired', description: 'Please sign in again.', variant: 'destructive' });
+        setStep('confirm');
+        return;
+      }
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-a-ment`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
+          body: JSON.stringify({
+            recipients: groupRecipients,
+            group_id: selectedGroupId,
+            delivery_method: 'email',
+            compliment_text: complimentToSend,
+            compliment_category: selectedCategory?.id || 'custom',
+          }),
+        }
+      );
+      const result = await response.json().catch(() => ({}));
+
+      if (result?.status === 'phone_not_verified') {
+        window.clearTimeout(timeoutId);
+        pendingSendRef.current = () => { void handleGroupSend(); };
+        setStep('confirm');
+        setShowPhoneVerify(true);
+        return;
+      }
+      if (!response.ok) throw new Error(result.message || result.error || 'Failed to send ment');
+
+      window.clearTimeout(timeoutId);
+      if (timedOut) return;
+
+      const { useGameStore } = await import('@/store/gameStore');
+      useGameStore.getState().bumpRefresh();
+
+      setStep('success');
+      confetti({ particleCount: 140, spread: 80, origin: { y: 0.6 }, colors: ['#58fc59', '#FF6B9D', '#4FC3F7', '#FFD740', '#B39DDB'] });
+      toast({ title: 'Ments sent! +1 mint earned', description: `Sent to ${selectedGroupName} (${groupRecipients.length} people)` });
+      setTimeout(() => handleClose(), 2500);
+    } catch (error: any) {
+      window.clearTimeout(timeoutId);
+      if (timedOut) return;
+      toast({ title: "Couldn't send ments", description: error.message || 'Please try again', variant: 'destructive' });
+      setStep('confirm');
+    }
   };
 
   // Shared success tail (contact stats + confetti + toast + close).
