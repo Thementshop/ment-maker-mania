@@ -392,6 +392,21 @@ const RevealAnimation = ({
               }}
             >
               — {senderName}
+              {senderSubtitle && (
+                <span
+                  style={{
+                    display: 'block',
+                    marginTop: '0.25em',
+                    fontSize: '0.72em',
+                    fontWeight: 500,
+                    color: '#4f8a45',
+                    textShadow: 'none',
+                    opacity: 0.9,
+                  }}
+                >
+                  {senderSubtitle}
+                </span>
+              )}
             </motion.p>
           )}
         </div>
