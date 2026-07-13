@@ -10,12 +10,15 @@
 // (password reset, email verification, etc.).
 // ─────────────────────────────────────────────────────────────────────
 
+import { getAppBaseUrl } from './app-url.ts';
+
 // deno-lint-ignore no-explicit-any
 type AdminClient = any;
 
-// Base URL for the public unsubscribe page (GET). NOTE: when TMS moves to the
-// custom domain (mentshop.com), update this constant.
-export const APP_BASE_URL = 'https://ment-maker-mania.lovable.app';
+// Base URL for the public unsubscribe page (GET). Sourced from the APP_BASE_URL
+// environment variable so it only needs to change in one place (see app-url.ts)
+// when TMS moves to the custom domain (mentshop.com).
+export const APP_BASE_URL = getAppBaseUrl();
 
 // Returns true if this email address has permanently opted out.
 export async function isOptedOut(admin: AdminClient, email: string): Promise<boolean> {
