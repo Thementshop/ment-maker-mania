@@ -147,6 +147,7 @@ const RevealAnimation = ({
   category,
   senderName,
   showSender = true,
+  senderSubtitle = null,
   className = '',
 }: RevealAnimationProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
