@@ -248,10 +248,11 @@ Deno.serve(async (req) => {
     const baseAppUrl = 'https://ment-maker-mania.lovable.app';
     const revealUrl = `${baseAppUrl}/ment/${insertedMent?.id || ''}?auto=1`;
 
-    // Enqueue email instead of calling send-email directly. The process-email-queue
-    // worker (pg_cron, every minute) drains the queue with retries + DLQ.
-    // Skipped when silently discarded so a blocked recipient is never emailed.
-    if (!silentlyDiscarded) {
+    // ─── Delivery ───
+    // EMAIL: enqueue for the process-email-queue worker (pg_cron, retries + DLQ).
+    // TEXT:  send an SMS via Twilio immediately (recipients have no account/queue).
+    // Both are skipped when silently discarded so a blocked recipient gets nothing.
+    if (!silentlyDiscarded && method === 'email') {
       try {
         const { error: enqueueErr } = await adminClient.from('email_queue').insert({
           email_type: 'ment_received',
@@ -274,6 +275,48 @@ Deno.serve(async (req) => {
       } catch (enqueueErr) {
         console.error('[SEND-A-MENT] Enqueue threw:', enqueueErr);
         // Don't fail the whole request if enqueue fails — the user-facing send still succeeded.
+      }
+    }
+
+    if (!silentlyDiscarded && method === 'text') {
+      const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
+      const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
+      const fromNumber = Deno.env.get('TWILIO_PHONE_NUMBER');
+      if (!accountSid || !authToken || !fromNumber) {
+        console.error('[SEND-A-MENT] Twilio env vars missing — cannot deliver SMS');
+        return new Response(
+          JSON.stringify({ error: 'sms_not_configured', message: "Text delivery isn't available right now. Try email instead." }),
+          { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Sender identity is NEVER included — the surprise is revealed only in-app.
+      const smsMessage = buildSingleMentShortMessage(revealUrl);
+      const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
+      const twilioResp = await fetch(twilioUrl, {
+        method: 'POST',
+        headers: {
+          Authorization: 'Basic ' + btoa(`${accountSid}:${authToken}`),
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          From: fromNumber,
+          To: normalizedPhone!,
+          Body: smsMessage,
+        }).toString(),
+      });
+
+      if (!twilioResp.ok) {
+        const errText = await twilioResp.text();
+        console.error(`[SEND-A-MENT] Twilio error [${twilioResp.status}]: ${errText}`);
+        // Roll back the ment we just stored so a failed text isn't left dangling.
+        if (insertedMent?.id) {
+          await adminClient.from('sent_ments').delete().eq('id', insertedMent.id);
+        }
+        return new Response(
+          JSON.stringify({ error: 'sms_failed', message: "We couldn't send that text. On a Twilio trial, the number must be verified in your Twilio console." }),
+          { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
     }
 
