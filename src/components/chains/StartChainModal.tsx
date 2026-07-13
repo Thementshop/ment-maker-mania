@@ -64,6 +64,11 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
   const [customRejectCount, setCustomRejectCount] = useState(0);
   const [customRejection, setCustomRejection] = useState<string | null>(null);
 
+  // Phone-verification gate: open the modal on 'phone_not_verified' and resume the
+  // exact chain-start once verified.
+  const [showPhoneVerify, setShowPhoneVerify] = useState(false);
+  const pendingSendRef = useRef<(() => void) | null>(null);
+
   const displayName = profile?.display_name || user?.email?.split('@')[0] || 'User';
 
   useEffect(() => {
