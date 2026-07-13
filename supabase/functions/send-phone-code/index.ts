@@ -148,7 +148,7 @@ Deno.serve(async (req) => {
       } catch { /* non-JSON body */ }
 
       // Friendly, specific guidance for the most common trial-account blockers.
-      let message = 'We couldn't send the verification text. Please try again in a minute.';
+      let message = "We couldn't send the verification text. Please try again in a minute.";
       if (twilioCode === 21608) {
         message = "On a Twilio trial, you can only text numbers you've verified in the Twilio console. Verify this number there first, or upgrade your Twilio account.";
       } else if (twilioCode === 21266) {
