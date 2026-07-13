@@ -254,12 +254,11 @@ const SendAMentModal = ({
     const retrySend = () => { void handleSend(complimentToSend, contact, method); };
 
 
-    // Pre-flight: SMS is not live yet. If user picked text but contact has no email
-    // for fallback, fail fast with a clear error instead of hanging.
-    if (method === 'text' && !contact.email) {
+    // Pre-flight: make sure we have the identifier the chosen channel needs.
+    if (method === 'text' && !contact.phone) {
       toast({
-        title: "Can't send to this contact yet",
-        description: "This contact doesn't have an email address. Please add an email to send them a Ment, or add your phone number to enable SMS.",
+        title: "No phone number on file",
+        description: "This contact doesn't have a phone number. Add one to send them a text, or switch to email.",
         variant: "destructive",
       });
       return;
@@ -292,91 +291,49 @@ const SendAMentModal = ({
         setStep('contact');
         return;
       }
-      const recipientIdentifier = method === 'text' ? contact.phone : contact.email;
 
-      if (method === 'email' && contact.email) {
-        // Use existing email flow
-        const response = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-a-ment`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${accessToken}`,
-            },
-            body: JSON.stringify({
-              recipient_email: contact.email,
-              compliment_text: complimentToSend,
-              compliment_category: selectedCategory?.id || 'custom',
-            }),
+      // Both email and text now go through send-a-ment, which stores the Ment,
+      // awards the mint, and delivers by the requested channel (SMS via Twilio
+      // for text, queued email for email).
+      const payload = method === 'text'
+        ? {
+            recipient_phone: contact.phone,
+            delivery_method: 'text',
+            compliment_text: complimentToSend,
+            compliment_category: selectedCategory?.id || 'custom',
           }
-        );
-        const result = await response.json();
-        if (result?.status === 'phone_not_verified') {
-          window.clearTimeout(timeoutId);
-          pendingSendRef.current = retrySend;
-          setStep(resumeStep);
-          setShowPhoneVerify(true);
-          return;
+        : {
+            recipient_email: contact.email,
+            delivery_method: 'email',
+            compliment_text: complimentToSend,
+            compliment_category: selectedCategory?.id || 'custom',
+          };
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-a-ment`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify(payload),
         }
-        if (!response.ok) throw new Error(result.error || 'Failed to send ment');
-
-        // Force homepage counters to refetch their canonical sources
-        const { useGameStore } = await import('@/store/gameStore');
-        useGameStore.getState().bumpRefresh();
-      } else if (method === 'text' && contact.phone) {
-        // Use SMS placeholder
-        const response = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-sms`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${accessToken}`,
-            },
-            body: JSON.stringify({
-              phone_number: contact.phone,
-              recipient_name: contact.contact_name,
-              sender_name: user.email?.split('@')[0] || 'Someone',
-              reveal_url: 'https://ment-maker-mania.lovable.app',
-            }),
-          }
-        );
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.error || 'Failed to send SMS');
-
-        // SMS is a placeholder until Twilio is wired up — silently fall back to email below.
-        // (No toast here; the success toast at the end covers delivery confirmation.)
-
-        // Fallback: send via email if available
-        if (contact.email) {
-          const emailResp = await fetch(
-            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-a-ment`,
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${accessToken}`,
-              },
-              body: JSON.stringify({
-                recipient_email: contact.email,
-                compliment_text: complimentToSend,
-                compliment_category: selectedCategory?.id || 'custom',
-              }),
-            }
-          );
-          const emailResult = await emailResp.json().catch(() => ({}));
-          if (emailResult?.status === 'phone_not_verified') {
-            window.clearTimeout(timeoutId);
-            pendingSendRef.current = retrySend;
-            setStep(resumeStep);
-            setShowPhoneVerify(true);
-            return;
-          }
-          const { useGameStore } = await import('@/store/gameStore');
-          useGameStore.getState().bumpRefresh();
-        }
+      );
+      const result = await response.json().catch(() => ({}));
+      if (result?.status === 'phone_not_verified') {
+        window.clearTimeout(timeoutId);
+        pendingSendRef.current = retrySend;
+        setStep(resumeStep);
+        setShowPhoneVerify(true);
+        return;
       }
+      if (!response.ok) throw new Error(result.message || result.error || 'Failed to send ment');
+
+      // Force homepage counters to refetch their canonical sources
+      const { useGameStore } = await import('@/store/gameStore');
+      useGameStore.getState().bumpRefresh();
+
 
       // Clear the safety timeout as soon as the send itself returned successfully.
       window.clearTimeout(timeoutId);
