@@ -418,6 +418,7 @@ const SendAMentModal = ({
   };
 
   return (
+    <>
     <AnimatePresence>
       {isOpen && (
         <motion.div
