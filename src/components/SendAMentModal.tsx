@@ -365,7 +365,14 @@ const SendAMentModal = ({
               }),
             }
           );
-          await emailResp.json();
+          const emailResult = await emailResp.json().catch(() => ({}));
+          if (emailResult?.status === 'phone_not_verified') {
+            window.clearTimeout(timeoutId);
+            pendingSendRef.current = retrySend;
+            setStep(resumeStep);
+            setShowPhoneVerify(true);
+            return;
+          }
           const { useGameStore } = await import('@/store/gameStore');
           useGameStore.getState().bumpRefresh();
         }
