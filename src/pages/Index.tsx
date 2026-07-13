@@ -6,6 +6,7 @@ import { useChainNotifications } from '@/hooks/useChainNotifications';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import SendAMentModal from '@/components/SendAMentModal';
+import EmailVerificationBanner from '@/components/EmailVerificationBanner';
 import LevelUpModal from '@/components/LevelUpModal';
 import OnboardingModal from '@/components/OnboardingModal';
 import SendMentSection from '@/components/home/SendMentSection';
@@ -144,6 +145,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-mint flex flex-col">
+      <EmailVerificationBanner />
       <Header worldCount={worldKindnessCount} />
 
       <div className="w-full">

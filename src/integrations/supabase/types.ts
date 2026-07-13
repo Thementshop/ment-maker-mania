@@ -462,6 +462,39 @@ export type Database = {
         }
         Relationships: []
       }
+      phone_verification_codes: {
+        Row: {
+          attempts: number
+          code: string
+          created_at: string
+          expires_at: string
+          id: string
+          phone_number: string
+          user_id: string
+          verified: boolean
+        }
+        Insert: {
+          attempts?: number
+          code: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          phone_number: string
+          user_id: string
+          verified?: boolean
+        }
+        Update: {
+          attempts?: number
+          code?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          phone_number?: string
+          user_id?: string
+          verified?: boolean
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -475,6 +508,9 @@ export type Database = {
           pause_tokens: number
           pause_tokens_unlimited: boolean
           pause_tokens_unlimited_expires_at: string | null
+          phone_number: string | null
+          phone_verified: boolean
+          phone_verified_at: string | null
           updated_at: string | null
         }
         Insert: {
@@ -489,6 +525,9 @@ export type Database = {
           pause_tokens?: number
           pause_tokens_unlimited?: boolean
           pause_tokens_unlimited_expires_at?: string | null
+          phone_number?: string | null
+          phone_verified?: boolean
+          phone_verified_at?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -503,6 +542,9 @@ export type Database = {
           pause_tokens?: number
           pause_tokens_unlimited?: boolean
           pause_tokens_unlimited_expires_at?: string | null
+          phone_number?: string | null
+          phone_verified?: boolean
+          phone_verified_at?: string | null
           updated_at?: string | null
         }
         Relationships: []

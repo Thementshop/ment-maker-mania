@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Phone, Mail } from 'lucide-react';
 import { complimentCategories, ComplimentCategory } from '@/data/compliments';
@@ -13,6 +13,7 @@ import { checkComplimentContent } from '@/utils/contentFilter';
 import confetti from 'canvas-confetti';
 import wrappedMint from '@/assets/wrapped-mint.png';
 import unwrappedMint from '@/assets/unwrapped-mint.png';
+import PhoneVerificationModal from '@/components/PhoneVerificationModal';
 
 interface SendAMentModalProps {
   isOpen: boolean;
@@ -52,6 +53,12 @@ const SendAMentModal = ({
   const [customChecking, setCustomChecking] = useState(false);
   const [customRejection, setCustomRejection] = useState<string | null>(null);
   const [customRejectCount, setCustomRejectCount] = useState(0);
+
+  // Phone-verification gate. When a send returns 'phone_not_verified', we open the
+  // verification modal and stash a retry closure so the in-progress send resumes
+  // exactly where it left off once the user verifies.
+  const [showPhoneVerify, setShowPhoneVerify] = useState(false);
+  const pendingSendRef = useRef<(() => void) | null>(null);
 
 
 
@@ -204,6 +211,14 @@ const SendAMentModal = ({
       const result = await response.json().catch(() => ({ approved: false }));
       setCustomChecking(false);
 
+      // Phone gate: stash a retry and open the verification modal.
+      if (result?.status === 'phone_not_verified') {
+        pendingSendRef.current = () => { void handleSendCustom(text, contact); };
+        setShowPhoneVerify(true);
+        return;
+      }
+
+
       // Fail closed: anything other than an explicit approval is a block.
       if (!response.ok || result?.approved !== true) {
         bumpRejection();
@@ -232,6 +247,11 @@ const SendAMentModal = ({
     const method = methodOverride || deliveryMethod;
     if (!user || !contact) return;
     const complimentToSend = compliment || selectedCompliment;
+
+    // Remember where we were so the phone gate can restore an interactive view.
+    const resumeStep: Step = selectedCategory ? 'compliment' : (isPrefilled ? 'contact' : 'category');
+    // Retry closure preserving the exact in-progress send for the phone gate.
+    const retrySend = () => { void handleSend(complimentToSend, contact, method); };
 
 
     // Pre-flight: SMS is not live yet. If user picked text but contact has no email
