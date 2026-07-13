@@ -1,6 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 import { checkComplimentContent } from '../_shared/contentFilter.ts';
 import { buildSingleMentShortMessage } from '../_shared/notification-copy.ts';
+import { isOptedOut } from '../_shared/opt-out.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
