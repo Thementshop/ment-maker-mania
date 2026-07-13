@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/input';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, UserPlus, Phone, Mail, Clock, ChevronDown } from 'lucide-react';
+import { Search, UserPlus, Phone, Mail, Clock, ChevronDown, Users } from 'lucide-react';
 
 export interface UserContact {
   id: string;
@@ -15,10 +15,18 @@ export interface UserContact {
   last_sent_at: string | null;
 }
 
+export interface GroupChip {
+  id: string;
+  name: string;
+  member_count: number;
+}
+
 interface ContactSelectorProps {
   onContactSelected: (contact: UserContact) => void;
   onNewContact: () => void;
   initialSearch?: string;
+  groups?: GroupChip[];
+  onGroupSelected?: (groupId: string, groupName: string) => void;
 }
 
 const ContactSelector = ({ onContactSelected, onNewContact, initialSearch = '' }: ContactSelectorProps) => {
