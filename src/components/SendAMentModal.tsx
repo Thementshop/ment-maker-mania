@@ -24,7 +24,9 @@ interface SendAMentModalProps {
   prefilledSenderName?: string | null;
 }
 
-type Step = 'contact' | 'addContact' | 'delivery' | 'category' | 'compliment' | 'sending' | 'success';
+type Step = 'contact' | 'addContact' | 'delivery' | 'category' | 'compliment' | 'confirm' | 'sending' | 'success';
+
+interface GroupRecipient { email: string; name: string; }
 
 // Custom-compliment moderation copy (TMS voice).
 const CHECKING_MESSAGE = "Hold on — we're making sure this is extra sweet.";
