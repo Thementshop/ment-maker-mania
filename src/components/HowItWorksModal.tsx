@@ -15,7 +15,7 @@ const steps = [
   {
     icon: stepIcon,
     title: "Send a Ment",
-    description: "Choose a compliment (or write your own), we'll wrap it up in the prettiest little mint, and off it goes to make someone's whole entire day. Oh, and every send earns you a mint. The universe absolutely notices — and honestly your Kindness Jar just did a tiny little happy dance."
+    description: "Choose a compliment (or write your own), we'll wrap it up in the prettiest little mint, and off it goes to make someone's whole entire day. Every time you send a Ment, you earn a mint. Send to one person or send to your whole crew — each send earns one mint. Receive a Ment? That's a mint too. And your Kindness Jar just did a tiny little happy dance."
   },
   {
     icon: stepIcon,

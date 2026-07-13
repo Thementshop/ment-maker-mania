@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 import { buildSingleMentShortMessage, buildChainShortMessage } from '../_shared/notification-copy.ts';
+import { getAppBaseUrl } from '../_shared/app-url.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -36,7 +37,7 @@ Deno.serve(async (req) => {
 
     // Centralized notification copy — sender identity is NEVER included.
     // Surprise is revealed only after the recipient unwraps in-app.
-    const url = reveal_url || 'https://ment-maker-mania.lovable.app';
+    const url = reveal_url || getAppBaseUrl();
     const message = message_type === 'chain_received'
       ? buildChainShortMessage(url)
       : buildSingleMentShortMessage(url);

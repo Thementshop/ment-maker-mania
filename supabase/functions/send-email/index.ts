@@ -6,6 +6,7 @@ import {
   buildUnsubscribeHtml,
   buildUnsubscribeHeaders,
 } from '../_shared/opt-out.ts';
+import { getAppBaseUrl } from '../_shared/app-url.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -204,7 +205,7 @@ function build1hrWarningBatchedEmail(data: TemplateData): string {
     </div>
   `).join('');
 
-  const appUrl = data.app_url || 'https://ment-maker-mania.lovable.app';
+  const appUrl = data.app_url || getAppBaseUrl();
   const inner = `
     ${urgencyBanner('Multiple Chains Expiring', `${(data.other_chains?.length || 0) + 1} chains need your attention right now.`)}
     <h2 style="color:${BRAND_DARK};margin:0 0 20px;font-size:26px;font-weight:800;letter-spacing:-0.5px;">
@@ -258,7 +259,7 @@ function buildCompletedEmail(data: TemplateData): string {
     </div>
   `).join('');
 
-  const appUrl = data.app_url || 'https://ment-maker-mania.lovable.app';
+  const appUrl = data.app_url || getAppBaseUrl();
   const inner = `
     <div style="margin:28px 0 24px;text-align:center;">
       <p style="color:${BRAND_DARK};font-size:12px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;margin:0 0 8px;">Chain Complete</p>
@@ -279,7 +280,7 @@ function buildCompletedEmail(data: TemplateData): string {
 
 // ─── TEMPLATE 5: Ment Received (Single Compliment) ───
 function buildMentReceivedEmail(data: TemplateData): string {
-  const appUrl = data.app_url || 'https://ment-maker-mania.lovable.app';
+  const appUrl = data.app_url || getAppBaseUrl();
   // Sender identity is intentionally NOT used here — revealed only on unwrap.
   const revealUrl = data.reveal_url || `${appUrl}/ment/${data.ment_id || ''}`;
   const inner = `

@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/input';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, UserPlus, Phone, Mail, Clock, ChevronDown } from 'lucide-react';
+import { Search, UserPlus, Phone, Mail, Clock, ChevronDown, Users } from 'lucide-react';
 
 export interface UserContact {
   id: string;
@@ -15,13 +15,21 @@ export interface UserContact {
   last_sent_at: string | null;
 }
 
+export interface GroupChip {
+  id: string;
+  name: string;
+  member_count: number;
+}
+
 interface ContactSelectorProps {
   onContactSelected: (contact: UserContact) => void;
   onNewContact: () => void;
   initialSearch?: string;
+  groups?: GroupChip[];
+  onGroupSelected?: (groupId: string, groupName: string) => void;
 }
 
-const ContactSelector = ({ onContactSelected, onNewContact, initialSearch = '' }: ContactSelectorProps) => {
+const ContactSelector = ({ onContactSelected, onNewContact, initialSearch = '', groups = [], onGroupSelected }: ContactSelectorProps) => {
   const { user } = useAuth();
   const [contacts, setContacts] = useState<UserContact[]>([]);
   const [search, setSearch] = useState(initialSearch);
@@ -83,6 +91,29 @@ const ContactSelector = ({ onContactSelected, onNewContact, initialSearch = '' }
           className="pl-10"
         />
       </div>
+
+      {/* Groups — tap to send to a whole crew at once */}
+      {search.length < 2 && groups.length > 0 && onGroupSelected && (
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            <Users className="inline h-3 w-3 mr-1" />Your groups
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {groups.map((g) => (
+              <button
+                key={g.id}
+                onClick={() => onGroupSelected(g.id, g.name)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/5 px-3 py-1.5 text-sm font-medium text-foreground hover:bg-primary/10 transition-colors"
+              >
+                <Users className="h-3.5 w-3.5 text-primary" />
+                {g.name}
+                <span className="text-xs text-muted-foreground">({g.member_count})</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
 
       {/* Autocomplete results */}
       <AnimatePresence>

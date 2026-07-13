@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Settings, Check, LogOut, Loader2, Flag } from 'lucide-react';
+import { Settings, Check, LogOut, Loader2, Flag, Users } from 'lucide-react';
+import GroupsManagerModal from '@/components/GroupsManagerModal';
 
 interface AccountSettingsModalProps {
   isOpen: boolean;
@@ -43,6 +44,9 @@ const AccountSettingsModal = ({ isOpen, onClose }: AccountSettingsModalProps) =>
 
   // Signing out state
   const [isSigningOut, setIsSigningOut] = useState(false);
+
+  // My Groups manager
+  const [showGroups, setShowGroups] = useState(false);
 
   const handleUpdateDisplayName = async () => {
     if (!displayName.trim()) {
@@ -274,6 +278,22 @@ const AccountSettingsModal = ({ isOpen, onClose }: AccountSettingsModalProps) =>
             </div>
           </motion.div>
 
+          {/* My Groups */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.23 }}
+          >
+            <Button
+              onClick={() => setShowGroups(true)}
+              variant="outline"
+              className="w-full"
+            >
+              <Users className="h-4 w-4 mr-2" />
+              My Groups
+            </Button>
+          </motion.div>
+
           {/* Your Reports */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -318,6 +338,7 @@ const AccountSettingsModal = ({ isOpen, onClose }: AccountSettingsModalProps) =>
           </motion.div>
         </div>
       </DialogContent>
+      <GroupsManagerModal isOpen={showGroups} onClose={() => setShowGroups(false)} />
     </Dialog>
   );
 };

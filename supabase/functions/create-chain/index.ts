@@ -1,6 +1,8 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 import { checkComplimentContent } from '../_shared/contentFilter.ts';
 import { isOptedOut } from '../_shared/opt-out.ts';
+import { getAppBaseUrl } from '../_shared/app-url.ts';
+import { checkAndRecordSend } from '../_shared/rate-limit.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -175,6 +177,18 @@ Deno.serve(async (req) => {
       console.error('[create-chain] ban check failed:', banErr);
     }
 
+    // ─── Rate-limit gate ───
+    // A chain start counts as exactly 1 send action; its recipients count toward
+    // the daily recipients cap. Applied after the ban check so banned users still
+    // silently "succeed" and are never told about limits.
+    const rl = await checkAndRecordSend(adminClient, userId, 'chain', recipientList.length, 'email');
+    if (!rl.allowed) {
+      return new Response(
+        JSON.stringify({ error: 'rate_limited', error_code: rl.errorCode, message: rl.message }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     console.log('Creating chain with', recipientList.length, 'recipients');
 
 
@@ -340,7 +354,7 @@ Deno.serve(async (req) => {
     // Enqueue email notifications instead of fanning out direct calls.
     // The process-email-queue worker drains the queue with retries + DLQ.
     const senderName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Someone';
-    const appBaseUrl = 'https://ment-maker-mania.lovable.app';
+    const appBaseUrl = getAppBaseUrl();
 
     const queueRows = recipientList
       .filter((r) => r.includes('@') && isDeliverable(r))

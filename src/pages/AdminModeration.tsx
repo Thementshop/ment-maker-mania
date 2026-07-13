@@ -19,6 +19,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { isAdminUserId } from '@/config/admins';
 import { supabase } from '@/integrations/supabase/client';
 import EmailHealthSection from '@/components/admin/EmailHealthSection';
+import DoNotContactSection from '@/components/admin/DoNotContactSection';
 
 interface ReportRow {
   id: string;
@@ -363,6 +364,9 @@ const AdminModeration = () => {
 
         {/* ── Section 4: Email Health ── */}
         <EmailHealthSection />
+
+        {/* ── Section 5: Do-Not-Contact ── */}
+        <DoNotContactSection />
       </div>
 
       <AlertDialog open={!!banTarget} onOpenChange={(open) => { if (!open) setBanTarget(null); }}>

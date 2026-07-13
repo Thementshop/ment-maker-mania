@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 import { checkComplimentContent } from '../_shared/contentFilter.ts';
+import { getAppBaseUrl } from '../_shared/app-url.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -190,7 +191,7 @@ Deno.serve(async (req) => {
       .maybeSingle();
     const senderName = senderProfile?.display_name || userEmail?.split('@')[0] || 'Someone';
 
-    const baseAppUrl = 'https://ment-maker-mania.lovable.app';
+    const baseAppUrl = getAppBaseUrl();
     const revealUrl = `${baseAppUrl}/ment/${insertedMentId}?auto=1`;
 
     try {

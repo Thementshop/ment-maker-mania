@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Phone, Mail } from 'lucide-react';
+import { X, Phone, Mail, Send } from 'lucide-react';
 import { complimentCategories, ComplimentCategory } from '@/data/compliments';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -14,6 +14,7 @@ import confetti from 'canvas-confetti';
 import wrappedMint from '@/assets/wrapped-mint.png';
 import unwrappedMint from '@/assets/unwrapped-mint.png';
 import PhoneVerificationModal from '@/components/PhoneVerificationModal';
+import { useContactGroups } from '@/hooks/useContactGroups';
 
 interface SendAMentModalProps {
   isOpen: boolean;
@@ -23,7 +24,9 @@ interface SendAMentModalProps {
   prefilledSenderName?: string | null;
 }
 
-type Step = 'contact' | 'addContact' | 'delivery' | 'category' | 'compliment' | 'sending' | 'success';
+type Step = 'contact' | 'addContact' | 'delivery' | 'category' | 'compliment' | 'confirm' | 'sending' | 'success';
+
+interface GroupRecipient { email: string; name: string; }
 
 // Custom-compliment moderation copy (TMS voice).
 const CHECKING_MESSAGE = "Hold on — we're making sure this is extra sweet.";
@@ -60,6 +63,24 @@ const SendAMentModal = ({
   const [showPhoneVerify, setShowPhoneVerify] = useState(false);
   const pendingSendRef = useRef<(() => void) | null>(null);
 
+  // ─── Group send state ───
+  const { groups, getMembers } = useContactGroups();
+  const [groupRecipients, setGroupRecipients] = useState<GroupRecipient[]>([]);
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [selectedGroupName, setSelectedGroupName] = useState<string | null>(null);
+  const [maxPerSend, setMaxPerSend] = useState(15);
+  const isGroupMode = groupRecipients.length > 0;
+
+  // Fetch the user's per-send recipient cap when the modal opens.
+  useEffect(() => {
+    if (!isOpen) return;
+    supabase.rpc('get_send_limits').then(({ data }) => {
+      const d = data as { max_per_send?: number } | null;
+      if (d?.max_per_send) setMaxPerSend(d.max_per_send);
+    });
+  }, [isOpen]);
+
+
 
 
   const isPrefilled = !!prefilledCompliment;
@@ -80,6 +101,9 @@ const SendAMentModal = ({
     setStep('contact');
     setSelectedContact(null);
     setDeliveryMethod('text');
+    setGroupRecipients([]);
+    setSelectedGroupId(null);
+    setSelectedGroupName(null);
     // Navigating away resets the custom-rejection counter.
     setCustomChecking(false);
     setCustomRejection(null);
@@ -93,7 +117,33 @@ const SendAMentModal = ({
 
   const handleClose = () => { resetModal(); onClose(); };
 
+  // Tapping a group selects ALL its members as recipients (email channel).
+  const handleGroupSelected = async (groupId: string, groupName: string) => {
+    const members = await getMembers(groupId);
+    const recipients: GroupRecipient[] = members
+      .filter((m) => m.contact_email)
+      .map((m) => ({ email: m.contact_email, name: (m.contact_name || '').trim() }));
+    if (recipients.length === 0) {
+      toast({ title: 'This group has no members with an email', variant: 'destructive' });
+      return;
+    }
+    setSelectedContact(null);
+    setGroupRecipients(recipients);
+    setSelectedGroupId(groupId);
+    setSelectedGroupName(groupName);
+    setDeliveryMethod('email');
+    if (isPrefilled) {
+      setSelectedCompliment(prefilledCompliment!);
+      setStep('confirm');
+    } else {
+      setStep('category');
+    }
+  };
+
   const handleContactSelected = (contact: UserContact) => {
+    setGroupRecipients([]);
+    setSelectedGroupId(null);
+    setSelectedGroupName(null);
     setSelectedContact(contact);
     // If contact has both phone and email, let user pick; otherwise skip ahead.
     if (contact.phone && contact.email) {
@@ -129,7 +179,81 @@ const SendAMentModal = ({
 
   const handleComplimentSelect = async (compliment: string) => {
     setSelectedCompliment(compliment);
+    // Group sends require a confirmation step before firing.
+    if (isGroupMode) {
+      setStep('confirm');
+      return;
+    }
     await handleSend(compliment);
+  };
+
+  // ─── Group send: one action, many recipients, one mint ───
+  const handleGroupSend = async () => {
+    if (!user || groupRecipients.length === 0) return;
+    if (groupRecipients.length > maxPerSend) {
+      toast({ title: "That's a big group!", description: 'Try splitting it into a couple of sends — same love, just in batches.', variant: 'destructive' });
+      return;
+    }
+    const complimentToSend = selectedCompliment || prefilledCompliment || '';
+    setStep('sending');
+
+    let timedOut = false;
+    const timeoutId = window.setTimeout(() => {
+      timedOut = true;
+      toast({ title: 'Something went wrong. Please try again.', variant: 'destructive' });
+      setStep('confirm');
+    }, 30000);
+
+    try {
+      const accessToken = await getFreshAccessToken();
+      if (!accessToken) {
+        window.clearTimeout(timeoutId);
+        toast({ title: 'Session expired', description: 'Please sign in again.', variant: 'destructive' });
+        setStep('confirm');
+        return;
+      }
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-a-ment`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
+          body: JSON.stringify({
+            recipients: groupRecipients,
+            group_id: selectedGroupId,
+            delivery_method: 'email',
+            compliment_text: complimentToSend,
+            compliment_category: selectedCategory?.id || 'custom',
+          }),
+        }
+      );
+      const result = await response.json().catch(() => ({}));
+
+      if (result?.status === 'phone_not_verified') {
+        window.clearTimeout(timeoutId);
+        pendingSendRef.current = () => { void handleGroupSend(); };
+        setStep('confirm');
+        setShowPhoneVerify(true);
+        return;
+      }
+      if (!response.ok) throw new Error(result.message || result.error || 'Failed to send ment');
+
+      window.clearTimeout(timeoutId);
+      if (timedOut) return;
+
+      const { useGameStore } = await import('@/store/gameStore');
+      useGameStore.getState().bumpRefresh();
+
+      setStep('success');
+      confetti({ particleCount: 140, spread: 80, origin: { y: 0.6 }, colors: ['#58fc59', '#FF6B9D', '#4FC3F7', '#FFD740', '#B39DDB'] });
+      toast({ title: 'Ments sent! +1 mint earned', description: `Sent to ${selectedGroupName} (${groupRecipients.length} people)` });
+      setTimeout(() => handleClose(), 2500);
+    } catch (error: any) {
+      window.clearTimeout(timeoutId);
+      if (timedOut) return;
+      toast({ title: "Couldn't send ments", description: error.message || 'Please try again', variant: 'destructive' });
+      setStep('confirm');
+    }
   };
 
   // Shared success tail (contact stats + confetti + toast + close).
@@ -371,6 +495,7 @@ const SendAMentModal = ({
       case 'delivery': setStep('contact'); break;
       case 'category': setStep(selectedContact?.phone && selectedContact?.email ? 'delivery' : 'contact'); break;
       case 'compliment': setStep('category'); break;
+      case 'confirm': setStep(isPrefilled ? 'contact' : 'compliment'); break;
     }
   };
 
@@ -411,6 +536,8 @@ const SendAMentModal = ({
                 onContactSelected={handleContactSelected}
                 onNewContact={() => setStep('addContact')}
                 initialSearch={isPrefilled && prefilledSenderName ? prefilledSenderName : ''}
+                groups={groups.map((g) => ({ id: g.id, name: g.name, member_count: g.member_count }))}
+                onGroupSelected={handleGroupSelected}
               />
             )}
 
@@ -472,8 +599,10 @@ const SendAMentModal = ({
               <div className="space-y-5">
                 <div className="text-center">
                   <p className="text-sm text-muted-foreground mb-1">
-                    Sending to <span className="font-medium text-foreground">{selectedContact?.contact_name}</span>
-                    {deliveryMethod === 'text' ? ` via` : ` via`}
+                    Sending to{' '}
+                    <span className="font-medium text-foreground">
+                      {isGroupMode ? `${selectedGroupName} (${groupRecipients.length} people)` : selectedContact?.contact_name}
+                    </span>
                   </p>
                   <h2 className="font-display text-2xl font-bold text-foreground">Choose Category</h2>
                 </div>
@@ -490,7 +619,7 @@ const SendAMentModal = ({
                     </motion.button>
                   ))}
                 </div>
-                {customRejectCount < 3 && (
+                {!isGroupMode && customRejectCount < 3 && (
                   <CustomComplimentInput onSelect={(text) => { setSelectedCompliment(text); void handleSendCustom(text); }} />
                 )}
 
@@ -540,6 +669,48 @@ const SendAMentModal = ({
                 <button onClick={handleBack} className="w-full text-sm text-muted-foreground hover:text-foreground">← Back to categories</button>
               </div>
             )}
+
+            {/* Step 5b: Group send confirmation */}
+            {step === 'confirm' && isGroupMode && (
+              <div className="space-y-5">
+                <div className="text-center">
+                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary/10 mb-2">
+                    <Send className="h-7 w-7 text-primary" />
+                  </div>
+                  <h2 className="font-display text-2xl font-bold text-foreground">Ready to send?</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    To <span className="font-semibold text-foreground">{selectedGroupName}</span> ({groupRecipients.length} {groupRecipients.length === 1 ? 'person' : 'people'})
+                  </p>
+                </div>
+
+                <div className="rounded-2xl p-4" style={{ background: 'linear-gradient(135deg, rgba(88,252,89,0.08), rgba(88,252,89,0.15))', border: '2px solid rgba(88,252,89,0.3)' }}>
+                  <p className="text-sm font-medium text-foreground italic">"{selectedCompliment || prefilledCompliment}"</p>
+                </div>
+
+                <p className="text-xs text-muted-foreground text-center">
+                  Sending to {groupRecipients.length} {groupRecipients.length === 1 ? 'person' : 'people'} · earns you 1 mint
+                </p>
+
+                {groupRecipients.length > maxPerSend ? (
+                  <div className="rounded-xl border border-border bg-muted/40 p-3 text-center">
+                    <p className="text-sm text-foreground">
+                      That's a big group! Try splitting it into a couple of sends — same love, just in batches.
+                    </p>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => void handleGroupSend()}
+                    className="w-full rounded-xl px-6 py-3 font-bold text-white text-center transition-all hover:scale-[1.02]"
+                    style={{ background: 'linear-gradient(135deg, #58fc59, #3dd83e)' }}
+                  >
+                    Send to all {groupRecipients.length}
+                  </button>
+                )}
+
+                <button onClick={handleBack} className="w-full text-sm text-muted-foreground hover:text-foreground">← Back</button>
+              </div>
+            )}
+
 
             {/* Step 6: Sending Animation */}
             {step === 'sending' && (

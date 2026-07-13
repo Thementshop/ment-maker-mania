@@ -26,6 +26,8 @@ export interface RevealAnimationProps {
   senderName: string;
   /** Whether to reveal the sender name (defaults to hidden later on). */
   showSender?: boolean;
+  /** Optional muted line under the sender (e.g. "sent to Sales Team"). */
+  senderSubtitle?: string | null;
   /** Optional className for the root container. */
   className?: string;
 }
@@ -145,6 +147,7 @@ const RevealAnimation = ({
   category,
   senderName,
   showSender = true,
+  senderSubtitle = null,
   className = '',
 }: RevealAnimationProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -389,6 +392,21 @@ const RevealAnimation = ({
               }}
             >
               — {senderName}
+              {senderSubtitle && (
+                <span
+                  style={{
+                    display: 'block',
+                    marginTop: '0.25em',
+                    fontSize: '0.72em',
+                    fontWeight: 500,
+                    color: '#4f8a45',
+                    textShadow: 'none',
+                    opacity: 0.9,
+                  }}
+                >
+                  {senderSubtitle}
+                </span>
+              )}
             </motion.p>
           )}
         </div>

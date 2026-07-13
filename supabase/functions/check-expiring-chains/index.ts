@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
+import { getAppBaseUrl } from '../_shared/app-url.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -106,7 +107,7 @@ Deno.serve(async (req) => {
       // Sort by expires_at (soonest first)
       unwarned.sort((a, b) => new Date(a.expires_at).getTime() - new Date(b.expires_at).getTime());
 
-      const appBaseUrl = 'https://ment-maker-mania.lovable.app';
+      const appBaseUrl = getAppBaseUrl();
       const urgent = unwarned[0];
 
       const templateData: Record<string, unknown> = {
