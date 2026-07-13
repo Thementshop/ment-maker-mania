@@ -101,6 +101,9 @@ const SendAMentModal = ({
     setStep('contact');
     setSelectedContact(null);
     setDeliveryMethod('text');
+    setGroupRecipients([]);
+    setSelectedGroupId(null);
+    setSelectedGroupName(null);
     // Navigating away resets the custom-rejection counter.
     setCustomChecking(false);
     setCustomRejection(null);
@@ -114,7 +117,33 @@ const SendAMentModal = ({
 
   const handleClose = () => { resetModal(); onClose(); };
 
+  // Tapping a group selects ALL its members as recipients (email channel).
+  const handleGroupSelected = async (groupId: string, groupName: string) => {
+    const members = await getMembers(groupId);
+    const recipients: GroupRecipient[] = members
+      .filter((m) => m.contact_email)
+      .map((m) => ({ email: m.contact_email, name: (m.contact_name || '').trim() }));
+    if (recipients.length === 0) {
+      toast({ title: 'This group has no members with an email', variant: 'destructive' });
+      return;
+    }
+    setSelectedContact(null);
+    setGroupRecipients(recipients);
+    setSelectedGroupId(groupId);
+    setSelectedGroupName(groupName);
+    setDeliveryMethod('email');
+    if (isPrefilled) {
+      setSelectedCompliment(prefilledCompliment!);
+      setStep('confirm');
+    } else {
+      setStep('category');
+    }
+  };
+
   const handleContactSelected = (contact: UserContact) => {
+    setGroupRecipients([]);
+    setSelectedGroupId(null);
+    setSelectedGroupName(null);
     setSelectedContact(contact);
     // If contact has both phone and email, let user pick; otherwise skip ahead.
     if (contact.phone && contact.email) {
