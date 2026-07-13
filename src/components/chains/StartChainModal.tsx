@@ -718,6 +718,7 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
   };
 
   return (
+    <>
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
