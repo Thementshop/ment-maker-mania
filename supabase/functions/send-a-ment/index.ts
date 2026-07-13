@@ -119,14 +119,16 @@ Deno.serve(async (req) => {
     // to succeed and the sender still earns their mint, but nothing is stored or
     // delivered to the recipient, and the sender is never told they were blocked.
     let silentlyDiscarded = false;
-    try {
-      const { data: blocked } = await adminClient.rpc('is_blocked_by_email', {
-        _sender: userId,
-        _recipient_email: recipient_email,
-      });
-      silentlyDiscarded = blocked === true;
-    } catch (blockErr) {
-      console.error('[SEND-A-MENT] block check failed:', blockErr);
+    if (method === 'email') {
+      try {
+        const { data: blocked } = await adminClient.rpc('is_blocked_by_email', {
+          _sender: userId,
+          _recipient_email: recipient_email,
+        });
+        silentlyDiscarded = blocked === true;
+      } catch (blockErr) {
+        console.error('[SEND-A-MENT] block check failed:', blockErr);
+      }
     }
 
     // ─── Admin ban enforcement ───
