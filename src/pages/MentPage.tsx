@@ -254,7 +254,7 @@ const MentPage = () => {
                       Create Free Account
                     </Link>
                     <Link
-                      to="/auth?mode=signin"
+                      to={signInHref}
                       className="block w-full text-center text-sm transition-colors hover:underline"
                       style={{ color: '#166534' }}
                     >
@@ -495,7 +495,7 @@ const MentPage = () => {
                       Create Free Account
                     </Link>
                     <Link
-                      to="/auth?mode=signin"
+                      to={signInHref}
                       className="block w-full text-center text-sm transition-colors hover:underline"
                       style={{ color: '#166534' }}
                     >
