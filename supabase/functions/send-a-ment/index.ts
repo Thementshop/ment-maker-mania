@@ -33,6 +33,23 @@ Deno.serve(async (req) => {
     const userId = authUser.id;
     const userEmail = authUser.email as string;
 
+    // ─── Phone verification gate (primary anti-abuse gate) ───
+    // A user cannot send until they've verified a real phone number. Checked
+    // BEFORE any processing so unverified users never reach the send logic.
+    {
+      const { data: profileRow } = await adminClient
+        .from('profiles')
+        .select('phone_verified')
+        .eq('id', userId)
+        .maybeSingle();
+      if (profileRow?.phone_verified !== true) {
+        return new Response(
+          JSON.stringify({ status: 'phone_not_verified', error: 'phone_not_verified' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
     const { recipient_email, compliment_text, compliment_category } = await req.json();
 
     if (!recipient_email || !compliment_text || !compliment_category) {

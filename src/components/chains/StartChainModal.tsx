@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link2, ArrowLeft, Send, Check, User, Mail, Phone, Sparkles, Flame, Loader2 } from 'lucide-react';
 import SavedContactsDropdown from '@/components/SavedContactsDropdown';
@@ -20,6 +20,7 @@ import { complimentCategories, type ComplimentCategory } from '@/data/compliment
 import CustomComplimentInput from '@/components/CustomComplimentInput';
 import { getAvailableChainNames } from '@/utils/chainNames';
 import confetti from 'canvas-confetti';
+import PhoneVerificationModal from '@/components/PhoneVerificationModal';
 
 // Custom-compliment moderation copy (TMS voice).
 const REJECT_EARLY =
@@ -62,6 +63,11 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
   // Custom-compliment moderation: 3-strike → ready-made fallback (TMS voice).
   const [customRejectCount, setCustomRejectCount] = useState(0);
   const [customRejection, setCustomRejection] = useState<string | null>(null);
+
+  // Phone-verification gate: open the modal on 'phone_not_verified' and resume the
+  // exact chain-start once verified.
+  const [showPhoneVerify, setShowPhoneVerify] = useState(false);
+  const pendingSendRef = useRef<(() => void) | null>(null);
 
   const displayName = profile?.display_name || user?.email?.split('@')[0] || 'User';
 
@@ -264,6 +270,15 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
       clearTimeout(timeoutId);
 
       const result = await response.json();
+
+      // Phone gate: stash a retry (preserving recipients + compliments) and open
+      // the verification modal instead of showing a generic error.
+      if (result?.status === 'phone_not_verified') {
+        pendingSendRef.current = () => { void handleSend(compliment, perRecipient); };
+        setStep('pickCompliment');
+        setShowPhoneVerify(true);
+        return;
+      }
 
       if (!response.ok) {
         // Content moderation rejection → keep the user in the picker with a gentle
@@ -703,6 +718,7 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
   };
 
   return (
+    <>
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
@@ -734,6 +750,18 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
         </AnimatePresence>
       </DialogContent>
     </Dialog>
+
+    <PhoneVerificationModal
+      isOpen={showPhoneVerify}
+      onClose={() => setShowPhoneVerify(false)}
+      onVerified={() => {
+        setShowPhoneVerify(false);
+        const fn = pendingSendRef.current;
+        pendingSendRef.current = null;
+        fn?.();
+      }}
+    />
+    </>
   );
 };
 

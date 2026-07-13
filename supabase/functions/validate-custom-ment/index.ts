@@ -35,6 +35,20 @@ Deno.serve(async (req) => {
     const userId = authUser.id;
     const userEmail = authUser.email as string;
 
+    // ─── Phone verification gate (primary anti-abuse gate) ───
+    // Custom Ments are a real send path, so the same gate applies: unverified
+    // users can't send until they've verified a real phone number.
+    {
+      const { data: profileRow } = await adminClient
+        .from('profiles')
+        .select('phone_verified')
+        .eq('id', userId)
+        .maybeSingle();
+      if (profileRow?.phone_verified !== true) {
+        return json({ approved: false, status: 'phone_not_verified', error: 'phone_not_verified' }, 403);
+      }
+    }
+
     const { recipient_email, compliment_text, compliment_category } = await req.json();
 
     if (!recipient_email || !compliment_text) {
