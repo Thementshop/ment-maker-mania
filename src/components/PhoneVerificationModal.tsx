@@ -193,17 +193,55 @@ const PhoneVerificationModal = ({ isOpen, onClose, onVerified }: PhoneVerificati
               </div>
 
               <div className="flex gap-2">
-                <select
-                  value={countryCode}
-                  onChange={(e) => setCountryCode(e.target.value)}
-                  className="rounded-xl border-2 border-border bg-background px-3 py-3 text-sm font-medium focus:border-primary focus:outline-none"
-                >
-                  {COUNTRY_CODES.map((c) => (
-                    <option key={c.code} value={c.code}>
-                      {c.label}
-                    </option>
-                  ))}
-                </select>
+                <Popover open={countryOpen} onOpenChange={setCountryOpen}>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      role="combobox"
+                      aria-expanded={countryOpen}
+                      aria-label="Select country code"
+                      className="flex shrink-0 items-center gap-1.5 rounded-xl border-2 border-border bg-background px-3 py-3 text-sm font-medium focus:border-primary focus:outline-none"
+                    >
+                      <span className="text-base leading-none">{flagEmoji(country.iso2)}</span>
+                      <span>{country.dial}</span>
+                      <ChevronsUpDown className="h-4 w-4 opacity-50" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[280px] p-0" align="start">
+                    <Command
+                      filter={(value, search) =>
+                        value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0
+                      }
+                    >
+                      <CommandInput placeholder="Search country..." />
+                      <CommandList>
+                        <CommandEmpty>No country found.</CommandEmpty>
+                        {COUNTRIES.map((c, i) => (
+                          <CommandItem
+                            key={`${c.iso2}-${c.name}-${i}`}
+                            value={`${c.name} ${c.dial}`}
+                            onSelect={() => {
+                              setCountry(c);
+                              setCountryOpen(false);
+                            }}
+                          >
+                            <span className="mr-2 text-base leading-none">{flagEmoji(c.iso2)}</span>
+                            <span className="flex-1">{c.name}</span>
+                            <span className="text-muted-foreground">{c.dial}</span>
+                            <Check
+                              className={cn(
+                                'ml-2 h-4 w-4',
+                                country.name === c.name && country.dial === c.dial
+                                  ? 'opacity-100'
+                                  : 'opacity-0',
+                              )}
+                            />
+                          </CommandItem>
+                        ))}
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
                 <input
                   type="tel"
                   inputMode="tel"
