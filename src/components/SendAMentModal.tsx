@@ -623,6 +623,18 @@ const SendAMentModal = ({
         </motion.div>
       )}
     </AnimatePresence>
+
+    <PhoneVerificationModal
+      isOpen={showPhoneVerify}
+      onClose={() => setShowPhoneVerify(false)}
+      onVerified={() => {
+        setShowPhoneVerify(false);
+        const fn = pendingSendRef.current;
+        pendingSendRef.current = null;
+        fn?.();
+      }}
+    />
+    </>
   );
 };
 
