@@ -206,7 +206,7 @@ const MentPage = () => {
         <Link
           to="/auth"
           className="inline-block rounded-xl px-8 py-3 font-semibold text-white transition-all hover:scale-105"
-          style={{ background: 'linear-gradient(135deg, #58fc59, #3dd83e)' }}
+          style={{ background: 'linear-gradient(135deg, #3FAA22, #2d8419)' }}
         >
           Join The Ment Shop →
         </Link>
@@ -244,7 +244,7 @@ const MentPage = () => {
                   <Link
                     to={isLoggedIn ? '/' : '/auth'}
                     className="block w-full rounded-xl px-6 py-3 font-semibold text-white text-center transition-all hover:scale-[1.02]"
-                    style={{ background: 'linear-gradient(135deg, #58fc59, #3dd83e)' }}
+                    style={{ background: 'linear-gradient(135deg, #3FAA22, #2d8419)' }}
                   >
                     Join The Ment Shop </Link>
                 ) : isLoggedIn ? (
@@ -252,7 +252,7 @@ const MentPage = () => {
                     <button
                       onClick={() => setShowSendBackChoice(true)}
                       className="block w-full rounded-xl px-6 py-3 font-semibold text-white text-center transition-all hover:scale-[1.02]"
-                      style={{ background: 'linear-gradient(135deg, #58fc59, #3dd83e)' }}
+                      style={{ background: 'linear-gradient(135deg, #3FAA22, #2d8419)' }}
                     >
                       Send a Ment Back to {ment.sender_name} </button>
                     <button
@@ -261,7 +261,7 @@ const MentPage = () => {
                         navigate('/');
                       }}
                       className="block w-full rounded-xl px-6 py-3 font-semibold text-center transition-all hover:scale-[1.02] border-2 bg-white"
-                      style={{ borderColor: '#58fc59', color: '#166534' }}
+                      style={{ borderColor: '#3FAA22', color: '#166534' }}
                     >
                       Choose someone new
                     </button>
@@ -271,7 +271,7 @@ const MentPage = () => {
                     <Link
                       to="/auth"
                       className="block w-full rounded-xl px-6 py-3 font-semibold text-white text-center transition-all hover:scale-[1.02]"
-                      style={{ background: 'linear-gradient(135deg, #58fc59, #3dd83e)' }}
+                      style={{ background: 'linear-gradient(135deg, #3FAA22, #2d8419)' }}
                     >
                       Create Free Account
                     </Link>
@@ -338,7 +338,7 @@ const MentPage = () => {
                       navigate('/');
                     }}
                     className="block w-full rounded-xl px-6 py-3 font-semibold text-white text-center transition-all hover:scale-[1.02]"
-                    style={{ background: 'linear-gradient(135deg, #58fc59, #3dd83e)' }}
+                    style={{ background: 'linear-gradient(135deg, #3FAA22, #2d8419)' }}
                   >
                     Send this same Ment </button>
                 </div>
@@ -349,7 +349,7 @@ const MentPage = () => {
                     navigate('/');
                   }}
                   className="block w-full rounded-xl px-6 py-3 font-semibold text-center transition-all hover:scale-[1.02] border-2"
-                  style={{ borderColor: '#58fc59', color: '#166534' }}
+                  style={{ borderColor: '#3FAA22', color: '#166534' }}
                 >
                   Choose something new instead →
                 </button>
@@ -401,7 +401,7 @@ const MentPage = () => {
               <motion.button
                 onClick={handleUnwrap}
                 className="w-full rounded-xl px-8 py-4 font-bold text-white text-lg transition-all"
-                style={{ background: 'linear-gradient(135deg, #58fc59, #3dd83e)' }}
+                style={{ background: 'linear-gradient(135deg, #3FAA22, #2d8419)' }}
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
               > Tap to Unwrap
@@ -475,14 +475,14 @@ const MentPage = () => {
                     <Link
                       to="/"
                       className="block w-full rounded-xl px-6 py-3 font-semibold text-white text-center transition-all hover:scale-[1.02]"
-                      style={{ background: 'linear-gradient(135deg, #58fc59, #3dd83e)' }}
+                      style={{ background: 'linear-gradient(135deg, #3FAA22, #2d8419)' }}
                     >
                       Join The Ment Shop </Link>
                   ) : (
                     <Link
                       to="/auth"
                       className="block w-full rounded-xl px-6 py-3 font-semibold text-white text-center transition-all hover:scale-[1.02]"
-                      style={{ background: 'linear-gradient(135deg, #58fc59, #3dd83e)' }}
+                      style={{ background: 'linear-gradient(135deg, #3FAA22, #2d8419)' }}
                     >
                       Join The Ment Shop </Link>
                   )
@@ -492,7 +492,7 @@ const MentPage = () => {
                     <button
                       onClick={() => setShowSendBackChoice(true)}
                       className="block w-full rounded-xl px-6 py-3 font-semibold text-white text-center transition-all hover:scale-[1.02]"
-                      style={{ background: 'linear-gradient(135deg, #58fc59, #3dd83e)' }}
+                      style={{ background: 'linear-gradient(135deg, #3FAA22, #2d8419)' }}
                     >
                       Send a Ment Back to {ment!.sender_name} </button>
                     <button
@@ -501,7 +501,7 @@ const MentPage = () => {
                         navigate('/');
                       }}
                       className="block w-full rounded-xl px-6 py-3 font-semibold text-center transition-all hover:scale-[1.02] border-2"
-                      style={{ borderColor: '#58fc59', color: '#166534' }}
+                      style={{ borderColor: '#3FAA22', color: '#166534' }}
                     >
                       Choose someone new
                     </button>
@@ -512,7 +512,7 @@ const MentPage = () => {
                     <Link
                       to="/auth"
                       className="block w-full rounded-xl px-6 py-3 font-semibold text-white text-center transition-all hover:scale-[1.02]"
-                      style={{ background: 'linear-gradient(135deg, #58fc59, #3dd83e)' }}
+                      style={{ background: 'linear-gradient(135deg, #3FAA22, #2d8419)' }}
                     >
                       Create Free Account
                     </Link>
@@ -579,7 +579,7 @@ const MentPage = () => {
                     navigate('/');
                   }}
                   className="block w-full rounded-xl px-6 py-3 font-semibold text-white text-center transition-all hover:scale-[1.02]"
-                  style={{ background: 'linear-gradient(135deg, #58fc59, #3dd83e)' }}
+                  style={{ background: 'linear-gradient(135deg, #3FAA22, #2d8419)' }}
                 >
                   Send this same Ment </button>
               </div>
@@ -591,7 +591,7 @@ const MentPage = () => {
                   navigate('/');
                 }}
                 className="block w-full rounded-xl px-6 py-3 font-semibold text-center transition-all hover:scale-[1.02] border-2"
-                style={{ borderColor: '#58fc59', color: '#166534' }}
+                style={{ borderColor: '#3FAA22', color: '#166534' }}
               >
                 Choose something new instead →
               </button>

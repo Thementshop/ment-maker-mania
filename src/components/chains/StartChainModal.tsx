@@ -321,7 +321,7 @@ const StartChainModal = ({ isOpen, onClose, onSuccess }: StartChainModalProps) =
         particleCount: 100,
         spread: 70,
         origin: { y: 0.6 },
-        colors: ['#FF6B35', '#F7931E', '#FFD23F', '#58fc59']
+        colors: ['#FF6B35', '#F7931E', '#FFD23F', '#3FAA22']
       });
 
       setTimeout(() => {

@@ -112,12 +112,12 @@ const Store = () => {
         const tokensChanged = (gs?.pause_tokens ?? 0) > startSnap.tokens;
 
         if (mintChanged) {
-          confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#58fc59', '#3ed83f'] });
+          confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#3FAA22', '#2d8419'] });
           toast({ title: '25 mints added to your jar!' });
           break;
         }
         if (unlimitedChanged || tokensChanged) {
-          confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#FFD700', '#58fc59'] });
+          confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#FFD700', '#3FAA22'] });
           toast({ title: 'Your Pause Tokens have been added!' });
           break;
         }
@@ -148,10 +148,10 @@ const Store = () => {
     });
 
     if (priceId === 'mint_boost') {
-      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#58fc59', '#3ed83f'] });
+      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#3FAA22', '#2d8419'] });
       toast({ title: '25 mints added in preview mode!' });
     } else {
-      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#FFD700', '#58fc59'] });
+      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#FFD700', '#3FAA22'] });
       toast({
         title:
           priceId === 'pause_tokens_unlimited_year'
