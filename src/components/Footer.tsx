@@ -126,6 +126,10 @@ const Footer = () => {
           <p className="text-xs text-muted-foreground">
             © {new Date().getFullYear()} The Ment Shop. Spreading sweetness worldwide.
           </p>
+          <div className="flex items-center gap-4 text-xs">
+            <a href="/privacy" className="text-muted-foreground hover:text-primary transition-colors">Privacy</a>
+            <a href="/terms" className="text-muted-foreground hover:text-primary transition-colors">Terms</a>
+          </div>
         </motion.div>
       </div>
     </footer>
