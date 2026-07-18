@@ -32,7 +32,7 @@ const Privacy = () => {
 
           <h2 className="font-display text-xl font-bold mt-8">SMS and Text Messages</h2>
           <p>When you provide your phone number during account verification, you consent to receive a one-time SMS verification code. Standard message and data rates may apply.</p>
-          <p>In the future, we may send SMS notifications when someone sends you a Ment. You may opt out of SMS messages at any time by replying STOP to any message. For help, reply HELP or email donna@mentshop.com.</p>
+          <p>In the future, we may send SMS notifications when someone sends you a Ment. You may opt out of SMS messages at any time by replying STOP to any message. For help, reply HELP or email hello@mentshop.com.</p>
           <p>Message frequency varies. Verification codes are sent once during account setup. Notification messages are sent when someone sends you a compliment.</p>
 
           <h2 className="font-display text-xl font-bold mt-8">Email Communications</h2>
@@ -49,7 +49,7 @@ const Privacy = () => {
           <p>These providers may store data on servers located in the United States.</p>
 
           <h2 className="font-display text-xl font-bold mt-8">Data Retention and Deletion</h2>
-          <p>We retain your account information and compliment content for as long as your account is active. You may request deletion of your account and associated data by emailing donna@mentshop.com. We will process deletion requests within 30 days.</p>
+          <p>We retain your account information and compliment content for as long as your account is active. You may request deletion of your account and associated data by emailing hello@mentshop.com. We will process deletion requests within 30 days.</p>
 
           <h2 className="font-display text-xl font-bold mt-8">Security</h2>
           <p>We take reasonable measures to protect your information, including server-side content validation, encrypted connections (HTTPS), and access controls. However, no method of transmission or storage is 100% secure, and we cannot guarantee absolute security.</p>
@@ -62,7 +62,7 @@ const Privacy = () => {
             <li>Request deletion of your information</li>
             <li>Object to certain uses of your information</li>
           </ul>
-          <p>To exercise any of these rights, email donna@mentshop.com.</p>
+          <p>To exercise any of these rights, email hello@mentshop.com.</p>
 
           <h2 className="font-display text-xl font-bold mt-8">Changes to This Policy</h2>
           <p>We may update this Privacy Policy from time to time. We will notify you of significant changes by posting the updated policy on this page with a revised "Last updated" date.</p>
@@ -71,7 +71,7 @@ const Privacy = () => {
           <p>If you have questions about this Privacy Policy, contact us at:</p>
           <p>
             Huddy Enterprises, LLC DBA The Ment Shop<br />
-            Email: <a href="mailto:donna@mentshop.com" className="text-primary hover:underline">donna@mentshop.com</a>
+            Email: <a href="mailto:hello@mentshop.com" className="text-primary hover:underline">hello@mentshop.com</a>
           </p>
         </div>
       </div>

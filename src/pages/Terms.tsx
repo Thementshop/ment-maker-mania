@@ -37,7 +37,7 @@ const Terms = () => {
           <p>We enforce a positivity-only content policy. All custom compliments are screened by our content moderation system. Messages that do not meet our standards will be rejected. Repeated violations may result in account suspension or termination.</p>
 
           <h2 className="font-display text-xl font-bold mt-8">SMS and Text Messages</h2>
-          <p>By providing your phone number, you consent to receive SMS messages from The Ment Shop for account verification and service notifications. Message frequency varies. Message and data rates may apply. Reply STOP to opt out of SMS messages at any time. Reply HELP for assistance. You can also contact donna@mentshop.com for support.</p>
+          <p>By providing your phone number, you consent to receive SMS messages from The Ment Shop for account verification and service notifications. Message frequency varies. Message and data rates may apply. Reply STOP to opt out of SMS messages at any time. Reply HELP for assistance. You can also contact hello@mentshop.com for support.</p>
           <p>Carriers are not liable for delayed or undelivered messages. Consent to receive SMS is not a condition of purchase.</p>
 
           <h2 className="font-display text-xl font-bold mt-8">Recipient Communications</h2>
@@ -54,7 +54,7 @@ const Terms = () => {
           <p>If you receive a Ment that you believe is inappropriate, you can report it directly from the Ment reveal screen. You can also block a sender to prevent them from sending you future Ments. We review all reports and take action as appropriate, including content removal and account suspension.</p>
 
           <h2 className="font-display text-xl font-bold mt-8">Account Termination</h2>
-          <p>We reserve the right to suspend or terminate your account at any time if you violate these Terms or engage in behavior that is harmful to other users or the Service. You may request deletion of your account at any time by emailing donna@mentshop.com.</p>
+          <p>We reserve the right to suspend or terminate your account at any time if you violate these Terms or engage in behavior that is harmful to other users or the Service. You may request deletion of your account at any time by emailing hello@mentshop.com.</p>
 
           <h2 className="font-display text-xl font-bold mt-8">Disclaimers</h2>
           <p>The Service is provided "as is" and "as available" without warranties of any kind, either express or implied. We do not guarantee that the Service will be uninterrupted, error-free, or secure.</p>
@@ -72,7 +72,7 @@ const Terms = () => {
           <p>If you have questions about these Terms, contact us at:</p>
           <p>
             Huddy Enterprises, LLC DBA The Ment Shop<br />
-            Email: <a href="mailto:donna@mentshop.com" className="text-primary hover:underline">donna@mentshop.com</a>
+            Email: <a href="mailto:hello@mentshop.com" className="text-primary hover:underline">hello@mentshop.com</a>
           </p>
         </div>
       </div>

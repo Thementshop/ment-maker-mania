@@ -34,10 +34,10 @@ const SmsTerms = () => {
 
           <h2 className="font-display text-xl font-bold mt-8">Opt-Out Instructions</h2>
           <p>You can opt out of SMS messages from The Ment Shop at any time by replying <strong>STOP</strong> to any message you receive from us. After you send STOP, we will send one final confirmation message and will not send you any additional SMS messages unless you opt back in.</p>
-          <p>To opt back in, reply <strong>START</strong> or contact us at donna@mentshop.com.</p>
+          <p>To opt back in, reply <strong>START</strong> or contact us at hello@mentshop.com.</p>
 
           <h2 className="font-display text-xl font-bold mt-8">Help</h2>
-          <p>For help, reply <strong>HELP</strong> to any message from us, or email <a href="mailto:donna@mentshop.com" className="text-primary hover:underline">donna@mentshop.com</a>.</p>
+          <p>For help, reply <strong>HELP</strong> to any message from us, or email <a href="mailto:hello@mentshop.com" className="text-primary hover:underline">hello@mentshop.com</a>.</p>
 
           <h2 className="font-display text-xl font-bold mt-8">Carriers</h2>
           <p>Carriers are not liable for delayed or undelivered messages. Supported carriers include AT&amp;T, Verizon, T-Mobile, Sprint, and most other US carriers.</p>
@@ -48,7 +48,7 @@ const SmsTerms = () => {
           <h2 className="font-display text-xl font-bold mt-8">Contact</h2>
           <p>
             Huddy Enterprises, LLC DBA The Ment Shop<br />
-            Email: <a href="mailto:donna@mentshop.com" className="text-primary hover:underline">donna@mentshop.com</a>
+            Email: <a href="mailto:hello@mentshop.com" className="text-primary hover:underline">hello@mentshop.com</a>
           </p>
         </div>
       </div>
