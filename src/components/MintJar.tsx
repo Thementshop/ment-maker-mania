@@ -85,8 +85,8 @@ const MintJar = ({ jarCount, totalSent }: MintJarProps) => {
       setShowTierUp(true);
       const end = Date.now() + 3000;
       const frame = () => {
-        confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#58fc59', '#FFD740', '#FF6B9D'] });
-        confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#58fc59', '#4FC3F7', '#B39DDB'] });
+        confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#3FAA22', '#FFD740', '#FF6B9D'] });
+        confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#3FAA22', '#4FC3F7', '#B39DDB'] });
         if (Date.now() < end) requestAnimationFrame(frame);
       };
       frame();

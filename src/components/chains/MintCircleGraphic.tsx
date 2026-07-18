@@ -68,8 +68,8 @@ const MintCircleGraphic: React.FC<MintCircleGraphicProps> = ({
       <defs>
         {/* Mint green gradient */}
         <linearGradient id="mintGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#58fc59" />
-          <stop offset="100%" stopColor="#3ed83f" />
+          <stop offset="0%" stopColor="#3FAA22" />
+          <stop offset="100%" stopColor="#2d8419" />
         </linearGradient>
 
         {/* Metallic chain gradient */}
@@ -87,9 +87,9 @@ const MintCircleGraphic: React.FC<MintCircleGraphicProps> = ({
         {/* Legendary glow gradient */}
         {isLegendary && (
           <radialGradient id="legendaryGlow">
-            <stop offset="0%" stopColor="#58fc59" stopOpacity="0.5" />
-            <stop offset="60%" stopColor="#58fc59" stopOpacity="0.2" />
-            <stop offset="100%" stopColor="#58fc59" stopOpacity="0" />
+            <stop offset="0%" stopColor="#3FAA22" stopOpacity="0.5" />
+            <stop offset="60%" stopColor="#3FAA22" stopOpacity="0.2" />
+            <stop offset="100%" stopColor="#3FAA22" stopOpacity="0" />
           </radialGradient>
         )}
 

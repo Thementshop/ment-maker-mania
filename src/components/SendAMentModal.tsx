@@ -245,7 +245,7 @@ const SendAMentModal = ({
       useGameStore.getState().bumpRefresh();
 
       setStep('success');
-      confetti({ particleCount: 140, spread: 80, origin: { y: 0.6 }, colors: ['#58fc59', '#FF6B9D', '#4FC3F7', '#FFD740', '#B39DDB'] });
+      confetti({ particleCount: 140, spread: 80, origin: { y: 0.6 }, colors: ['#3FAA22', '#FF6B9D', '#4FC3F7', '#FFD740', '#B39DDB'] });
       toast({ title: 'Ments sent! +1 mint earned', description: `Sent to ${selectedGroupName} (${groupRecipients.length} people)` });
       setTimeout(() => handleClose(), 2500);
     } catch (error: any) {
@@ -268,7 +268,7 @@ const SendAMentModal = ({
       .then(({ error }) => { if (error) console.error('[SendAMent] contact stats update failed:', error); });
 
     setStep('success');
-    confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#58fc59', '#FF6B9D', '#4FC3F7', '#FFD740', '#B39DDB'] });
+    confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#3FAA22', '#FF6B9D', '#4FC3F7', '#FFD740', '#B39DDB'] });
     toast({ title: "Compliment sent! +1 mint earned", description: `Your ment was sent to ${contact.contact_name}` });
     setTimeout(() => handleClose(), 2500);
   };
@@ -474,7 +474,7 @@ const SendAMentModal = ({
         .then(({ error }) => { if (error) console.error('[SendAMent] contact stats update failed:', error); });
 
       setStep('success');
-      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#58fc59', '#FF6B9D', '#4FC3F7', '#FFD740', '#B39DDB'] });
+      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#3FAA22', '#FF6B9D', '#4FC3F7', '#FFD740', '#B39DDB'] });
       toast({ title: "Compliment sent! +1 mint earned", description: `Your ment was sent to ${contact.contact_name}` });
       setTimeout(() => handleClose(), 2500);
     } catch (error: any) {
@@ -701,7 +701,7 @@ const SendAMentModal = ({
                   <button
                     onClick={() => void handleGroupSend()}
                     className="w-full rounded-xl px-6 py-3 font-bold text-white text-center transition-all hover:scale-[1.02]"
-                    style={{ background: 'linear-gradient(135deg, #58fc59, #3dd83e)' }}
+                    style={{ background: 'linear-gradient(135deg, #3FAA22, #2d8419)' }}
                   >
                     Send to all {groupRecipients.length}
                   </button>

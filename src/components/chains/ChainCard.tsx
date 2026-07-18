@@ -88,7 +88,7 @@ const ChainCard = ({
         particleCount: 60,
         spread: 50,
         origin: { y: 0.7 },
-        colors: ['#58fc59', '#3ed83f', '#F1C40F']
+        colors: ['#3FAA22', '#2d8419', '#F1C40F']
       });
 
       toast({
