@@ -129,6 +129,7 @@ const Footer = () => {
           <div className="flex items-center gap-4 text-xs">
             <a href="/privacy" className="text-muted-foreground hover:text-primary transition-colors">Privacy</a>
             <a href="/terms" className="text-muted-foreground hover:text-primary transition-colors">Terms</a>
+            <a href="/sms-terms" className="text-muted-foreground hover:text-primary transition-colors">SMS Terms</a>
           </div>
         </motion.div>
       </div>
