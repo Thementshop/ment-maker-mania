@@ -8,8 +8,8 @@ const corsHeaders = {
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
-// Where Ment reports are sent for review.
-const DONNA_EMAIL = 'info@mentshop.com';
+// Where Ment reports are sent for review (admin alert destination).
+const DONNA_EMAIL = 'donna@mentshop.com';
 
 function escapeHtml(s: string) {
   return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
