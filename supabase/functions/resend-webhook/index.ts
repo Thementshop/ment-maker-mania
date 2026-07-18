@@ -16,7 +16,7 @@ const corsHeaders = {
 };
 
 const ALERT_TO = 'donna@mentshop.com';
-const ALERT_FROM = 'Ment Shop <info@mentshop.com>';
+const ALERT_FROM = 'The Ment Shop <hello@mentshop.com>';
 
 // Extract the recipient email from a Resend webhook data payload.
 function extractRecipient(data: Record<string, unknown>): string {
