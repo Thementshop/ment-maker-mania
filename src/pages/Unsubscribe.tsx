@@ -75,10 +75,10 @@ const Unsubscribe = () => {
               This link doesn't look right. If you're trying to unsubscribe, please
               contact us at{' '}
               <a
-                href="mailto:donna@mentshop.com"
+                href="mailto:hello@mentshop.com"
                 className="text-primary font-semibold underline underline-offset-2"
               >
-                donna@mentshop.com
+                hello@mentshop.com
               </a>
               .
             </p>
