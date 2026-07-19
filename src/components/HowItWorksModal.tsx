@@ -35,7 +35,7 @@ const steps = [
   {
     icon: stepIcon,
     title: "Start a Chain",
-    description: "Start a Ment Chain and set something extraordinary in motion. Five mints land in your jar instantly — the universe's way of saying thank you for being this kind. Every person in the chain has 48 hours to keep the sweetness moving, and if anyone needs a little breathing room, a Pause Token adds 48 more. Watch it travel. Watch it grow. The universe is absolutely watching and it is SO proud."
+    description: "Start a Ment Chain and set something extraordinary in motion. Five mints land in your jar instantly — the universe's way of saying thank you for being this kind. Every person in the chain has 48 hours to keep the sweetness moving, and if anyone needs a little breathing room, a Pause Token adds 48 more hours to the countdown timer. Watch it travel. Watch it grow. The universe is absolutely watching and it is SO proud."
   }
 ];
 
