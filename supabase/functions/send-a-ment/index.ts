@@ -53,20 +53,7 @@ Deno.serve(async (req) => {
     const userId = authUser.id;
     const userEmail = authUser.email as string;
 
-    // ─── Phone verification gate (primary anti-abuse gate) ───
-    {
-      const { data: profileRow } = await adminClient
-        .from('profiles')
-        .select('phone_verified')
-        .eq('id', userId)
-        .maybeSingle();
-      if (profileRow?.phone_verified !== true) {
-        return new Response(
-          JSON.stringify({ status: 'phone_not_verified', error: 'phone_not_verified' }),
-          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-    }
+    // ─── Phone verification gate (temporarily disabled pending Twilio approval) ───
 
     const body = await req.json();
     const {
