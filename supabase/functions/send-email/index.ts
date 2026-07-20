@@ -449,11 +449,7 @@ Deno.serve(async (req) => {
     }
 
     // Log to database
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const adminClient = createClient(supabaseUrl, supabaseServiceKey);
-
-    const { error: logError } = await adminClient
+    const { error: logError } = await admin
       .from('email_logs')
       .insert({
         email_type,
@@ -464,6 +460,7 @@ Deno.serve(async (req) => {
         status: 'sent',
         metadata: { subject, template_data },
       });
+
 
     if (logError) console.warn('[EMAIL] Log failed:', logError);
 
